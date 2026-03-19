@@ -41,12 +41,13 @@ Full names also work: `@manager`, `@code-reviewer`, etc.
 - `/gpu` — check GPU
 - `/cleanup` — clean cache
 
-### Workflows (4)
+### Workflows (5)
 
 - `workflows/bugfix.md` — fix a bug
 - `workflows/new-feature.md` — implement feature
 - `workflows/refactor.md` — refactor code
 - `workflows/release.md` — prepare release
+- `workflows/security-scan.md` — scan for private data (API keys, passwords, tokens)
 
 ## Usage
 
