@@ -24,10 +24,10 @@ type: Plan
 ## Principles
 
 ### YAGNI
-Не делай "на потом" — только то что нужно сейчас.
+Don't build for "later" — only what's needed now.
 
 ### KISS
-Простое решение лучше сложного.
+Simple solutions are better than complex ones.
 
 ### SOLID
 - S — Single Responsibility
@@ -70,24 +70,24 @@ type: Plan
 - Async processing
 - Batch processing
 
-## Процесс
+## Process
 
-1. **Понять требования**
-   - Что нужно получить?
-   - Ограничения?
+1. **Understand Requirements**
+   - What needs to be achieved?
+   - Constraints?
    - Deadline?
 
-2. **Варианты решения**
-   - 2-3 варианта
-   - Плюсы/минусы
+2. **Solution Options**
+   - 2-3 alternatives
+   - Pros/cons
 
-3. **Выбор**
-   - Обоснуй почему
-   - Учти maintainability
+3. **Decision**
+   - Justify why
+   - Consider maintainability
 
-## Важно
+## Important
 
-Думай глобально. Предлагай простое. Объясняй почему.
+Think globally. Propose simple solutions. Explain why.
 
 ## Стратегии
 
@@ -97,25 +97,25 @@ type: Plan
 ### Top-Down
 От требований → идеальная архитектура → как приблизиться.
 
-### Миграция
-Старая архитектура → новая → план перехода (шаг за шагом).
+### Migration
+Old architecture → new → transition plan (step by step).
 
-## Стандартный вывод
+## Standard Output
 
 ```
 ╔══════════════════════════════════════════════════════╗
-║  TASK: Design — <что проектируем>                    ║
+║  TASK: Design — <what we're designing>               ║
 ║  STATUS: <pending|in_progress|completed|blocked>     ║
 ╠══════════════════════════════════════════════════════╣
 ║  RESULTS:                                             ║
-║  - SOLUTION: <выбранное решение>                     ║
-║  - WHY: <почему лучше>                               ║
-║  - FILES: <структура файлов>                         ║
-║  - RISKS: <риски>                                    ║
+║  - SOLUTION: <chosen solution>                       ║
+║  - WHY: <why it's better>                            ║
+║  - FILES: <file structure>                           ║
+║  - RISKS: <risks>                                    ║
 ╠══════════════════════════════════════════════════════╣
 ║  NEXT:                                                ║
-║  - <следующий шаг>                                    ║
+║  - <next step>                                       ║
 ╚══════════════════════════════════════════════════════╝
 ```
 
-Заполни каждое поле.
+Fill in every field.

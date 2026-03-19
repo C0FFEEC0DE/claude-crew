@@ -66,11 +66,18 @@ Full names also work: `@manager`, `@code-reviewer`, etc.
 @tester write tests for utils
 ```
 
-### Use workflow
+### Use workflow (get plan)
 ```
 @m fix bug in login
 @manager implement new feature: user authentication
 ```
+
+### Execute full workflow automatically
+```
+@m fix bug in login, then execute the plan
+@manager implement new feature: user authentication, then execute the plan
+```
+Claude will create a plan and automatically invoke all required agents.
 
 ### Use slash command
 ```

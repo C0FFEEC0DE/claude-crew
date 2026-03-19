@@ -15,23 +15,34 @@ Need to implement new feature.
 @architect design the feature
 ```
 
-### 3. Implement
-(You do the implementation)
-
-### 4. Test
+### 3. Design Tests
 ```
-@tester write tests
+@tester design test strategy for the feature
 ```
 
-### 5. Review
+### 4. Review Design
 ```
-@code-reviewer review code
+@code-reviewer review the design
 ```
 
-### 6. Docs
+### 5. Document
 ```
 @docwriter document the feature
 ```
 
-## Command
-Just say: "@manager implement new feature: [description]"
+### 6. Cleanup
+```
+@housekeeper cleanup after implementation
+```
+
+## Commands
+
+**Get plan:**
+```
+@manager implement new feature: [description]
+```
+
+**Execute full workflow:**
+```
+@manager implement new feature: [description], then execute the plan
+```

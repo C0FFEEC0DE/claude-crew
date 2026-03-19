@@ -85,7 +85,26 @@ Predefined agent chains:
 - `workflows/refactor.md` — refactor code
 - `workflows/release.md` — prepare release
 
-Usage: "@m fix bug in login" or "@manager fix bug in login"
+### Usage
+
+**Get plan only:**
+```
+@m fix bug in login
+```
+Manager returns a plan with steps and agents.
+
+**Execute full workflow:**
+```
+@m fix bug in login, then execute the plan
+```
+Manager creates a plan, then Claude executes it by invoking agents automatically.
+
+**Direct agent invocation:**
+```
+@explorer analyze auth module
+@bugbuster find the bug
+@architect design the fix
+```
 
 ## Docs
 - https://docs.anthropic.com/en/docs/claude-code/settings

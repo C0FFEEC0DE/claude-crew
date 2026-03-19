@@ -15,8 +15,10 @@ Found a bug → need to fix it.
 @bugbuster find the root cause
 ```
 
-### 3. Fix
-(You do the fix)
+### 3. Design Fix
+```
+@architect design the fix for [root cause]
+```
 
 ### 4. Test
 ```
@@ -30,8 +32,17 @@ Found a bug → need to fix it.
 
 ### 6. Cleanup
 ```
-@housekeeper cleanse
+@housekeeper clean up the repository after bug fix
 ```
 
-## Command
-Just say: "@manager fix bug in [area]"
+## Commands
+
+**Get plan:**
+```
+@manager fix bug in [area]
+```
+
+**Execute full workflow:**
+```
+@manager fix bug in [area], then execute the plan
+```
