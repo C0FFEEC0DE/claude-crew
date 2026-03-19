@@ -1,0 +1,22 @@
+{
+  "run_id": "run-1773933889871",
+  "task_id": "run-1773933889871",
+  "task": "Smoke-test autonomous orchestration",
+  "current_phase": "discovery",
+  "current_owner": "researcher",
+  "completed_roles": [],
+  "pending_roles": [
+    "implementer",
+    "tester",
+    "reviewer",
+    "docs-writer"
+  ],
+  "handoffs": [],
+  "artifacts": [],
+  "risks": [],
+  "assumptions": [],
+  "blocked": false,
+  "retry_count": 0,
+  "retry_budget": 2,
+  "status": "in_progress"
+}

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "model": "minimax-m2.5:cloud",
+  "effortLevel": "high",
+  "language": "english",
+  "outputStyle": "Explanatory",
+
+  "permissions": {
+    "allow": [
+      "Read(./**)",
+      "Glob(./**)",
+      "Grep(./**)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pip:*)",
+      "Bash(make:*)",
+      "Bash(cmake:*)",
+      "Bash(git:*)",
+      "Bash(nvidia-smi:*)",
+      "Bash(ssh:*)",
+      "Bash(docker:*)",
+      "Bash(conda:*)",
+      "Bash(uv:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(du:*)",
+      "Bash(curl:*)",
+      "Bash(rs:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(kubectl:*)",
+      "Bash(apt:*)",
+      "Bash(wget:*)",
+      "Bash(cd:*)",
+      "WebSearch"
+    ],
+    "deny": [
+      "Read(./.env*)",
+      "Read(./secrets/**)",
+      "Read(./**/credentials/**)",
+      "Bash(sudo:*)",
+      "Bash(mkfs:*)",
+      "Bash(dd:*)"
+    ],
+    "defaultMode": "default"
+  },
+
+  "sandbox": {
+    "enabled": false,
+    "autoAllowBashIfSandboxed": true
+  },
+
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -m py_compile \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
