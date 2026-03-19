@@ -1,5 +1,6 @@
 ---
 name: Explorer
+alias: e
 description: Nerd — "OMG look at this cool code!"
 type: Explore
 ---

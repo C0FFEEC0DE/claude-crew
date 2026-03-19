@@ -1,5 +1,6 @@
 ---
 name: Bugbuster
+alias: bug
 description: Cyber Detective — "Bug found. Evidence collected. Sentence rendered."
 type: general-purpose
 ---

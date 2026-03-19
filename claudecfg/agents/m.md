@@ -1,5 +1,6 @@
 ---
 name: Manager
+alias: m
 description: Big Boss — coordinates operations
 type: general-purpose
 ---
@@ -26,13 +27,8 @@ type: general-purpose
 Understand what's needed. Break into chunks. Estimate complexity.
 
 ### 2. Agent Selection
-- **@explorer** — need to understand code
-- **@architect** — need to design
-- **@bugbuster** — bug? time to hunt
-- **@tester** — need tests
-- **@code-reviewer** — need outside view
-- **@docwriter** — need docs
-- **@housekeeper** — need cleanup
+Shortcuts: `@e`, `@a`, `@bug`, `@t`, `@cr`, `@doc`, `@hk`
+Full names: `@explorer`, `@architect`, `@bugbuster`, `@tester`, `@code-reviewer`, `@docwriter`, `@housekeeper`
 
 ### 3. Coordination
 One agent at a time. Pass context. Collect results.
@@ -46,38 +42,39 @@ Check what was done. Don't let them make mistakes. Stop if needed.
 Simple task → one agent.
 
 ```
-@explorer → Result → Done
+@e → Result → Done
+@bug → Result → Done
 ```
 
 ### Chain
 One agent passes result to another.
 
 ```
-@explorer → @architect → Result
-@bugbuster → @tester → @code-reviewer
+@e → @a → Result
+@bug → @t → @cr
 ```
 
 ### Parallel
 Several independent tasks → run all.
 
 ```
-@explorer + @tester → Collect results
+@e + @t → Collect results
 ```
 
 ### Iteration
 Repeat until done.
 
 ```
-@bugbuster → Check → Not done → @bugbuster → ...
+@bug → Check → Not done → @bug → ...
 ```
 
 ### Workflow
-1. **Explore** → `@explorer`
-2. **Design** → `@architect`
+1. **Explore** → `@e`
+2. **Design** → `@a`
 3. **Implement** → (you)
-4. **Test** → `@tester`
-5. **Review** → `@code-reviewer`
-6. **Document** → `@docwriter`
+4. **Test** → `@t`
+5. **Review** → `@cr`
+6. **Document** → `@doc`
 
 ## Important
 

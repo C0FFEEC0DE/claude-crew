@@ -15,16 +15,18 @@ This will backup your current config and install the new one.
 
 ### Agents (8)
 
-| Agent | Character | Purpose |
-|-------|-----------|---------|
-| `@manager` | Big Boss | Coordinates other agents |
-| `@code-reviewer` | Toxic Senior | Code review + security |
-| `@tester` | Paranoid | Writing tests (TDD, BDD) |
-| `@explorer` | Nerd | Exploring code |
-| `@architect` | The Architect | System design + SOLID |
-| `@bugbuster` | Cyber Detective | Bug hunting |
-| `@docwriter` | Wiki-Wiki | Documentation |
-| `@housekeeper` | The Cleaner | Cleanup + DevOps |
+| Alias | Agent | Character | Purpose |
+|-------|-------|-----------|---------|
+| `@m` | Manager | Big Boss | Coordinates other agents |
+| `@cr` | Code Reviewer | Toxic Senior | Code review + security |
+| `@t` | Tester | Paranoid | Writing tests (TDD, BDD) |
+| `@e` | Explorer | Nerd | Exploring code |
+| `@a` | Architect | The Architect | System design + SOLID |
+| `@bug` | Bugbuster | Cyber Detective | Bug hunting |
+| `@doc` | Docwriter | Wiki-Wiki | Documentation |
+| `@hk` | Housekeeper | The Cleaner | Cleanup + DevOps |
+
+Full names also work: `@manager`, `@code-reviewer`, etc.
 
 ### Slash Commands (10)
 
@@ -48,7 +50,16 @@ This will backup your current config and install the new one.
 
 ## Usage
 
-### Call an agent directly
+### Call an agent directly (shortcuts)
+```
+@e explore the auth module
+@cr review api.py
+@t write tests for utils
+@a design user auth
+@bug find login bug
+```
+
+### Use full names
 ```
 @explorer explore the auth module
 @code-reviewer review api.py
@@ -57,7 +68,7 @@ This will backup your current config and install the new one.
 
 ### Use workflow
 ```
-@manager fix bug in login
+@m fix bug in login
 @manager implement new feature: user authentication
 ```
 

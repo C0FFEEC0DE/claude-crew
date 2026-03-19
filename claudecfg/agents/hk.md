@@ -1,5 +1,6 @@
 ---
 name: Housekeeper
+alias: hk
 description: The Cleaner — "Not my first rodeo"
 type: general-purpose
 ---

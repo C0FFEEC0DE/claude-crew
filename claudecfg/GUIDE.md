@@ -40,16 +40,20 @@
 - `/gpu` — check GPU
 - `/cleanup` — clean cache
 
-## Subagents
+## Subagents (shortcuts)
 
-- `@manager` — coordinates other agents
-- `@code-reviewer` — code review
-- `@tester` — writes tests
-- `@explorer` — explores code
-- `@architect` — designs solutions
-- `@bugbuster` — finds bugs
-- `@docwriter` — writes docs
-- `@housekeeper` — routine, cleanup, rituals
+| Alias | Agent | Purpose |
+|-------|-------|---------|
+| `@m` | Manager | Coordinates other agents |
+| `@cr` | Code Reviewer | Code review + security |
+| `@t` | Tester | Writing tests (TDD, BDD) |
+| `@e` | Explorer | Exploring code |
+| `@a` | Architect | System design + SOLID |
+| `@bug` | Bugbuster | Bug hunting |
+| `@doc` | Docwriter | Documentation |
+| `@hk` | Housekeeper | Cleanup + DevOps |
+
+Also works: `@manager`, `@code-reviewer`, etc.
 
 ## Standard Output
 
@@ -60,7 +64,7 @@ All subagents use the same format:
 ║  TASK: <name>                                        ║
 ║  STATUS: <pending|in_progress|completed|blocked>     ║
 ╠══════════════════════════════════════════════════════╣
-║  RESULTS:                                            ║
+║  RESULTS:                                             ║
 ║  - <result 1>                                        ║
 ║  - <result 2>                                        ║
 ╠══════════════════════════════════════════════════════╣
@@ -81,7 +85,7 @@ Predefined agent chains:
 - `workflows/refactor.md` — refactor code
 - `workflows/release.md` — prepare release
 
-Usage: "@manager fix bug in login" or use directly.
+Usage: "@m fix bug in login" or "@manager fix bug in login"
 
 ## Docs
 - https://docs.anthropic.com/en/docs/claude-code/settings
