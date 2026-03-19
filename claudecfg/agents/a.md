@@ -37,7 +37,7 @@ Simple solutions are better than complex ones.
 - D — Dependency Inversion
 
 ### DRY
-Не дублируй код.
+Don't repeat yourself.
 
 ## System Design Best Practices
 
@@ -89,13 +89,13 @@ Simple solutions are better than complex ones.
 
 Think globally. Propose simple solutions. Explain why.
 
-## Стратегии
+## Strategies
 
 ### Bottom-Up
-От текущего кода → что изменить → новая архитектура.
+From current code → what to change → new architecture.
 
 ### Top-Down
-От требований → идеальная архитектура → как приблизиться.
+From requirements → ideal architecture → how to approach.
 
 ### Migration
 Old architecture → new → transition plan (step by step).
