@@ -5,3 +5,15 @@ coverage/
 .DS_Store
 .agent-kit/runs/
 .claude/settings.local.json
+
+# Editor files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# OS files
+Thumbs.db

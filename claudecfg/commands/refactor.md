@@ -1,19 +1,28 @@
 # /refactor
 
-Run refactoring session.
+**This command is now a skill that invokes @housekeeper agent.**
+
+Run refactoring session with the Housekeeper agent.
 
 ## When to use
 - Code duplication
 - Functions too long (>50 lines)
 - Bad variable names
 - Tests became fragile
+- Technical debt cleanup
 
-## Process
+## Usage
+```
+/refactor [what to refactor]
+```
+
+## Agent Actions
+The @housekeeper agent will:
 1. Find the problem
-2. Describe what you want
-3. Small steps
+2. Describe the refactoring approach
+3. Make small, incremental changes
 4. Run tests after each
-5. Don't try to do everything at once
+5. Leave code cleaner than it was
 
 ## Important
 - Separate commits for refactor

@@ -25,12 +25,25 @@ Need to implement new feature.
 @code-reviewer review the design
 ```
 
-### 5. Document
+### 5. Implement
+(You implement the feature)
+
+### 6. Test
+```
+@tester write tests for the feature
+```
+
+### 7. Review Code
+```
+@code-reviewer review the implementation
+```
+
+### 8. Document
 ```
 @docwriter document the feature
 ```
 
-### 6. Cleanup
+### 9. Cleanup
 ```
 @housekeeper cleanup after implementation
 ```

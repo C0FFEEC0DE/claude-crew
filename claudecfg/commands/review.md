@@ -1,12 +1,27 @@
 # /review
 
-Run code review.
+**This command is now a skill that invokes @code-reviewer agent.**
 
-## Focus
-- Bugs and security
-- Architecture
-- Readability
-- Tests
+Run code review with the Code Reviewer agent.
+
+## When to use
+- Before committing
+- PR review
+- Security check
+- Architecture review
+
+## Usage
+```
+/review [what to review]
+```
+
+## Agent Actions
+The @code-reviewer agent will:
+1. Check for bugs and security issues
+2. Review architecture and readability
+3. Verify tests exist and pass
+4. Suggest specific solutions, not just problems
+5. Praise good code
 
 ## Checklist
 - [ ] No obvious bugs
@@ -15,8 +30,3 @@ Run code review.
 - [ ] Error handling exists
 - [ ] Tests exist and pass
 - [ ] No sensitive data in logs
-
-## Important
-- Constructive criticism
-- Suggest solution, not just problem
-- Praise good code

@@ -24,14 +24,17 @@
 - Don't commit myself
 - Don't touch .env, secrets, credentials
 
-## Slash Commands
+## Slash Commands (Skills)
+
+These commands invoke specialized agents:
 
 ### General
 - `/debug` — debugging session
-- `/test` — testing session
-- `/design` — design session
-- `/refactor` — refactoring session
-- `/review` — code review
+- `/test` — testing session (invokes @tester)
+- `/design` — design session (invokes @architect)
+- `/refactor` — refactoring session (invokes @housekeeper)
+- `/review` — code review (invokes @code-reviewer)
+- `/docs` — documentation session (invokes @docwriter)
 
 ### ML/AI
 - `/train` — train model
@@ -50,10 +53,20 @@
 | `@e` | Explorer | Exploring code |
 | `@a` | Architect | System design + SOLID |
 | `@bug` | Bugbuster | Bug hunting |
+| `@dbg` | Debugger | Debugging issues |
 | `@doc` | Docwriter | Documentation |
 | `@hk` | Housekeeper | Cleanup + DevOps |
 
 Also works: `@manager`, `@code-reviewer`, etc.
+
+## Auto-Execution
+
+When working in a project folder (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`):
+- Commands execute automatically
+- No confirmation needed for safe operations
+- Security restrictions still apply (no sudo, rm -rf /, etc.)
+
+Outside project folders, confirmation is required.
 
 ## Standard Output
 
@@ -98,6 +111,8 @@ Manager returns a plan with steps and agents.
 @m fix bug in login, then execute the plan
 ```
 Manager creates a plan, then Claude executes it by invoking agents automatically.
+
+**Note:** Code review (@cr) is automatically included as the final step in all workflows.
 
 **Direct agent invocation:**
 ```

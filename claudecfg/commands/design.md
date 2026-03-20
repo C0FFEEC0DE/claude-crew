@@ -1,18 +1,27 @@
 # /design
 
-Run design session.
+**This command is now a skill that invokes @architect agent.**
+
+Run design session with the Architect agent.
 
 ## When to use
 - New feature
 - Architectural decision
 - Don't know where to start
 
-## Process
-1. What needs to be achieved?
-2. What are the constraints?
-3. Solution options
-4. Pros/cons of each
+## Usage
+```
+/design [what to design]
+```
+
+## Agent Actions
+The @architect agent will:
+1. Understand what needs to be achieved
+2. Identify constraints
+3. Propose solution options
+4. Compare pros/cons
 5. Choose and explain why
+6. Ensure SOLID principles
 
 ## Important
 - Document decisions

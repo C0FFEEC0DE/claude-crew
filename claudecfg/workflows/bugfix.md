@@ -30,7 +30,12 @@ Found a bug → need to fix it.
 @code-reviewer review the fix
 ```
 
-### 6. Cleanup
+### 6. Document
+```
+@docwriter document the bug fix
+```
+
+### 7. Cleanup
 ```
 @housekeeper clean up the repository after bug fix
 ```

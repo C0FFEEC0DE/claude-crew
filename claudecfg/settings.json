@@ -33,6 +33,25 @@
       "Bash(apt:*)",
       "Bash(wget:*)",
       "Bash(cd:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(chmod:*)",
+      "Bash(tar:*)",
+      "Bash(zip:*)",
+      "Bash(unzip:*)",
+      "Bash(jq:*)",
+      "Bash(go:*)",
+      "Bash(rustc:*)",
+      "Bash(cargo:*)",
+      "Bash(gradle:*)",
+      "Bash(mvn:*)",
+      "Bash(ruby:*)",
+      "Bash(php:*)",
+      "Bash(composer:*)",
+      "Bash(brew:*)",
       "WebSearch"
     ],
     "deny": [
@@ -43,12 +62,25 @@
       "Bash(mkfs:*)",
       "Bash(dd:*)"
     ],
-    "defaultMode": "default"
+    "defaultMode": "auto"
   },
 
   "sandbox": {
     "enabled": false,
     "autoAllowBashIfSandboxed": true
+  },
+
+  "autoExecution": {
+    "enabled": true,
+    "paths": [
+      "${HOME}/projects/**",
+      "${HOME}/code/**",
+      "${HOME}/repos/**",
+      "${HOME}/work/**",
+      "/tmp/claude-projects/**"
+    ],
+    "agents": ["*"],
+    "tools": ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "Agent"]
   },
 
   "hooks": {
@@ -59,6 +91,10 @@
           {
             "type": "command",
             "command": "python -m py_compile \"$CLAUDE_FILE_PATH\" 2>/dev/null || true"
+          },
+          {
+            "type": "prompt",
+            "prompt": "Code was just modified. Remind the user to run code review with: @cr review the changes"
           }
         ]
       }

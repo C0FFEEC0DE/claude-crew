@@ -1,7 +1,5 @@
 # /test
 
-**This command is now a skill that invokes @tester agent.**
-
 Run testing session with the Tester agent.
 
 ## When to use
@@ -15,16 +13,17 @@ Run testing session with the Tester agent.
 /test [what to test]
 ```
 
-## Agent Actions
-The @tester agent will:
-1. Find what to test
+## Examples
+```
+/test the auth module
+/test write unit tests for user service
+/test check coverage for payment gateway
+```
+
+## Agent
+Invokes @tester (Paranoid) who will:
+1. Analyze what needs testing
 2. Write Unit → Integration → E2E tests
 3. Use AAA pattern (Arrange, Act, Assert)
 4. Cover edge cases
 5. Report coverage and gaps
-
-## Important
-- Tests should be isolated
-- Don't test internals — only API
-- Mock external dependencies
-- 100% coverage is not the goal

@@ -5,24 +5,24 @@ Preparing for release.
 
 ## Steps
 
-### 1. Review
+### 1. Docs
+```
+@docwriter update documentation
+```
+
+### 2. Review
 ```
 @code-reviewer full review
 ```
 
-### 2. Tests
+### 3. Tests
 ```
 @tester ensure all tests pass
 ```
 
-### 3. Cleanup
+### 4. Cleanup
 ```
 @housekeeper pre-release cleanup
-```
-
-### 4. Docs
-```
-@docwriter update documentation
 ```
 
 ## Command

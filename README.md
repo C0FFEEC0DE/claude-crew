@@ -11,9 +11,18 @@ cd claudecfg
 
 This will backup your current config and install the new one.
 
+## Auto-Execution
+
+In project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`), agents can execute commands automatically without confirmation.
+
+### Safety
+- Protected paths: `~/.ssh`, `~/.aws`, `/etc`, `/usr`, etc.
+- Denied commands: `sudo`, `mkfs`, `dd`, `rm -rf /`
+- Confirmation required outside project folders
+
 ## What's Included
 
-### Agents (8)
+### Agents (9)
 
 | Alias | Agent | Character | Purpose |
 |-------|-------|-----------|---------|
@@ -23,18 +32,22 @@ This will backup your current config and install the new one.
 | `@e` | Explorer | Nerd | Exploring code |
 | `@a` | Architect | The Architect | System design + SOLID |
 | `@bug` | Bugbuster | Cyber Detective | Bug hunting |
+| `@dbg` | Debugger | Bug Hunter | Debugging issues |
 | `@doc` | Docwriter | Wiki-Wiki | Documentation |
 | `@hk` | Housekeeper | The Cleaner | Cleanup + DevOps |
 
 Full names also work: `@manager`, `@code-reviewer`, etc.
 
-### Slash Commands (10)
+### Slash Commands (11)
+
+Commands that invoke specialized agents:
 
 - `/debug` — debugging session
-- `/test` — testing session
-- `/design` — design session
-- `/refactor` — refactoring session
-- `/review` — code review
+- `/test` — testing session (invokes @tester)
+- `/design` — design session (invokes @architect)
+- `/refactor` — refactoring session (invokes @housekeeper)
+- `/review` — code review (invokes @code-reviewer)
+- `/docs` — documentation session (invokes @docwriter)
 - `/train` — train model
 - `/convert` — convert model
 - `/deploy` — deploy
@@ -96,6 +109,7 @@ See `claudecfg/settings.json` for permissions and settings.
 - `claudecfg/GUIDE.md` — full cheatsheet
 - `claudecfg/agents/` — agent definitions
 - `claudecfg/commands/` — command definitions
+- `claudecfg/skills/` — skill definitions (commands that invoke agents)
 
 ## Uninstall
 
