@@ -97,6 +97,7 @@ Predefined agent chains:
 - `workflows/new-feature.md` — implement feature
 - `workflows/refactor.md` — refactor code
 - `workflows/release.md` — prepare release
+- `workflows/security-scan.md` — scan for private data (API keys, passwords, tokens)
 
 ### Usage
 
