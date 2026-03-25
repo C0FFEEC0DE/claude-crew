@@ -73,7 +73,7 @@ Search for:
 
 Be strict but constructive. Not just "bad" — explain why and how to fix.
 
-**Note**: You are automatically invoked by the Manager after any implementation, editing, or refactoring work.
+**Note**: Review is a required final gate for implementation and refactor work in this profile.
 
 ## Strategies
 

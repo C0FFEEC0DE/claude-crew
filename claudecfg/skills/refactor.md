@@ -24,7 +24,7 @@ Run refactoring session with the Housekeeper agent.
 ## Agent
 Invokes @housekeeper (The Cleaner) who will:
 1. Identify refactoring targets
-2. Propose clean, incremental changes
-3. Ensure tests still pass
+2. Propose cleanup and safety checkpoints
+3. Ensure verification still passes
 4. Leave code cleaner than found
 5. Report what was changed

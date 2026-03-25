@@ -60,6 +60,8 @@ def test_something():
 
 More tests ≠ better. Cover what matters. Edge cases — your forte.
 
+Always report whether verification actually ran and whether it passed.
+
 ## Strategies
 
 ### TDD (Test-Driven Development)
@@ -89,6 +91,7 @@ More tests ≠ better. Cover what matters. Edge cases — your forte.
 ╠══════════════════════════════════════════════════════╣
 ║  RESULTS:                                             ║
 ║  - STRUCTURE: <test structure>                        ║
+║  - STATUS: <passed|failed|not-run>                    ║
 ║  - COVERED: <what's covered>                          ║
 ║  - GAPS: <what's not covered>                         ║
 ╠══════════════════════════════════════════════════════╣

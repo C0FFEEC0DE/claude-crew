@@ -23,6 +23,7 @@
 - Don't change configs automatically
 - Don't commit myself
 - Don't touch .env, secrets, credentials
+- No release/deploy automation in this profile
 
 ## Slash Commands (Skills)
 
@@ -35,13 +36,6 @@ These commands invoke specialized agents:
 - `/refactor` — refactoring session (invokes @housekeeper)
 - `/review` — code review (invokes @code-reviewer)
 - `/docs` — documentation session (invokes @docwriter)
-
-### ML/AI
-- `/train` — train model
-- `/convert` — convert model (GGUF, Safetensors)
-- `/deploy` — deploy to remote host
-- `/gpu` — check GPU
-- `/cleanup` — clean cache
 
 ## Subagents (shortcuts)
 
@@ -65,8 +59,24 @@ When working in a project folder (`~/projects/**`, `~/code/**`, `~/repos/**`, `~
 - Commands execute automatically
 - No confirmation needed for safe operations
 - Security restrictions still apply (no sudo, rm -rf /, etc.)
+- Hooks still enforce SDLC gates and block release/deploy actions
 
 Outside project folders, confirmation is required.
+
+## Hook-Gated SDLC
+
+Mandatory flow:
+
+`discover -> design -> implement -> verify -> review -> docs when behavior changes -> cleanup`
+
+Main checkpoints:
+
+- `SessionStart` — bootstrap SDLC context and detect test/lint/build commands
+- `UserPromptSubmit` — classify work as feature, bugfix, or refactor
+- `PreToolUse` / `PermissionRequest` — block dangerous or out-of-scope commands
+- `PostToolUse` / `PostToolUseFailure` — record edits and verification status
+- `TaskCompleted` / `TeammateIdle` / `Stop` — prevent incomplete work from being declared done
+- `SessionEnd` — log transcript path and session metadata for later indexing
 
 ## Standard Output
 
@@ -91,13 +101,13 @@ Create `./CLAUDE.md` in project — put project context there (max 50 lines).
 
 ## Workflows
 
-Predefined agent chains:
+Predefined workflows:
 
 - `workflows/bugfix.md` — fix a bug
 - `workflows/new-feature.md` — implement feature
 - `workflows/refactor.md` — refactor code
-- `workflows/release.md` — prepare release
 - `workflows/security-scan.md` — scan for private data (API keys, passwords, tokens)
+- `workflows/release.md` — optional manual checklist, not part of the required SDLC path
 
 ### Usage
 
@@ -107,13 +117,10 @@ Predefined agent chains:
 ```
 Manager returns a plan with steps and agents.
 
-**Execute full workflow:**
-```
-@m fix bug in login, then execute the plan
-```
-Manager creates a plan, then Claude executes it by invoking agents automatically.
-
-**Note:** Code review (@cr) is automatically included as the final step in all workflows.
+**Execution policy:**
+- manager coordination is optional
+- hooks, not markdown, enforce verification and stop conditions
+- code review remains a required final gate for implementation work
 
 **Direct agent invocation:**
 ```
@@ -124,3 +131,4 @@ Manager creates a plan, then Claude executes it by invoking agents automatically
 
 ## Docs
 - https://docs.anthropic.com/en/docs/claude-code/settings
+- https://code.claude.com/docs/en/hooks

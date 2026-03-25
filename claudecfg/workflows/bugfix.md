@@ -20,24 +20,22 @@ Found a bug → need to fix it.
 @architect design the fix for [root cause]
 ```
 
-### 4. Test
-```
-@tester write tests for the fix
-```
+### 4. Implement
+Implement the fix in code.
 
-### 5. Review
+### 5. Verify
 ```
-@code-reviewer review the fix
+@tester run regression tests for the fix and report pass/fail
 ```
 
 ### 6. Document
 ```
-@docwriter document the bug fix
+@docwriter document the bug fix if behavior, interface, or operator workflow changed
 ```
 
-### 7. Cleanup
+### 7. Review
 ```
-@housekeeper clean up the repository after bug fix
+@code-reviewer review the fix
 ```
 
 ## Commands
@@ -47,7 +45,4 @@ Found a bug → need to fix it.
 @manager fix bug in [area]
 ```
 
-**Execute full workflow:**
-```
-@manager fix bug in [area], then execute the plan
-```
+Hooks enforce the final verification gate before task completion.

@@ -20,8 +20,8 @@ Run refactoring session with the Housekeeper agent.
 The @housekeeper agent will:
 1. Find the problem
 2. Describe the refactoring approach
-3. Make small, incremental changes
-4. Run tests after each
+3. Prepare a cleanup and safety checklist for the main implementation thread
+4. Run or request verification after changes
 5. Leave code cleaner than it was
 
 ## Important

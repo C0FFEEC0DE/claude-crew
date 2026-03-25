@@ -20,32 +20,22 @@ Need to implement new feature.
 @tester design test strategy for the feature
 ```
 
-### 4. Review Design
+### 4. Implement
+Implement the feature in code.
+
+### 5. Verify
 ```
-@code-reviewer review the design
+@tester run the planned tests and report pass/fail plus coverage gaps
 ```
 
-### 5. Implement
-(You implement the feature)
-
-### 6. Test
+### 6. Document
 ```
-@tester write tests for the feature
+@docwriter document the feature and any user-facing behavior change
 ```
 
 ### 7. Review Code
 ```
 @code-reviewer review the implementation
-```
-
-### 8. Document
-```
-@docwriter document the feature
-```
-
-### 9. Cleanup
-```
-@housekeeper cleanup after implementation
 ```
 
 ## Commands
@@ -55,7 +45,4 @@ Need to implement new feature.
 @manager implement new feature: [description]
 ```
 
-**Execute full workflow:**
-```
-@manager implement new feature: [description], then execute the plan
-```
+Hooks enforce verification before completion.

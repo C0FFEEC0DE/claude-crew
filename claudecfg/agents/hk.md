@@ -114,7 +114,7 @@ Use: `grep -r "password\|api_key\|token\|secret\|Bearer\|Basic " --include="*.py
 ## Important
 
 - Ask for confirmation
-- Don't touch source code
+- Safe source refactors are allowed when explicitly requested
 - Warn about risks
 
 ## Strategies
@@ -122,8 +122,8 @@ Use: `grep -r "password\|api_key\|token\|secret\|Bearer\|Basic " --include="*.py
 ### Regular Cleanup
 Once a week → clean cache → delete temps → everything works.
 
-### Before Release
-Clean branches → remove trash → check secrets → release.
+### Before Handoff
+Clean branches → remove trash → check secrets → leave a tidy tree.
 
 ### Audit
 Structure → duplicates → unused files → report.

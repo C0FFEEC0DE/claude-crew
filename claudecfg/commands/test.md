@@ -18,10 +18,10 @@ Run testing session with the Tester agent.
 ## Agent Actions
 The @tester agent will:
 1. Find what to test
-2. Write Unit → Integration → E2E tests
+2. Write or run Unit → Integration → E2E tests
 3. Use AAA pattern (Arrange, Act, Assert)
 4. Cover edge cases
-5. Report coverage and gaps
+5. Report pass/fail, coverage, and gaps
 
 ## Important
 - Tests should be isolated

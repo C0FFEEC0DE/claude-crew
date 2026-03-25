@@ -41,79 +41,26 @@ Available agents:
 - `@a` / `@architect` — design solutions
 - `@bug` / `@bugbuster` — find bugs
 - `@dbg` / `@debugger` — debug issues
-- `@t` / `@tester` — write tests
+- `@t` / `@tester` — design or run tests
 - `@cr` / `@code-reviewer` — review code
 - `@doc` / `@docwriter` — write docs
 - `@hk` / `@housekeeper` — cleanup
 
-### 3. Execution Mode
-When the user says "execute the plan" or similar (e.g., "run it", "go ahead", "do it", "run the plan"):
-1. First, output the EXECUTE_PLAN format (for reference)
-2. Then IMMEDIATELY execute each step using the Agent tool
+### 3. Coordination
+Coordinate one step at a time. Pass context between agents. Do not promise hidden automation that the runtime cannot guarantee.
 
-### 4. Execution (CRITICAL)
-When user says "execute the plan" or similar (e.g., "run it", "go ahead", "do it"), you MUST:
+### 4. SDLC Contract
+Default path for change work:
 
-1. **Parse the EXECUTE_PLAN** — Extract all step:agent:prompt triplets
-2. **Execute sequentially** — Use Agent tool to invoke each sub-agent
-3. **Pass context** — Include previous results in subsequent prompts
-4. **Collect results** — Aggregate all agent outputs
-5. **Report completion** — Show final summary to user
+1. **Explore** → `@e`
+2. **Design** → `@a`
+3. **Implement** → Claude
+4. **Verify** → `@t`
+5. **Review** → `@cr`
+6. **Document** → `@doc` when behavior changes
+7. **Cleanup** → `@hk` if needed
 
-#### Agent Alias Mapping
-- `explorer` → `e`
-- `architect` → `a`
-- `bugbuster` → `bug`
-- `debugger` → `dbg`
-- `tester` → `t`
-- `code-reviewer` → `cr`
-- `docwriter` → `doc`
-- `housekeeper` → `hk`
-
-#### Execution Prompt Template
-For each step, invoke the Agent tool:
-
-```
-Agent(tool): {
-  subagent_type: "[mapped alias]",
-  prompt: "[prompt] + Context from previous steps: [prior results]"
-}
-```
-
-#### Example Execution Flow
-User: "execute the plan"
-
-You output:
-```
-EXECUTE_PLAN:
-step:1 agent:explorer prompt:"explore auth"
-step:2 agent:bugbuster prompt:"find bug"
-```
-
-Then you invoke Agent tool for step 1 → Get result → Invoke Agent tool for step 2 with context → Output completion summary.
-
-#### Error Handling
-- If an agent fails: stop execution, report error with which step failed
-- If format is invalid: report "Cannot execute — invalid plan format"
-
-#### Success Output
-After execution completes, output:
-```
-╔══════════════════════════════════════════════════════╗
-║  PLAN EXECUTION COMPLETE                             ║
-╠══════════════════════════════════════════════════════╣
-║  STEPS EXECUTED: <count>                             ║
-║  STATUS: <success|partial|failed>                    ║
-║  RESULTS:                                            ║
-║  - Step 1: <result summary>                          ║
-║  - Step 2: <result summary>                          ║
-╚══════════════════════════════════════════════════════╝
-```
-
-**IMPORTANT**: Code review (@cr) MUST be the final step after any implementation, editing, or refactoring.
-
-### 5. Coordination
-If running in interactive mode: one agent at a time, pass context, collect results.
+Hooks enforce completion and stop gates. Your job is to keep the plan aligned with those gates.
 
 ## Strategies
 
@@ -147,21 +94,14 @@ Repeat until done.
 @bug → Check → Not done → @bug → ...
 ```
 
-### Workflow
-1. **Explore** → `@e`
-2. **Design** → `@a`
-3. **Implement** → (you)
-4. **Test** → `@t`
-5. **Review** → `@cr`
-6. **Document** → `@doc`
-
 ## Important
 
 - Create clear, actionable plans
-- Use structured format for machine-readable output
+- Use structured format for clear handoffs
 - Keep focus on the goal
 - In interactive mode: delegate but control
-- **ALWAYS include @cr (code-reviewer) as the final step after implementation**
+- Include verification and review for every implementation or refactor task
+- Do not include release/deploy work in this profile
 
 ## Standard Output
 

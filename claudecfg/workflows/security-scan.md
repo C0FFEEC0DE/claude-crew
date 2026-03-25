@@ -50,10 +50,7 @@ Check repository for private/sensitive data before publishing publicly.
 @m check repo for private data
 ```
 
-**Execute full workflow:**
-```
-@m scan repo for secrets, then execute the plan
-```
+Manager creates the plan; Claude runs the scan steps directly.
 
 ## Categories to Check
 

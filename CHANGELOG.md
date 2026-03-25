@@ -15,12 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - GitHub Actions security-scan workflow
 - CONTRIBUTING.md guidelines
 - LICENSE file (MIT)
+- Hook-based SDLC gate layer for session start, prompt classification, verification tracking, stop control, and transcript indexing
 
 ### Changed
 - Fixed agent types to use specialized types instead of `general-purpose`
-- Updated workflows to include mandatory code review
-- Fixed bugfix workflow to include documentation step
-- Fixed release workflow order (docs before review)
+- Reworked workflows around hook-gated execution instead of manager auto-execution promises
+- Moved release/deploy out of the default profile into an optional manual checklist
+- Updated docs to reflect implemented commands only
 - Updated GUIDE.md with new agents and skills
 
 ### Fixed

@@ -1,9 +1,15 @@
 # Release Workflow
 
 ## When
-Preparing for release.
+Preparing for release manually.
 
-## Steps
+## Status
+
+This profile does **not** automate release or deploy.
+
+Use this file only as a manual reminder outside the mandatory SDLC path.
+
+## Optional Manual Checklist
 
 ### 1. Docs
 ```
@@ -26,4 +32,4 @@ Preparing for release.
 ```
 
 ## Command
-Just say: "@manager prepare release"
+No automated release command in this profile.

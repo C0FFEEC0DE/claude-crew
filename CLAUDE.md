@@ -2,9 +2,12 @@
 
 This directory contains Claude Code configuration.
 
-## Auto-Execution
+## Profile
 
-In project folders (`~/projects/**`, `~/code/**`, etc.), agents execute commands automatically without confirmation.
+This profile is hook-gated:
+- discover -> design -> implement -> verify -> review -> docs when behavior changes -> cleanup
+- release/deploy automation is intentionally disabled
+- session metadata is logged for later audit or dataset indexing
 
 ## Quick Start
 
@@ -13,22 +16,9 @@ cd claudecfg
 ./install.sh
 ```
 
-## Agents
-
-Use `@manager` to coordinate other agents:
-
-- `@explorer` — explore code
-- `@architect` — design solutions
-- `@bugbuster` — find bugs
-- `@tester` — write tests
-- `@code-reviewer` — code review
-- `@docwriter` — write docs
-- `@housekeeper` — cleanup
-
 ## Commands
 
 - `/debug`, `/test`, `/design`, `/refactor`, `/review`, `/docs`
-- `/train`, `/convert`, `/deploy`, `/gpu`, `/cleanup`
 
 Commands `/debug`, `/test`, `/design`, `/refactor`, `/review`, `/docs` invoke specialized agents.
 
