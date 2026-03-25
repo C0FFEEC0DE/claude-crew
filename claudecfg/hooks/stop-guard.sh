@@ -27,6 +27,10 @@ if [ "$code_changed" = "true" ] && [ -z "$last_message" ]; then
     exit 0
 fi
 
+if [ "$code_changed" = "true" ] && message_reports_no_changes "$last_message"; then
+    exit 0
+fi
+
 if [ "$code_changed" = "true" ] && ! message_mentions_verification_status "$last_message"; then
     jq -n '{
         decision: "block",

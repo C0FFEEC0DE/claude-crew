@@ -233,6 +233,13 @@
     "expect_exit": 0
   },
   {
+    "name": "stop_guard_allows_no_change_summary_even_if_code_flag_was_set",
+    "script": "claudecfg/hooks/stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/stop_guard_no_changes_summary.json",
+    "seed_state": "tests/hooks/fixtures/state_stop_guard_seed.json",
+    "expect_exit": 0
+  },
+  {
     "name": "session_start_detects_node_scripts",
     "script": "claudecfg/hooks/session-start.sh",
     "stdin": "tests/hooks/fixtures/session_start_node.json",

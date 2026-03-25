@@ -255,19 +255,19 @@ is_remote_shell_bootstrap_command() {
 message_mentions_verification_status() {
     local message="$1"
 
-    grep -Eiq '(verification|verified|validate|validated|test|tests|pytest|coverage|lint|build|compiled|compile|pass(ed)?|fail(ed)?|проверк|вериф|тест|линт|сборк)' <<<"$message"
+    grep -Eiq '(verification|verified|verify|validate|validated|no changes to verify|nothing to verify|test|tests|pytest|coverage|lint|build|compiled|compile|pass(ed)?|fail(ed)?|проверк|вериф|тест|линт|сборк)' <<<"$message"
 }
 
 message_mentions_review_outcome() {
     local message="$1"
 
-    grep -Eiq '(review (pending|complete|completed|done|not run)|reviewed|code review|self-review|ревью (в ожидании|готово|сделано|не проводилось)|самопровер)' <<<"$message"
+    grep -Eiq '(review (pending|complete|completed|done|not run)|reviewed|review outcome|not applicable|n/a|code review|self-review|ревью (в ожидании|готово|сделано|не проводилось)|самопровер|не применимо)' <<<"$message"
 }
 
 message_mentions_changed_files() {
     local message="$1"
 
-    grep -Eiq '(files changed|changed files|updated files|modified files|key changed files|no files changed|измененн(ые|ых) файл|файлы изменены|файлы:|changed:)' <<<"$message"
+    grep -Eiq '(files changed|changed files|updated files|modified files|key changed files|no files changed|no changes were made|nothing changed|измененн(ые|ых) файл|файлы изменены|файлы:|changed:|без изменений)' <<<"$message"
 }
 
 message_mentions_remaining_risks() {
@@ -286,6 +286,12 @@ message_mentions_concrete_outcome() {
     local message="$1"
 
     grep -Eiq '(outcome|result|implemented|updated|fixed|investigated|reviewed|documented|added|removed|refactored|changed|created|no changes|completed|done|исправил|обновил|добавил|удалил|проверил|нашел|сделал|без изменений)' <<<"$message"
+}
+
+message_reports_no_changes() {
+    local message="$1"
+
+    grep -Eiq '(no changes were made|no files changed|nothing changed|without changes|без изменений|изменений не было)' <<<"$message"
 }
 
 session_block_reason() {
