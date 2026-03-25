@@ -1,7 +1,5 @@
 # Claude Code Configuration
 
-## Status
-
 [![Validate](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml)
 [![Hook Tests](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml)
 [![Benchmark](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/benchmark.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/benchmark.yml)
@@ -36,7 +34,7 @@ In project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`), ag
 |-------|-------|-----------|---------|
 | `@m` | Manager | Big Boss | Coordinates other agents |
 | `@cr` | Code Reviewer | Toxic Senior | Code review + security |
-| `@t` | Tester | Paranoid | Writing tests (TDD, BDD) |
+| `@t` | Tester | Paranoid | Test design, execution, and verification |
 | `@e` | Explorer | Nerd | Exploring code |
 | `@a` | Architect | The Architect | System design + SOLID |
 | `@bug` | Bugbuster | Cyber Detective | Bug hunting |
@@ -48,14 +46,14 @@ Full names also work: `@manager`, `@code-reviewer`, etc.
 
 ### Slash Commands
 
-Commands that invoke specialized agents:
+Commands and skills that invoke specialized agents:
 
 - `/debug` — debugging session
 - `/test` — testing session (invokes @tester)
 - `/design` — design session (invokes @architect)
 - `/refactor` — refactoring session (invokes @housekeeper)
 - `/review` — code review (invokes @code-reviewer)
-- `/docs` — documentation session (invokes @docwriter)
+- `/docs` — documentation skill session (invokes @docwriter)
 
 ### Workflows
 
@@ -181,7 +179,7 @@ Hook logs are written under `~/.claude/logs/`. Session metadata and transcript p
 - `claudecfg/GUIDE.md` — full cheatsheet
 - `claudecfg/agents/` — agent definitions
 - `claudecfg/commands/` — command definitions
-- `claudecfg/skills/` — skill definitions (commands that invoke agents)
+- `claudecfg/skills/` — skill definitions, including `/docs`
 - `docs/benchmarking.md` — benchmark runner contract and workflow usage
 
 ## Uninstall

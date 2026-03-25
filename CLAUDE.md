@@ -20,7 +20,7 @@ cd claudecfg
 
 - `/debug`, `/test`, `/design`, `/refactor`, `/review`, `/docs`
 
-Commands `/debug`, `/test`, `/design`, `/refactor`, `/review`, `/docs` invoke specialized agents.
+Commands `/debug`, `/test`, `/design`, `/refactor`, `/review` and the `/docs` skill invoke specialized agents.
 
 ## Agents
 
@@ -29,7 +29,7 @@ Commands `/debug`, `/test`, `/design`, `/refactor`, `/review`, `/docs` invoke sp
 - `@a` — Architect (design)
 - `@bug` — Bugbuster (find bugs)
 - `@dbg` — Debugger (debug issues)
-- `@t` — Tester (write tests)
+- `@t` — Tester (design, run, and verify tests)
 - `@cr` — Code Reviewer (review)
 - `@doc` — Docwriter (documentation)
 - `@hk` — Housekeeper (cleanup)
