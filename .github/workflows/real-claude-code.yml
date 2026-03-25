@@ -1,6 +1,7 @@
 name: Real Claude Code
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       prompt:
@@ -22,6 +23,9 @@ jobs:
   claude-code-openrouter:
     name: Real Claude Code via OpenRouter
     runs-on: ubuntu-latest
+    concurrency:
+      group: real-claude-code-${{ github.ref }}
+      cancel-in-progress: true
     permissions:
       contents: read
 
@@ -35,14 +39,36 @@ jobs:
         id: cfg
         shell: bash
         env:
+          EVENT_NAME: ${{ github.event_name }}
           INPUT_MODEL: ${{ inputs.model }}
           VAR_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          GH_SHA: ${{ github.sha }}
         run: |
           model="${INPUT_MODEL:-${VAR_MODEL:-anthropic/claude-haiku-4.5}}"
           if [ -z "$model" ]; then
             model="anthropic/claude-haiku-4.5"
           fi
           echo "model=$model" >> "$GITHUB_OUTPUT"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            prompt="${{ inputs.prompt }}"
+          else
+            baseline="${PUSH_BEFORE_SHA:-}"
+            if [ -z "$baseline" ] || [ "$baseline" = "0000000000000000000000000000000000000000" ]; then
+              if git rev-parse --verify "${GH_SHA}^" >/dev/null 2>&1; then
+                baseline="$(git rev-parse "${GH_SHA}^")"
+              else
+                baseline="$GH_SHA"
+              fi
+            fi
+            prompt="Inspect the repository changes introduced between ${baseline} and ${GH_SHA}. Use the installed ~/.claude profile from this repository. Review the changed files, run the relevant validation or test commands when needed, and make only minimal fixes that are justified by the diff. Do not do release or deploy work. Leave the resulting workspace diff for artifact collection."
+          fi
+          {
+            echo "prompt<<__PROMPT__"
+            echo "$prompt"
+            echo "__PROMPT__"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Install Claude configuration
         shell: bash
@@ -54,11 +80,12 @@ jobs:
             echo "## Real Claude Code Context"
             echo ""
             echo "- OpenRouter Claude model: \`${{ steps.cfg.outputs.model }}\`"
+            echo "- Trigger: \`${{ github.event_name }}\`"
             echo "- Max turns: \`${{ inputs.max_turns }}\`"
             echo "- Prompt:"
             echo ""
             echo '```text'
-            echo "${{ inputs.prompt }}"
+            echo "${{ steps.cfg.outputs.prompt }}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -66,7 +93,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          prompt: ${{ inputs.prompt }}
+          prompt: ${{ steps.cfg.outputs.prompt }}
           claude_args: |
             --model ${{ steps.cfg.outputs.model }}
             --max-turns ${{ inputs.max_turns }}

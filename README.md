@@ -2,7 +2,7 @@
 
 [![Validate](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml)
 [![Hook Tests](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml)
-[![Benchmark](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/benchmark.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/benchmark.yml)
+[![Real Claude Code](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/real-claude-code.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/real-claude-code.yml)
 [![Security Scan](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml)
 
 Badges reflect the latest workflow result for the `main` branch.
@@ -112,17 +112,16 @@ Manager can coordinate work, but completion is enforced by hooks. The expected f
 
 See `claudecfg/settings.json` for permissions and settings.
 
-## CI and Benchmarks
+## CI and Claude Code
 
 GitHub Actions now covers four layers:
 
 - `Validate` — fast structural checks on every push and PR
 - `Hook Tests` — behavior tests for the SDLC hook scripts
-- `Benchmark` — baseline vs candidate comparison with a PR/job summary
-- `Real Claude Code` — manual official Claude Code run via OpenRouter using the installed `claudecfg` profile
+- `Real Claude Code` — official Claude Code run via OpenRouter using the installed `claudecfg` profile
+- `Security Scan` — repository secret and sensitive-file scan
 
-All three workflows plus `Security Scan` run automatically on every push.
-`Benchmark` compares the previous commit against the current commit on push events.
+All four workflows run automatically on every push.
 
 ### Fast CI
 
@@ -139,50 +138,22 @@ All three workflows plus `Security Scan` run automatically on every push.
 
 This harness verifies that key hooks block dangerous commands, classify prompts correctly, record verification, and refuse completion without tests when code changed.
 
-### Benchmarks
-
-Benchmark task definitions live under `bench/tasks/`.
-Task fixtures live under `bench/fixtures/`.
-The benchmark summary schema lives in `bench/schema/summary.schema.json`.
-
-By default, the GitHub benchmark workflow uses:
-
-- `mock` mode on pull requests
-- previous-commit vs current-commit comparison on push
-- configurable refs on `workflow_dispatch`
-- previous-commit vs current-commit comparison on nightly schedule
-
-To run real benchmark comparisons you have two options:
-
-- set `OPENROUTER_API_KEY` and optionally `OPENROUTER_MODEL` to use the built-in OpenRouter runner
-- set `BENCH_RUNNER_CMD` to a custom runner command if you want another provider or a true Claude Code harness
-
-Recommended low-cost starting point:
-
-- `OPENROUTER_MODEL=qwen/qwen3-coder-next`
-- use `qwen/qwen3-coder:free` or `openrouter/free` only for smoke tests because rate limits can make push-time benchmarking flaky
-
-The runner contract is simple:
-
-- GitHub sets `BENCH_TASK_FILE`, `BENCH_TASK_ID`, `BENCH_WORKDIR`, `BENCH_FIXTURE_DIR`, and `BENCH_OUTPUT_DIR`
-- your runner command must execute the task and write `result.json` into `$BENCH_OUTPUT_DIR`
-- `scripts/run-benchmark.sh` aggregates those task results into `summary.json`
-- `scripts/compare-benchmarks.sh` decides `improved|regressed|no_significant_change`
-
-See `docs/benchmarking.md` for setup, the OpenRouter path, and the expected `result.json` format.
-
 ### Real Claude Code
 
-If you want the official Claude Code runtime instead of the custom benchmark worker, use `.github/workflows/real-claude-code.yml`.
+The repository now uses `.github/workflows/real-claude-code.yml` as the active coding-agent workflow.
 
 That workflow:
 
 - installs `claudecfg/*` into `~/.claude`
 - runs `anthropics/claude-code-action@v1`
 - routes Claude Code through OpenRouter
+- runs automatically on every push
+- can also be started manually with a custom prompt
 - uploads `git status`, `git diff --stat`, and the patch as workflow artifacts
 
-This path is the real Claude Code runtime. It is separate from the cheaper benchmark worker in `scripts/bench_runner_openrouter.py`.
+Recommended model:
+
+- `OPENROUTER_MODEL=anthropic/claude-haiku-4.5`
 
 ## Logs
 
@@ -194,7 +165,7 @@ Hook logs are written under `~/.claude/logs/`. Session metadata and transcript p
 - `claudecfg/agents/` — agent definitions
 - `claudecfg/commands/` — command definitions
 - `claudecfg/skills/` — skill definitions, including `/docs`
-- `docs/benchmarking.md` — benchmark runner contract and workflow usage
+- `docs/real-claude-code.md` — real Claude Code workflow and OpenRouter setup
 
 ## Uninstall
 
