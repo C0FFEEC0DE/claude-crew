@@ -12,53 +12,38 @@ code_changed="$(jq -r '.code_changed // false' "$(state_file)")"
 last_message="$(json_get '.last_assistant_message')"
 
 if reason="$(session_block_reason)"; then
-    jq -n --arg reason "$reason" '{
-        decision: "block",
-        reason: $reason
-    }'
+    emit_loop_aware_block "stop" "$reason" "$last_message"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && [ -z "$last_message" ]; then
-    jq -n '{
-        decision: "block",
-        reason: "Code or config changed, but no assistant summary message was found for this stop event."
-    }'
+    emit_loop_aware_block "stop" "Code or config changed, but no assistant summary message was found for this stop event." "$last_message"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && message_reports_no_changes "$last_message"; then
+    clear_loop_block "stop"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && ! message_mentions_verification_status "$last_message"; then
-    jq -n '{
-        decision: "block",
-        reason: "Final response must mention verification status after code or config changes."
-    }'
+    emit_loop_aware_block "stop" "Final response must mention verification status after code or config changes." "$last_message"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && ! message_mentions_review_outcome "$last_message"; then
-    jq -n '{
-        decision: "block",
-        reason: "Final response must mention review outcome or explicitly say review is pending after code or config changes."
-    }'
+    emit_loop_aware_block "stop" "Final response must mention review outcome or explicitly say review is pending after code or config changes." "$last_message"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && ! message_mentions_changed_files "$last_message"; then
-    jq -n '{
-        decision: "block",
-        reason: "Final response must name key changed files or explicitly say no files changed."
-    }'
+    emit_loop_aware_block "stop" "Final response must name key changed files or explicitly say no files changed." "$last_message"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && ! message_mentions_remaining_risks "$last_message"; then
-    jq -n '{
-        decision: "block",
-        reason: "Final response must state remaining risks or explicitly mark them as none."
-    }'
+    emit_loop_aware_block "stop" "Final response must state remaining risks or explicitly mark them as none." "$last_message"
     exit 0
 fi
+
+clear_loop_block "stop"

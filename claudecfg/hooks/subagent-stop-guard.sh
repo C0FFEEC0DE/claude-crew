@@ -6,44 +6,33 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=/dev/null
 source "${SCRIPT_DIR}/lib.sh"
 
+ensure_state
+
 last_message="$(json_get '.last_assistant_message')"
 
 if [ -z "$last_message" ]; then
-    jq -n '{
-        decision: "block",
-        reason: "No assistant summary message was found for this subagent stop event."
-    }'
+    emit_loop_aware_block "subagent_stop" "No assistant summary message was found for this subagent stop event." "$last_message"
     exit 0
 fi
 
 if ! message_mentions_concrete_outcome "$last_message"; then
-    jq -n '{
-        decision: "block",
-        reason: "Subagent output must include a concrete outcome."
-    }'
+    emit_loop_aware_block "subagent_stop" "Subagent output must include a concrete outcome." "$last_message"
     exit 0
 fi
 
 if ! message_mentions_changed_files "$last_message"; then
-    jq -n '{
-        decision: "block",
-        reason: "Subagent output must name changed files or explicitly say no files changed."
-    }'
+    emit_loop_aware_block "subagent_stop" "Subagent output must name changed files or explicitly say no files changed." "$last_message"
     exit 0
 fi
 
 if ! message_mentions_verification_status "$last_message"; then
-    jq -n '{
-        decision: "block",
-        reason: "Subagent output must mention verification status or explicitly say verification was not run."
-    }'
+    emit_loop_aware_block "subagent_stop" "Subagent output must mention verification status or explicitly say verification was not run." "$last_message"
     exit 0
 fi
 
 if ! message_mentions_remaining_risks "$last_message" && ! message_mentions_next_step "$last_message"; then
-    jq -n '{
-        decision: "block",
-        reason: "Subagent output must state remaining risks or the next step."
-    }'
+    emit_loop_aware_block "subagent_stop" "Subagent output must state remaining risks or the next step." "$last_message"
     exit 0
 fi
+
+clear_loop_block "subagent_stop"

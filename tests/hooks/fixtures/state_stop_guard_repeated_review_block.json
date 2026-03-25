@@ -1,0 +1,31 @@
+{
+  "session_id": "case-stop-guard",
+  "cwd": "",
+  "transcript_path": "",
+  "created_at": "2026-03-25T00:00:00Z",
+  "task_type": "feature",
+  "edited": true,
+  "code_changed": true,
+  "docs_changed": false,
+  "tests_ok": true,
+  "tests_failed": false,
+  "lint_ok": false,
+  "lint_failed": false,
+  "build_ok": false,
+  "build_failed": false,
+  "detected_test_command": "pytest",
+  "detected_lint_command": "",
+  "detected_build_command": "",
+  "last_test_command": "pytest -q",
+  "last_lint_command": "",
+  "last_build_command": "",
+  "stop_block_count": 2,
+  "stop_block_reason": "Final response must mention review outcome or explicitly say review is pending after code or config changes.",
+  "stop_block_message": "Verification: pytest -q passed. Files changed: src/app.py. Remaining risks: none.",
+  "subagent_stop_block_count": 0,
+  "subagent_stop_block_reason": "",
+  "subagent_stop_block_message": "",
+  "files": [
+    "src/app.py"
+  ]
+}

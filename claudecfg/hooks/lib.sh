@@ -71,6 +71,12 @@ ensure_state() {
             last_test_command: "",
             last_lint_command: "",
             last_build_command: "",
+            stop_block_count: 0,
+            stop_block_reason: "",
+            stop_block_message: "",
+            subagent_stop_block_count: 0,
+            subagent_stop_block_reason: "",
+            subagent_stop_block_message: "",
             files: []
         }' > "$file"
 }
@@ -84,6 +90,123 @@ update_state() {
     tmp="$(mktemp)"
     jq "$jq_program" "$file" > "$tmp"
     mv "$tmp" "$file"
+}
+
+record_loop_block() {
+    local prefix="$1"
+    local reason="$2"
+    local message="$3"
+    local count_key reason_key message_key file tmp previous_reason previous_message previous_count next_count
+
+    case "$prefix" in
+        stop)
+            count_key="stop_block_count"
+            reason_key="stop_block_reason"
+            message_key="stop_block_message"
+            ;;
+        subagent_stop)
+            count_key="subagent_stop_block_count"
+            reason_key="subagent_stop_block_reason"
+            message_key="subagent_stop_block_message"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    file="$(state_file)"
+    previous_reason="$(jq -r --arg key "$reason_key" '.[$key] // empty' "$file")"
+    previous_message="$(jq -r --arg key "$message_key" '.[$key] // empty' "$file")"
+    previous_count="$(jq -r --arg key "$count_key" '.[$key] // 0' "$file")"
+
+    if [ "$previous_reason" = "$reason" ] && [ "$previous_message" = "$message" ]; then
+        next_count=$((previous_count + 1))
+    else
+        next_count=1
+    fi
+
+    tmp="$(mktemp)"
+    jq \
+        --arg count_key "$count_key" \
+        --arg reason_key "$reason_key" \
+        --arg message_key "$message_key" \
+        --arg reason "$reason" \
+        --arg message "$message" \
+        --argjson count "$next_count" \
+        '.[$count_key] = $count
+        | .[$reason_key] = $reason
+        | .[$message_key] = $message' "$file" > "$tmp"
+    mv "$tmp" "$file"
+}
+
+clear_loop_block() {
+    local prefix="$1"
+    local count_key reason_key message_key tmp
+
+    case "$prefix" in
+        stop)
+            count_key="stop_block_count"
+            reason_key="stop_block_reason"
+            message_key="stop_block_message"
+            ;;
+        subagent_stop)
+            count_key="subagent_stop_block_count"
+            reason_key="subagent_stop_block_reason"
+            message_key="subagent_stop_block_message"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    tmp="$(mktemp)"
+    jq \
+        --arg count_key "$count_key" \
+        --arg reason_key "$reason_key" \
+        --arg message_key "$message_key" \
+        '.[$count_key] = 0
+        | .[$reason_key] = ""
+        | .[$message_key] = ""' "$(state_file)" > "$tmp"
+    mv "$tmp" "$(state_file)"
+}
+
+loop_block_count() {
+    local prefix="$1"
+    local key
+
+    case "$prefix" in
+        stop)
+            key="stop_block_count"
+            ;;
+        subagent_stop)
+            key="subagent_stop_block_count"
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    jq -r --arg key "$key" '.[$key] // 0' "$(state_file)"
+}
+
+emit_loop_aware_block() {
+    local prefix="$1"
+    local reason="$2"
+    local message="$3"
+    local count final_reason
+
+    record_loop_block "$prefix" "$reason" "$message"
+    count="$(loop_block_count "$prefix")"
+    final_reason="$reason"
+
+    if [ "$count" -ge 3 ]; then
+        final_reason="Repeated stop-block loop detected (${count}x): ${reason} Do not retry the same final response again; change the summary or perform the required action first."
+    fi
+
+    jq -n --arg reason "$final_reason" '{
+        decision: "block",
+        reason: $reason
+    }'
 }
 
 append_jsonl() {
@@ -267,7 +390,7 @@ message_mentions_review_outcome() {
 message_mentions_changed_files() {
     local message="$1"
 
-    grep -Eiq '(files changed|changed files|updated files|modified files|key changed files|no files changed|no changes were made|nothing changed|измененн(ые|ых) файл|файлы изменены|файлы:|changed:|без изменений)' <<<"$message"
+    grep -Eiq '(files changed|changed files|updated files|modified files|key files changed|key changed files|no files changed|no changes were made|nothing changed|измененн(ые|ых) файл|файлы изменены|файлы:|changed:|без изменений)' <<<"$message"
 }
 
 message_mentions_remaining_risks() {
