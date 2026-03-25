@@ -114,11 +114,12 @@ See `claudecfg/settings.json` for permissions and settings.
 
 ## CI and Benchmarks
 
-GitHub Actions now covers three levels:
+GitHub Actions now covers four layers:
 
 - `Validate` — fast structural checks on every push and PR
 - `Hook Tests` — behavior tests for the SDLC hook scripts
 - `Benchmark` — baseline vs candidate comparison with a PR/job summary
+- `Real Claude Code` — manual official Claude Code run via OpenRouter using the installed `claudecfg` profile
 
 All three workflows plus `Security Scan` run automatically on every push.
 `Benchmark` compares the previous commit against the current commit on push events.
@@ -169,6 +170,19 @@ The runner contract is simple:
 - `scripts/compare-benchmarks.sh` decides `improved|regressed|no_significant_change`
 
 See `docs/benchmarking.md` for setup, the OpenRouter path, and the expected `result.json` format.
+
+### Real Claude Code
+
+If you want the official Claude Code runtime instead of the custom benchmark worker, use `.github/workflows/real-claude-code.yml`.
+
+That workflow:
+
+- installs `claudecfg/*` into `~/.claude`
+- runs `anthropics/claude-code-action@v1`
+- routes Claude Code through OpenRouter
+- uploads `git status`, `git diff --stat`, and the patch as workflow artifacts
+
+This path is the real Claude Code runtime. It is separate from the cheaper benchmark worker in `scripts/bench_runner_openrouter.py`.
 
 ## Logs
 

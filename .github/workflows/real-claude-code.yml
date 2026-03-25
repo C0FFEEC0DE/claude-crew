@@ -1,0 +1,111 @@
+name: Real Claude Code
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: "Prompt for Claude Code"
+        required: true
+        type: string
+      max_turns:
+        description: "Maximum Claude Code turns"
+        required: false
+        default: "8"
+        type: string
+      model:
+        description: "Optional OpenRouter Claude model override"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  claude-code-openrouter:
+    name: Real Claude Code via OpenRouter
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve Claude model
+        id: cfg
+        shell: bash
+        env:
+          INPUT_MODEL: ${{ inputs.model }}
+          VAR_MODEL: ${{ vars.OPENROUTER_MODEL }}
+        run: |
+          model="${INPUT_MODEL:-${VAR_MODEL:-anthropic/claude-haiku-4.5}}"
+          if [ -z "$model" ]; then
+            model="anthropic/claude-haiku-4.5"
+          fi
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+
+      - name: Install Claude configuration
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.claude"
+          cp -R claudecfg/* "$HOME/.claude/"
+          find "$HOME/.claude/hooks" -type f -name "*.sh" -exec chmod +x {} \;
+          {
+            echo "## Real Claude Code Context"
+            echo ""
+            echo "- OpenRouter Claude model: \`${{ steps.cfg.outputs.model }}\`"
+            echo "- Max turns: \`${{ inputs.max_turns }}\`"
+            echo "- Prompt:"
+            echo ""
+            echo '```text'
+            echo "${{ inputs.prompt }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run Claude Code
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          prompt: ${{ inputs.prompt }}
+          claude_args: |
+            --model ${{ steps.cfg.outputs.model }}
+            --max-turns ${{ inputs.max_turns }}
+        env:
+          ANTHROPIC_BASE_URL: https://openrouter.ai/api
+          ANTHROPIC_API_KEY: ""
+          ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ steps.cfg.outputs.model }}
+          ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ steps.cfg.outputs.model }}
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ steps.cfg.outputs.model }}
+          CLAUDE_CODE_SUBAGENT_MODEL: ${{ steps.cfg.outputs.model }}
+
+      - name: Collect workspace diff
+        if: always()
+        shell: bash
+        run: |
+          git status --short > claude-status.txt
+          git diff --stat > claude-diffstat.txt || true
+          git diff > claude-workspace.patch || true
+          {
+            echo ""
+            echo "## Real Claude Code Output"
+            echo ""
+            echo '```text'
+            cat claude-status.txt
+            echo '```'
+            echo ""
+            echo "### Diff Stat"
+            echo ""
+            echo '```text'
+            cat claude-diffstat.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Claude artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-claude-code-${{ github.run_id }}
+          path: |
+            claude-status.txt
+            claude-diffstat.txt
+            claude-workspace.patch

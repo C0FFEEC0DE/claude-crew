@@ -1,10 +1,11 @@
 # Benchmarking
 
-This repository now separates three kinds of signal:
+This repository now separates four kinds of signal:
 
 - structural validity
 - hook behavior correctness
 - benchmarked agent outcomes
+- manual real-Claude-Code runs via OpenRouter
 
 ## Workflows
 
@@ -58,6 +59,19 @@ For real measurements on push, manual runs, or the nightly schedule, configure e
 - `OPENROUTER_API_KEY` for the built-in OpenRouter runner
 - `BENCH_RUNNER_CMD` for your own runner
 
+### Real Claude Code
+
+Workflow: `.github/workflows/real-claude-code.yml`
+
+Purpose:
+
+- run the official `anthropics/claude-code-action@v1`
+- install the repository's `claudecfg` profile into `~/.claude`
+- route Claude Code through OpenRouter
+- capture the resulting workspace diff as artifacts
+
+This workflow is manual-only by design because it uses the real Claude Code runtime and consumes paid model calls.
+
 ## OpenRouter Setup
 
 If you already have an OpenRouter key, this is the fastest path.
@@ -96,7 +110,8 @@ Minimum GitHub setup:
 
 1. Add secret `OPENROUTER_API_KEY`
 2. Add variable `OPENROUTER_MODEL`
-3. Push a commit or run the `Benchmark` workflow manually
+3. Push a commit to exercise the cheap benchmark worker
+4. Run `Real Claude Code` manually when you want the official Claude Code runtime
 
 Important limitation:
 
@@ -105,7 +120,7 @@ Important limitation:
 - this is good for cheap comparative benchmarking
 - this is **not** a faithful test of Claude Code hooks, permissions, or multi-turn tool execution
 
-If you need to test the real Claude Code runtime with your configs, use Anthropic API, Bedrock, or Vertex AI with the official Claude Code Action instead.
+In this repository, the real-runtime path is provided separately by `.github/workflows/real-claude-code.yml`, using OpenRouter as the Anthropic-compatible backend for the official Claude Code action.
 
 ## Runner Contract
 
@@ -166,6 +181,7 @@ That runner can internally call Claude Code, Codex, OpenRouter, or another agent
 - `.github/workflows/validate.yml` — fast structural validation on every push and PR
 - `.github/workflows/hooks-test.yml` — deterministic hook behavior tests on every push and PR
 - `.github/workflows/security-scan.yml` — secret scanning on every push and PR plus a weekly scheduled run
+- `.github/workflows/real-claude-code.yml` — manual official Claude Code run via OpenRouter with the installed `claudecfg` profile
 
 ## Verdict Logic
 

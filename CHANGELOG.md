@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Benchmark harness with task fixtures, comparison scripts, and report generation
 - OpenRouter benchmark runner and setup documentation
 - README status badges for repository workflows
+- Manual `Real Claude Code` workflow via OpenRouter using the official Claude Code action with installed repo config
 
 ### Changed
 - Fixed agent types to use specialized types instead of `general-purpose`
