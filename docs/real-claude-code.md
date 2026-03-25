@@ -1,6 +1,6 @@
 # Real Claude Code
 
-This repository uses the official Claude Code GitHub Action routed through OpenRouter.
+This repository uses the real Claude Code CLI in headless mode routed through OpenRouter.
 
 The active coding-agent workflow is:
 
@@ -12,9 +12,10 @@ On every push, the workflow:
 
 1. checks out the repository
 2. installs `claudecfg/*` into `~/.claude`
-3. runs `anthropics/claude-code-action@v1`
-4. routes the action through OpenRouter
-5. uploads `git status`, `git diff --stat`, and the patch as artifacts
+3. installs the Claude Code CLI
+4. runs `claude -p`
+5. routes Claude Code through OpenRouter
+6. uploads `git status`, `git diff --stat`, the patch, and Claude output as artifacts
 
 You can also run it manually with a custom prompt using `workflow_dispatch`.
 
@@ -35,7 +36,7 @@ anthropic/claude-haiku-4.5
 
 ## Why OpenRouter
 
-OpenRouter is used here as an Anthropic-compatible backend for the official Claude Code action.
+OpenRouter is used here as an Anthropic-compatible backend for Claude Code.
 
 The workflow sets:
 
@@ -43,10 +44,11 @@ The workflow sets:
 ANTHROPIC_BASE_URL=https://openrouter.ai/api
 ```
 
-and passes:
+and exports:
 
 ```text
-anthropic_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+ANTHROPIC_AUTH_TOKEN=${OPENROUTER_API_KEY}
+ANTHROPIC_API_KEY=
 ```
 
 to the action.
@@ -61,3 +63,4 @@ to the action.
 - This is the real Claude Code runtime, not a custom benchmark worker.
 - The repository profile under `claudecfg/` is installed into `~/.claude` before Claude runs.
 - The workflow is configured with `contents: read`, so any suggested file changes stay in the runner workspace and are captured as artifacts.
+- The GitHub Action wrapper was removed from the automatic path because it currently fails on `push` with `Unsupported event type: push`, so the workflow now calls the Claude Code CLI directly.

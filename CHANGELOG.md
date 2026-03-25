@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - LICENSE file (MIT)
 - Hook-based SDLC gate layer for session start, prompt classification, verification tracking, stop control, and transcript indexing
 - Repository-level `Validate` and `Hook Tests` GitHub Actions workflows
-- Real Claude Code workflow via OpenRouter using the official Claude Code action with installed repo config
+- Real Claude Code workflow via OpenRouter using headless Claude Code CLI with installed repo config
 - OpenRouter-backed Claude Code setup documentation
 - README status badges for repository workflows
 
@@ -28,7 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated docs to reflect implemented commands only
 - Updated GUIDE.md with new agents and skills
 - Updated GitHub Actions workflows to run on every push
-- Replaced the custom benchmark coding-agent workflow with automatic real Claude Code runs via OpenRouter
+- Replaced the custom benchmark coding-agent workflow with automatic real Claude Code CLI runs via OpenRouter
 
 ### Fixed
 - New Feature workflow missing implementation and test steps

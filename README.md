@@ -118,7 +118,7 @@ GitHub Actions now covers four layers:
 
 - `Validate` — fast structural checks on every push and PR
 - `Hook Tests` — behavior tests for the SDLC hook scripts
-- `Real Claude Code` — official Claude Code run via OpenRouter using the installed `claudecfg` profile
+- `Real Claude Code` — headless Claude Code run via OpenRouter using the installed `claudecfg` profile
 - `Security Scan` — repository secret and sensitive-file scan
 
 All four workflows run automatically on every push.
@@ -145,11 +145,11 @@ The repository now uses `.github/workflows/real-claude-code.yml` as the active c
 That workflow:
 
 - installs `claudecfg/*` into `~/.claude`
-- runs `anthropics/claude-code-action@v1`
+- installs the Claude Code CLI and runs `claude -p`
 - routes Claude Code through OpenRouter
 - runs automatically on every push
 - can also be started manually with a custom prompt
-- uploads `git status`, `git diff --stat`, and the patch as workflow artifacts
+- uploads `git status`, `git diff --stat`, the patch, and Claude output as workflow artifacts
 
 Recommended model:
 

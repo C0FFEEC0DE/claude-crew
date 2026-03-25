@@ -23,6 +23,7 @@ jobs:
   claude-code-openrouter:
     name: Real Claude Code via OpenRouter
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     concurrency:
       group: real-claude-code-${{ github.ref }}
       cancel-in-progress: true
@@ -40,6 +41,8 @@ jobs:
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
+          INPUT_MAX_TURNS: ${{ inputs.max_turns }}
+          INPUT_PROMPT: ${{ inputs.prompt }}
           INPUT_MODEL: ${{ inputs.model }}
           VAR_MODEL: ${{ vars.OPENROUTER_MODEL }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
@@ -51,8 +54,14 @@ jobs:
           fi
           echo "model=$model" >> "$GITHUB_OUTPUT"
 
+          max_turns="${INPUT_MAX_TURNS:-8}"
+          if [ -z "$max_turns" ]; then
+            max_turns="8"
+          fi
+          echo "max_turns=$max_turns" >> "$GITHUB_OUTPUT"
+
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            prompt="${{ inputs.prompt }}"
+            prompt="$INPUT_PROMPT"
           else
             baseline="${PUSH_BEFORE_SHA:-}"
             if [ -z "$baseline" ] || [ "$baseline" = "0000000000000000000000000000000000000000" ]; then
@@ -81,7 +90,7 @@ jobs:
             echo ""
             echo "- OpenRouter Claude model: \`${{ steps.cfg.outputs.model }}\`"
             echo "- Trigger: \`${{ github.event_name }}\`"
-            echo "- Max turns: \`${{ inputs.max_turns }}\`"
+            echo "- Max turns: \`${{ steps.cfg.outputs.max_turns }}\`"
             echo "- Prompt:"
             echo ""
             echo '```text'
@@ -89,21 +98,30 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Install Claude Code CLI
+        shell: bash
+        run: |
+          node --version
+          npm --version
+          npm install -g @anthropic-ai/claude-code
+          claude --version
+
       - name: Run Claude Code
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          prompt: ${{ steps.cfg.outputs.prompt }}
-          claude_args: |
-            --model ${{ steps.cfg.outputs.model }}
-            --max-turns ${{ inputs.max_turns }}
+        shell: bash
         env:
+          PROMPT: ${{ steps.cfg.outputs.prompt }}
+          CLAUDE_MODEL: ${{ steps.cfg.outputs.model }}
+          MAX_TURNS: ${{ steps.cfg.outputs.max_turns }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ANTHROPIC_BASE_URL: https://openrouter.ai/api
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.OPENROUTER_API_KEY }}
           ANTHROPIC_API_KEY: ""
-          ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ steps.cfg.outputs.model }}
-          ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ steps.cfg.outputs.model }}
-          ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ steps.cfg.outputs.model }}
-          CLAUDE_CODE_SUBAGENT_MODEL: ${{ steps.cfg.outputs.model }}
+        run: |
+          if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+            echo "OPENROUTER_API_KEY secret is required" >&2
+            exit 1
+          fi
+          bash scripts/run-real-claude-code.sh
 
       - name: Collect workspace diff
         if: always()
@@ -125,6 +143,14 @@ jobs:
             echo '```text'
             cat claude-diffstat.txt
             echo '```'
+            if [ -f claude-result.txt ]; then
+              echo ""
+              echo "### Claude Result"
+              echo ""
+              echo '```text'
+              cat claude-result.txt
+              echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Claude artifacts
@@ -136,3 +162,7 @@ jobs:
             claude-status.txt
             claude-diffstat.txt
             claude-workspace.patch
+            claude-result.json
+            claude-result.txt
+            claude-stderr.log
+            claude-stderr-tail.txt

@@ -43,6 +43,6 @@ See `claudecfg/GUIDE.md` for full documentation.
 Repository CI now includes:
 - status badges in `README.md`
 - `Validate`, `Hook Tests`, and `Security Scan` on every push and PR
-- `Real Claude Code` on every push, plus manual runs with custom prompts
+- `Real Claude Code` on every push, plus manual runs with custom prompts, using headless Claude Code CLI via OpenRouter
 
 OpenRouter-backed Claude Code is configured via repository secrets/variables. See `docs/real-claude-code.md`.
