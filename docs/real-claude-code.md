@@ -31,7 +31,7 @@ Repository settings:
 Recommended value:
 
 ```text
-anthropic/claude-haiku-4.5
+z-ai/glm-4.7-flash
 ```
 
 ## Why OpenRouter

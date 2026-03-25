@@ -14,7 +14,7 @@ on:
         default: "8"
         type: string
       model:
-        description: "Optional OpenRouter Claude model override"
+        description: "Optional OpenRouter model override"
         required: false
         default: ""
         type: string
@@ -36,7 +36,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Resolve Claude model
+      - name: Resolve model
         id: cfg
         shell: bash
         env:
@@ -48,9 +48,9 @@ jobs:
           PUSH_BEFORE_SHA: ${{ github.event.before }}
           GH_SHA: ${{ github.sha }}
         run: |
-          model="${INPUT_MODEL:-${VAR_MODEL:-anthropic/claude-haiku-4.5}}"
+          model="${INPUT_MODEL:-${VAR_MODEL:-z-ai/glm-4.7-flash}}"
           if [ -z "$model" ]; then
-            model="anthropic/claude-haiku-4.5"
+            model="z-ai/glm-4.7-flash"
           fi
           echo "model=$model" >> "$GITHUB_OUTPUT"
 
@@ -88,7 +88,7 @@ jobs:
           {
             echo "## Real Claude Code Context"
             echo ""
-            echo "- OpenRouter Claude model: \`${{ steps.cfg.outputs.model }}\`"
+            echo "- OpenRouter model: \`${{ steps.cfg.outputs.model }}\`"
             echo "- Trigger: \`${{ github.event_name }}\`"
             echo "- Max turns: \`${{ steps.cfg.outputs.max_turns }}\`"
             echo "- Prompt:"

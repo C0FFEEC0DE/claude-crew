@@ -153,7 +153,7 @@ That workflow:
 
 Recommended model:
 
-- `OPENROUTER_MODEL=anthropic/claude-haiku-4.5`
+- `OPENROUTER_MODEL=z-ai/glm-4.7-flash`
 
 ## Logs
 
