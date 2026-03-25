@@ -8,10 +8,7 @@ source "${SCRIPT_DIR}/lib.sh"
 
 ensure_state
 
-code_changed="$(jq -r '.code_changed // false' "$(state_file)")"
-tests_ok="$(jq -r '.tests_ok' "$(state_file)")"
-
-if [ "$code_changed" = "true" ] && [ "$tests_ok" != "true" ]; then
-    echo "Do not go idle yet: verification is still missing for this session." >&2
+if reason="$(session_block_reason)"; then
+    echo "Do not go idle yet: ${reason}" >&2
     exit 2
 fi

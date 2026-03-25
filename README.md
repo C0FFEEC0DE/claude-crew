@@ -69,10 +69,12 @@ The profile uses hooks as enforcement points, not markdown alone:
 
 - `SessionStart` — bootstrap SDLC context and detect test/lint/build commands
 - `UserPromptSubmit` — classify task into `bugfix|feature|refactor`
-- `PreToolUse` / `PermissionRequest` — block destructive or release/deploy actions
-- `PostToolUse` / `PostToolUseFailure` — track edits and verification commands
-- `TaskCompleted` / `Stop` / `TeammateIdle` — prevent finishing without verification
+- `PreToolUse` / `PermissionRequest` — block destructive or out-of-scope actions, including force-push, `mkfs*`, and remote bootstrap pipes such as `curl|bash` or `wget|bash`
+- `PostToolUse` / `PostToolUseFailure` — track edits plus successful or failed test/lint/build commands
+- `TaskCompleted` / `Stop` / `TeammateIdle` — use the shared session state to block completion after missing verification or failed test/lint/build runs
 - `SessionEnd` — index transcript paths and session metadata for later dataset work
+
+`Stop` is enforced by the shell `stop-guard` hook only. This avoids prompt-hook failures on tool-only turns while still requiring a final assistant summary after code/config changes with verification status, review outcome, changed files, and remaining risks.
 
 ## Usage
 
@@ -136,7 +138,7 @@ All four workflows run automatically on every push.
 
 - `bash scripts/test-hooks.sh`
 
-This harness verifies that key hooks block dangerous commands, classify prompts correctly, record verification, and refuse completion without tests when code changed.
+This harness verifies that key hooks block dangerous commands, classify prompts correctly, record verification state, reject incomplete stop summaries, and refuse completion after missing or failed verification when code changed.
 
 ### Real Claude Code
 

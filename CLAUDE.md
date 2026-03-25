@@ -8,6 +8,7 @@ This profile is hook-gated:
 - discover -> design -> implement -> verify -> review -> docs when behavior changes -> cleanup
 - release/deploy automation is intentionally disabled
 - session metadata is logged for later audit or dataset indexing
+- final completion is enforced by shell hooks using shared session state for test/lint/build results and final summary requirements
 
 ## Quick Start
 

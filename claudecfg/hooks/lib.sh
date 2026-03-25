@@ -119,6 +119,21 @@ emit_pretool_decision() {
         }'
 }
 
+emit_permission_request_deny() {
+    local message="$1"
+    jq -n \
+        --arg message "$message" \
+        '{
+            hookSpecificOutput: {
+                hookEventName: "PermissionRequest",
+                decision: {
+                    behavior: "deny",
+                    message: $message
+                }
+            }
+        }'
+}
+
 detect_node_script() {
     local script_name="$1"
     if [ -f package.json ] && jq -e --arg name "$script_name" '.scripts[$name] != null' package.json >/dev/null 2>&1; then
@@ -200,7 +215,7 @@ command_class() {
         *"pytest"*|*"npm test"*|*"npm run test"*|*"pnpm test"*|*"yarn test"*|*"cargo test"*|*"go test"*|*"ctest"*|*"make test"*)
             printf "test"
             ;;
-        *"npm run lint"*|*"pnpm lint"*|*"yarn lint"*|*"ruff"*|*"flake8"*|*"cargo clippy"*|*"golangci-lint"*|*"eslint"*|*"shellcheck"*|*"python -m compileall "*)
+        *"npm run lint"*|*"pnpm lint"*|*"yarn lint"*|*"ruff"*|*"flake8"*|*"cargo clippy"*|*"golangci-lint"*|*"eslint"*|*"shellcheck"*|*"python -m compileall "*|*"make lint"*)
             printf "lint"
             ;;
         *"npm run build"*|*"pnpm build"*|*"yarn build"*|*"cargo build"*|*"go build"*|*"cmake --build"*|*"make"*)
@@ -210,6 +225,89 @@ command_class() {
             printf "other"
             ;;
     esac
+}
+
+is_release_or_deploy_command() {
+    local command="$1"
+
+    [[ "$command" == *"npm publish"* \
+        || "$command" == *"cargo publish"* \
+        || "$command" == *"docker push"* \
+        || "$command" == *"gh release"* \
+        || "$command" == *"kubectl apply"* \
+        || "$command" == *"helm upgrade"* ]]
+}
+
+is_remote_shell_bootstrap_command() {
+    local command="$1"
+
+    if { [[ "$command" =~ (^|[[:space:]])curl($|[[:space:]]) ]] || [[ "$command" =~ (^|[[:space:]])wget($|[[:space:]]) ]]; } \
+        && [[ "$command" =~ [|][[:space:]]*[[:alnum:]_./-]*(sh|bash|zsh|dash|ksh)($|[[:space:]]) ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+message_mentions_verification_status() {
+    local message="$1"
+
+    grep -Eiq '(verification|verified|validate|validated|test|tests|pytest|coverage|lint|build|compiled|compile|pass(ed)?|fail(ed)?|проверк|вериф|тест|линт|сборк)' <<<"$message"
+}
+
+message_mentions_review_outcome() {
+    local message="$1"
+
+    grep -Eiq '(review (pending|complete|completed|done|not run)|reviewed|code review|self-review|ревью (в ожидании|готово|сделано|не проводилось)|самопровер)' <<<"$message"
+}
+
+message_mentions_changed_files() {
+    local message="$1"
+
+    grep -Eiq '(files changed|changed files|updated files|modified files|key changed files|no files changed|измененн(ые|ых) файл|файлы изменены|файлы:|changed:)' <<<"$message"
+}
+
+message_mentions_remaining_risks() {
+    local message="$1"
+
+    grep -Eiq '(remaining risks|risks:|risk: none|risks: none|no known risks|residual risk|остаточн(ые|ых) риски|риски: нет|риски отсутствуют|remaining risk: none)' <<<"$message"
+}
+
+session_block_reason() {
+    local state code_changed tests_ok tests_failed lint_failed build_failed
+    local last_test_command last_lint_command last_build_command
+
+    state="$(state_file)"
+    code_changed="$(jq -r '.code_changed // false' "$state")"
+    tests_ok="$(jq -r '.tests_ok // false' "$state")"
+    tests_failed="$(jq -r '.tests_failed // false' "$state")"
+    lint_failed="$(jq -r '.lint_failed // false' "$state")"
+    build_failed="$(jq -r '.build_failed // false' "$state")"
+    last_test_command="$(jq -r '.last_test_command // empty' "$state")"
+    last_lint_command="$(jq -r '.last_lint_command // empty' "$state")"
+    last_build_command="$(jq -r '.last_build_command // empty' "$state")"
+
+    if [ "$code_changed" = "true" ] && [ "$tests_failed" = "true" ]; then
+        printf "Code or config changed, but the latest test command failed in this session (%s). Fix the failure and rerun verification before stopping." "${last_test_command:-test command}"
+        return 0
+    fi
+
+    if [ "$code_changed" = "true" ] && [ "$lint_failed" = "true" ]; then
+        printf "Code or config changed, but the latest lint/static-check command failed in this session (%s). Fix the failure and rerun it successfully before stopping." "${last_lint_command:-lint command}"
+        return 0
+    fi
+
+    if [ "$code_changed" = "true" ] && [ "$build_failed" = "true" ]; then
+        printf "Code or config changed, but the latest build command failed in this session (%s). Fix the failure and rerun it successfully before stopping." "${last_build_command:-build command}"
+        return 0
+    fi
+
+    if [ "$code_changed" = "true" ] && [ "$tests_ok" != "true" ]; then
+        printf "Code or config changed, but no successful verification command was recorded in this session. Run tests before stopping."
+        return 0
+    fi
+
+    return 1
 }
 
 is_docs_path() {

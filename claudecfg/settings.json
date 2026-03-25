@@ -195,10 +195,6 @@
           {
             "type": "command",
             "command": "\"$HOME\"/.claude/hooks/stop-guard.sh"
-          },
-          {
-            "type": "prompt",
-            "prompt": "You are validating whether Claude may stop. Context: $ARGUMENTS\n\nThis profile enforces hook-gated SDLC without release/deploy. Allow stopping only if: 1) the user's requested work is complete, 2) if code or config files were edited then the response includes verification status, 3) if code or config files were edited then the response mentions review outcome or explicitly says review is still pending, 4) the response names key changed files or explicitly says no files changed, and 5) remaining risks are stated or explicitly marked none. Respond with JSON only: {\"ok\": true} or {\"ok\": false, \"reason\": \"...\"}."
           }
         ]
       }

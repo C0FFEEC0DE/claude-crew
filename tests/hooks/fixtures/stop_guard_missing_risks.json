@@ -1,0 +1,4 @@
+{
+  "session_id": "case-stop-guard",
+  "last_assistant_message": "Verification: pytest -q passed. Review pending. Files changed: src/app.py."
+}
