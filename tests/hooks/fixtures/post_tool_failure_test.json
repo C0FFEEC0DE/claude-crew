@@ -1,0 +1,7 @@
+{
+  "session_id": "case-post-failure",
+  "tool_input": {
+    "command": "pytest -q"
+  },
+  "error": "AssertionError: expected 2 == 3"
+}

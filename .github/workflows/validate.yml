@@ -1,0 +1,32 @@
+name: Validate
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  validate:
+    name: Validate Repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run repository validator
+        run: bash scripts/validate.sh
+
+      - name: Check shell syntax
+        run: bash -n claudecfg/install.sh claudecfg/hooks/*.sh scripts/*.sh
+
+      - name: Check key JSON files
+        run: |
+          jq empty claudecfg/settings.json
+          jq empty tests/hooks/cases.json
+          jq empty bench/tasks/*.json
+          jq empty bench/schema/*.json
+
+      - name: Check whitespace errors
+        run: git diff --check

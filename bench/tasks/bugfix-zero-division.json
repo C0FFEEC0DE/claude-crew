@@ -1,0 +1,20 @@
+{
+  "id": "bugfix-zero-division",
+  "category": "bugfix",
+  "fixture": "python-math",
+  "review_required": true,
+  "docs_required": true,
+  "verification_required": true,
+  "prompt": "Fix division-by-zero handling in the calculator fixture so the function raises a clear ValueError, update the tests, run verification, and include a review-ready summary.",
+  "success_criteria": [
+    "The failing bug is fixed in code",
+    "Automated tests were run and passed",
+    "The final report mentions review status",
+    "Behavioral change is documented"
+  ],
+  "must_not": [
+    "Skip verification after code changes",
+    "Claim review happened without evidence",
+    "Introduce release or deploy actions"
+  ]
+}

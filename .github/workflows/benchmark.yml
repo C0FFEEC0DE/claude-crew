@@ -1,0 +1,250 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline_ref:
+        description: "Baseline git ref to compare against"
+        required: false
+        default: ""
+      candidate_ref:
+        description: "Candidate git ref to benchmark"
+        required: false
+        default: ""
+      mode:
+        description: "Benchmark mode"
+        required: false
+        default: "auto"
+        type: choice
+        options:
+          - auto
+          - mock
+          - command
+      task_glob:
+        description: "Task glob relative to repo root"
+        required: false
+        default: "bench/tasks/*.json"
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    - cron: "0 3 * * *"
+
+jobs:
+  benchmark:
+    name: Benchmark Agent Config
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve benchmark context
+        id: ctx
+        shell: bash
+        env:
+          INPUT_BASELINE_REF: ${{ inputs.baseline_ref }}
+          INPUT_CANDIDATE_REF: ${{ inputs.candidate_ref }}
+          INPUT_MODE: ${{ inputs.mode }}
+          INPUT_TASK_GLOB: ${{ inputs.task_glob }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_SHA: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          BENCH_RUNNER_CMD_SECRET: ${{ secrets.BENCH_RUNNER_CMD }}
+          BENCH_RUNNER_CMD_VAR: ${{ vars.BENCH_RUNNER_CMD }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          task_glob="${INPUT_TASK_GLOB:-bench/tasks/*.json}"
+          bench_runner_cmd="${BENCH_RUNNER_CMD_VAR:-$BENCH_RUNNER_CMD_SECRET}"
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            baseline_ref="${PR_BASE_SHA}"
+            candidate_ref="${PR_HEAD_SHA}"
+          elif [ "$EVENT_NAME" = "schedule" ]; then
+            if git rev-parse --verify "${GH_SHA}^" >/dev/null 2>&1; then
+              baseline_ref="${GH_SHA}^"
+            else
+              baseline_ref="${GH_SHA}"
+            fi
+            candidate_ref="${GH_SHA}"
+          else
+            baseline_ref="${INPUT_BASELINE_REF:-origin/main}"
+            candidate_ref="${INPUT_CANDIDATE_REF:-$GH_SHA}"
+          fi
+
+          requested_mode="${INPUT_MODE:-auto}"
+          note=""
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            mode="mock"
+            note="pull_request events always run in mock mode to avoid exposing benchmark secrets to untrusted code"
+          else
+            case "$requested_mode" in
+              auto|"")
+                if [ -n "$bench_runner_cmd" ]; then
+                  mode="command"
+                  note="BENCH_RUNNER_CMD detected; running real benchmark command"
+                elif [ -n "$OPENROUTER_API_KEY" ]; then
+                  mode="command"
+                  bench_runner_cmd="python3 scripts/bench_runner_openrouter.py"
+                  note="OPENROUTER_API_KEY detected; using the built-in OpenRouter benchmark runner"
+                else
+                  mode="mock"
+                  note="No benchmark runner credentials were configured; running benchmark plumbing in mock mode"
+                fi
+                ;;
+              mock)
+                mode="mock"
+                note="workflow explicitly requested mock mode"
+                ;;
+              command)
+                if [ -z "$bench_runner_cmd" ] && [ -n "$OPENROUTER_API_KEY" ]; then
+                  bench_runner_cmd="python3 scripts/bench_runner_openrouter.py"
+                fi
+                if [ -z "$bench_runner_cmd" ]; then
+                  echo "BENCH_RUNNER_CMD variable/secret or OPENROUTER_API_KEY is required for command mode" >&2
+                  exit 1
+                fi
+                mode="command"
+                note="workflow explicitly requested command mode"
+                ;;
+              *)
+                echo "Unsupported mode: $requested_mode" >&2
+                exit 1
+                ;;
+            esac
+          fi
+
+          {
+            echo "baseline_ref=$baseline_ref"
+            echo "candidate_ref=$candidate_ref"
+            echo "mode=$mode"
+            echo "task_glob=$task_glob"
+            echo "bench_runner_cmd=$bench_runner_cmd"
+            echo "note=$note"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        if: steps.ctx.outputs.mode == 'command'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install benchmark runtime dependencies
+        if: steps.ctx.outputs.mode == 'command'
+        shell: bash
+        run: python3 -m pip install --upgrade pip pytest
+
+      - name: Prepare benchmark worktrees
+        shell: bash
+        run: |
+          rm -rf "$RUNNER_TEMP/baseline-tree" "$RUNNER_TEMP/candidate-tree"
+          git worktree add --detach "$RUNNER_TEMP/baseline-tree" "${{ steps.ctx.outputs.baseline_ref }}"
+          git worktree add --detach "$RUNNER_TEMP/candidate-tree" "${{ steps.ctx.outputs.candidate_ref }}"
+
+      - name: Run baseline benchmark
+        shell: bash
+        env:
+          BENCH_RUNNER_CMD: ${{ steps.ctx.outputs.bench_runner_cmd }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          OPENROUTER_BASE_URL: ${{ vars.OPENROUTER_BASE_URL }}
+        run: |
+          if [ "${{ steps.ctx.outputs.mode }}" != "command" ]; then
+            unset BENCH_RUNNER_CMD
+            unset OPENROUTER_API_KEY
+          fi
+          cd "$RUNNER_TEMP/baseline-tree"
+          bash scripts/run-benchmark.sh \
+            --output-dir "$RUNNER_TEMP/baseline-results" \
+            --task-glob "${{ steps.ctx.outputs.task_glob }}" \
+            --mode "${{ steps.ctx.outputs.mode }}" \
+            --ref "${{ steps.ctx.outputs.baseline_ref }}"
+
+      - name: Run candidate benchmark
+        shell: bash
+        env:
+          BENCH_RUNNER_CMD: ${{ steps.ctx.outputs.bench_runner_cmd }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          OPENROUTER_BASE_URL: ${{ vars.OPENROUTER_BASE_URL }}
+        run: |
+          if [ "${{ steps.ctx.outputs.mode }}" != "command" ]; then
+            unset BENCH_RUNNER_CMD
+            unset OPENROUTER_API_KEY
+          fi
+          cd "$RUNNER_TEMP/candidate-tree"
+          bash scripts/run-benchmark.sh \
+            --output-dir "$RUNNER_TEMP/candidate-results" \
+            --task-glob "${{ steps.ctx.outputs.task_glob }}" \
+            --mode "${{ steps.ctx.outputs.mode }}" \
+            --ref "${{ steps.ctx.outputs.candidate_ref }}"
+
+      - name: Compare results
+        shell: bash
+        run: |
+          bash scripts/compare-benchmarks.sh \
+            "$RUNNER_TEMP/baseline-results/summary.json" \
+            "$RUNNER_TEMP/candidate-results/summary.json" \
+            > "$RUNNER_TEMP/comparison.json"
+          bash scripts/render-benchmark-report.sh \
+            "$RUNNER_TEMP/comparison.json" \
+            > "$RUNNER_TEMP/benchmark-report.md"
+          {
+            echo "## Benchmark Context"
+            echo ""
+            echo "- Baseline: \`${{ steps.ctx.outputs.baseline_ref }}\`"
+            echo "- Candidate: \`${{ steps.ctx.outputs.candidate_ref }}\`"
+            echo "- Mode: \`${{ steps.ctx.outputs.mode }}\`"
+            echo "- Note: ${{ steps.ctx.outputs.note }}"
+            echo ""
+            cat "$RUNNER_TEMP/benchmark-report.md"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/baseline-results/summary.json
+            ${{ runner.temp }}/candidate-results/summary.json
+            ${{ runner.temp }}/comparison.json
+            ${{ runner.temp }}/benchmark-report.md
+
+      - name: Comment on pull request
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          REPORT_PATH: ${{ runner.temp }}/benchmark-report.md
+          REPORT_NOTE: ${{ steps.ctx.outputs.note }}
+        with:
+          script: |
+            const fs = require("fs");
+            const marker = "<!-- benchmark-report -->";
+            const body = `${marker}\n${process.env.REPORT_NOTE}\n\n${fs.readFileSync(process.env.REPORT_PATH, "utf8")}`;
+            const issue_number = context.payload.pull_request.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number
+            });
+            const previous = comments.find((comment) => comment.body.includes(marker));
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number,
+                body
+              });
+            }

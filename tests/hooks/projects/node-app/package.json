@@ -1,0 +1,9 @@
+{
+  "name": "hook-node-app",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "lint": "eslint .",
+    "build": "tsc -p ."
+  }
+}

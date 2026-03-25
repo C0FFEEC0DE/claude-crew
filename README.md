@@ -107,6 +107,51 @@ Manager can coordinate work, but completion is enforced by hooks. The expected f
 
 See `claudecfg/settings.json` for permissions and settings.
 
+## CI and Benchmarks
+
+GitHub Actions now covers three levels:
+
+- `Validate` — fast structural checks on every push and PR
+- `Hook Tests` — behavior tests for the SDLC hook scripts
+- `Benchmark` — baseline vs candidate comparison with a PR/job summary
+
+### Fast CI
+
+`Validate` runs:
+
+- `bash scripts/validate.sh`
+- shell syntax checks for `claudecfg/hooks/*.sh` and `scripts/*.sh`
+- JSON checks for settings, hook cases, and benchmark metadata
+- `git diff --check`
+
+`Hook Tests` runs:
+
+- `bash scripts/test-hooks.sh`
+
+This harness verifies that key hooks block dangerous commands, classify prompts correctly, record verification, and refuse completion without tests when code changed.
+
+### Benchmarks
+
+Benchmark task definitions live under `bench/tasks/`.
+Task fixtures live under `bench/fixtures/`.
+The benchmark summary schema lives in `bench/schema/summary.schema.json`.
+
+By default, the GitHub benchmark workflow uses `mock` mode for pull requests so the pipeline stays safe for untrusted code.
+
+To run real benchmark comparisons you have two options:
+
+- set `OPENROUTER_API_KEY` and optionally `OPENROUTER_MODEL` to use the built-in OpenRouter runner
+- set `BENCH_RUNNER_CMD` to a custom runner command if you want another provider or a true Claude Code harness
+
+The runner contract is simple:
+
+- GitHub sets `BENCH_TASK_FILE`, `BENCH_TASK_ID`, `BENCH_WORKDIR`, `BENCH_FIXTURE_DIR`, and `BENCH_OUTPUT_DIR`
+- your runner command must execute the task and write `result.json` into `$BENCH_OUTPUT_DIR`
+- `scripts/run-benchmark.sh` aggregates those task results into `summary.json`
+- `scripts/compare-benchmarks.sh` decides `improved|regressed|no_significant_change`
+
+See `docs/benchmarking.md` for setup, the OpenRouter path, and the expected `result.json` format.
+
 ## Logs
 
 Hook logs are written under `~/.claude/logs/`. Session metadata and transcript paths are indexed in `~/.claude/logs/session-index.jsonl`.
@@ -117,6 +162,7 @@ Hook logs are written under `~/.claude/logs/`. Session metadata and transcript p
 - `claudecfg/agents/` — agent definitions
 - `claudecfg/commands/` — command definitions
 - `claudecfg/skills/` — skill definitions (commands that invoke agents)
+- `docs/benchmarking.md` — benchmark runner contract and workflow usage
 
 ## Uninstall
 

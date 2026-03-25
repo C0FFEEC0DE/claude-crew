@@ -1,0 +1,6 @@
+{
+  "session_id": "case-pre-release",
+  "tool_input": {
+    "command": "docker push ghcr.io/example/app:latest"
+  }
+}

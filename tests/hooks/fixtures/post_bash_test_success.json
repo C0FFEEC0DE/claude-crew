@@ -1,0 +1,6 @@
+{
+  "session_id": "case-post-bash",
+  "tool_input": {
+    "command": "pytest -q"
+  }
+}

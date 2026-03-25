@@ -1,0 +1,4 @@
+{
+  "session_id": "case-feature",
+  "prompt": "Please add support for provider failover and integrate OpenRouter."
+}

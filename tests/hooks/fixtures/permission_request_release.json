@@ -1,0 +1,6 @@
+{
+  "session_id": "case-permission-release",
+  "tool_input": {
+    "command": "kubectl apply -f deploy.yaml"
+  }
+}

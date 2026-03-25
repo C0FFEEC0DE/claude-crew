@@ -1,0 +1,19 @@
+{
+  "id": "docs-quickstart-clarity",
+  "category": "docs",
+  "fixture": "text-report",
+  "review_required": false,
+  "docs_required": true,
+  "verification_required": false,
+  "prompt": "Improve the quickstart documentation for the text-report fixture, clarify the command examples, and avoid changing source code.",
+  "success_criteria": [
+    "Documentation is clearer and easier to follow",
+    "No code changes are required",
+    "Final report accurately states that verification was not required"
+  ],
+  "must_not": [
+    "Modify runtime code",
+    "Invent test results",
+    "Trigger release or deploy steps"
+  ]
+}

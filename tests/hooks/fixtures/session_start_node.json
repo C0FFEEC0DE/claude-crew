@@ -1,0 +1,5 @@
+{
+  "session_id": "case-session-start",
+  "cwd": "/tmp/example-project",
+  "transcript_path": "/tmp/session-transcript.jsonl"
+}
