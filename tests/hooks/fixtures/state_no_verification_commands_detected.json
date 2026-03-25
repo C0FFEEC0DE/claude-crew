@@ -1,5 +1,5 @@
 {
-  "session_id": "case-task-incomplete",
+  "session_id": "case-no-verification-commands",
   "cwd": "",
   "transcript_path": "",
   "created_at": "2026-03-25T00:00:00Z",
@@ -13,13 +13,13 @@
   "lint_failed": false,
   "build_ok": false,
   "build_failed": false,
-  "detected_test_command": "pytest",
-  "detected_lint_command": "python -m compileall .",
+  "detected_test_command": "",
+  "detected_lint_command": "",
   "detected_build_command": "",
   "last_test_command": "",
   "last_lint_command": "",
   "last_build_command": "",
   "files": [
-    "src/feature.py"
+    "config.yaml"
   ]
 }

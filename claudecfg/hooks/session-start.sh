@@ -22,6 +22,16 @@ if detected="$(detect_build_cmd)"; then
     build_cmd="$detected"
 fi
 
+tmp="$(mktemp)"
+jq \
+    --arg test_cmd "$test_cmd" \
+    --arg lint_cmd "$lint_cmd" \
+    --arg build_cmd "$build_cmd" \
+    '.detected_test_command = $test_cmd
+    | .detected_lint_command = $lint_cmd
+    | .detected_build_command = $build_cmd' "$(state_file)" > "$tmp"
+mv "$tmp" "$(state_file)"
+
 if [ -n "${CLAUDE_ENV_FILE:-}" ]; then
     {
         echo "export CLAUDE_SDLC_PROFILE=hook-gated"

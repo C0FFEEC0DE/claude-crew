@@ -79,7 +79,7 @@ Main checkpoints:
 - `TaskCompleted` / `TeammateIdle` / `Stop` — share the same gate logic and block completion after missing verification or failed test/lint/build runs
 - `SessionEnd` — log transcript path and session metadata for later indexing
 
-`Stop` is shell-enforced by `hooks/stop-guard.sh`, and `SubagentStop` is shell-enforced by `hooks/subagent-stop-guard.sh`. After code or config changes, the final assistant summary must mention verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`. Subagent summaries must include outcome, changed files or `no files changed`, verification status, and remaining risks or next step.
+`Stop` is shell-enforced by `hooks/stop-guard.sh`, and `SubagentStop` is shell-enforced by `hooks/subagent-stop-guard.sh`. After code or config changes, the final assistant summary must mention verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`. If the repo exposes no detectable `test`, `lint`, or `build` command, the stop guard allows completion without deadlock, but the summary must explicitly say verification was not run and why. Subagent summaries must include outcome, changed files or `no files changed`, verification status, and remaining risks or next step.
 
 ## Standard Output
 

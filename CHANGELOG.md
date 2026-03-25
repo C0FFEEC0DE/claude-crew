@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Replaced the custom benchmark coding-agent workflow with automatic real Claude Code CLI runs via OpenRouter
 - Tightened hook safety and completion gates: expanded dangerous-command blocking, unified failed test/lint/build gating, and moved `Stop` enforcement fully into shell hooks to avoid tool-only prompt-hook failures
 - Moved `SubagentStop` enforcement into a shell hook so subagent stop validation no longer depends on prompt-hook message availability
+- Updated shell stop gating so repos without detectable `test`/`lint`/`build` commands do not deadlock completion after config changes
 
 ### Fixed
 - New Feature workflow missing implementation and test steps

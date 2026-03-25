@@ -156,6 +156,13 @@
     "stderr_regex": "latest build command failed"
   },
   {
+    "name": "task_completed_allows_code_change_when_no_verification_commands_detected",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_no_verification_commands.json",
+    "seed_state": "tests/hooks/fixtures/state_no_verification_commands_detected.json",
+    "expect_exit": 0
+  },
+  {
     "name": "stop_guard_blocks_without_verification_status",
     "script": "claudecfg/hooks/stop-guard.sh",
     "stdin": "tests/hooks/fixtures/stop_guard_missing_verification.json",
@@ -219,6 +226,13 @@
     "expect_exit": 0
   },
   {
+    "name": "stop_guard_allows_code_change_when_no_verification_commands_detected_but_summary_explains_it",
+    "script": "claudecfg/hooks/stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/stop_guard_no_verification_commands_detected.json",
+    "seed_state": "tests/hooks/fixtures/state_no_verification_commands_detected.json",
+    "expect_exit": 0
+  },
+  {
     "name": "session_start_detects_node_scripts",
     "script": "claudecfg/hooks/session-start.sh",
     "stdin": "tests/hooks/fixtures/session_start_node.json",
@@ -245,7 +259,8 @@
         "path": "__CASE_TMP__/claude.env",
         "regex": "PROJECT_BUILD_CMD=\"npm run build\""
       }
-    ]
+    ],
+    "state_jq": ".detected_test_command == \"npm run test\" and .detected_lint_command == \"npm run lint\" and .detected_build_command == \"npm run build\""
   },
   {
     "name": "teammate_idle_blocks_after_failed_lint",

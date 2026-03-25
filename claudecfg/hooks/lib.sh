@@ -65,6 +65,9 @@ ensure_state() {
             lint_failed: false,
             build_ok: false,
             build_failed: false,
+            detected_test_command: "",
+            detected_lint_command: "",
+            detected_build_command: "",
             last_test_command: "",
             last_lint_command: "",
             last_build_command: "",
@@ -286,18 +289,34 @@ message_mentions_concrete_outcome() {
 }
 
 session_block_reason() {
-    local state code_changed tests_ok tests_failed lint_failed build_failed
+    local state code_changed tests_ok tests_failed lint_ok lint_failed build_ok build_failed
+    local detected_test_command detected_lint_command detected_build_command
     local last_test_command last_lint_command last_build_command
+    local has_detected_verification="false"
+    local has_successful_verification="false"
 
     state="$(state_file)"
     code_changed="$(jq -r '.code_changed // false' "$state")"
     tests_ok="$(jq -r '.tests_ok // false' "$state")"
     tests_failed="$(jq -r '.tests_failed // false' "$state")"
+    lint_ok="$(jq -r '.lint_ok // false' "$state")"
     lint_failed="$(jq -r '.lint_failed // false' "$state")"
+    build_ok="$(jq -r '.build_ok // false' "$state")"
     build_failed="$(jq -r '.build_failed // false' "$state")"
+    detected_test_command="$(jq -r '.detected_test_command // empty' "$state")"
+    detected_lint_command="$(jq -r '.detected_lint_command // empty' "$state")"
+    detected_build_command="$(jq -r '.detected_build_command // empty' "$state")"
     last_test_command="$(jq -r '.last_test_command // empty' "$state")"
     last_lint_command="$(jq -r '.last_lint_command // empty' "$state")"
     last_build_command="$(jq -r '.last_build_command // empty' "$state")"
+
+    if [ -n "$detected_test_command" ] || [ -n "$detected_lint_command" ] || [ -n "$detected_build_command" ]; then
+        has_detected_verification="true"
+    fi
+
+    if [ "$tests_ok" = "true" ] || [ "$lint_ok" = "true" ] || [ "$build_ok" = "true" ]; then
+        has_successful_verification="true"
+    fi
 
     if [ "$code_changed" = "true" ] && [ "$tests_failed" = "true" ]; then
         printf "Code or config changed, but the latest test command failed in this session (%s). Fix the failure and rerun verification before stopping." "${last_test_command:-test command}"
@@ -314,8 +333,8 @@ session_block_reason() {
         return 0
     fi
 
-    if [ "$code_changed" = "true" ] && [ "$tests_ok" != "true" ]; then
-        printf "Code or config changed, but no successful verification command was recorded in this session. Run tests before stopping."
+    if [ "$code_changed" = "true" ] && [ "$has_detected_verification" = "true" ] && [ "$has_successful_verification" != "true" ]; then
+        printf "Code or config changed, but no successful verification command was recorded in this session. Run a detected test, lint, or build command before stopping."
         return 0
     fi
 

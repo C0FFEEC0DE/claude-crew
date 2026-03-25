@@ -75,7 +75,7 @@ The profile uses hooks as enforcement points, not markdown alone:
 - `TaskCompleted` / `Stop` / `TeammateIdle` — use the shared session state to block completion after missing verification or failed test/lint/build runs
 - `SessionEnd` — index transcript paths and session metadata for later dataset work
 
-`Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs.
+`Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs. If a repo has no detected `test`, `lint`, or `build` command, `Stop` no longer deadlocks the session, but the final summary must explicitly say that verification was not run and why.
 
 ## Usage
 
