@@ -15,13 +15,20 @@ TASK_FILE = pathlib.Path(os.environ["BENCH_TASK_FILE"]).resolve()
 WORKDIR = pathlib.Path(os.environ["BENCH_WORKDIR"]).resolve()
 OUTPUT_DIR = pathlib.Path(os.environ["BENCH_OUTPUT_DIR"]).resolve()
 
-OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
-OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.5")
-OPENROUTER_BASE_URL = os.environ.get(
+
+def env_or_default(name: str, default: str) -> str:
+    value = os.environ.get(name, "")
+    value = value.strip()
+    return value or default
+
+
+OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"].strip()
+OPENROUTER_MODEL = env_or_default("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.5")
+OPENROUTER_BASE_URL = env_or_default(
     "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1/chat/completions"
 )
-OPENROUTER_SITE_URL = os.environ.get("OPENROUTER_SITE_URL", "https://github.com")
-OPENROUTER_APP_NAME = os.environ.get("OPENROUTER_APP_NAME", "claude-crew-benchmark")
+OPENROUTER_SITE_URL = env_or_default("OPENROUTER_SITE_URL", "https://github.com")
+OPENROUTER_APP_NAME = env_or_default("OPENROUTER_APP_NAME", "claude-crew-benchmark")
 
 
 def is_docs_path(path_str: str) -> bool:
