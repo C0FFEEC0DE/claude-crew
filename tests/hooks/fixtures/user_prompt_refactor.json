@@ -1,0 +1,4 @@
+{
+  "session_id": "case-refactor",
+  "prompt": "Refactor the hook state helpers to reduce duplication."
+}

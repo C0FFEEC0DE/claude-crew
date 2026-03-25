@@ -63,16 +63,25 @@ Commands and skills that invoke specialized agents:
 - `workflows/security-scan.md` — scan for private data (API keys, passwords, tokens)
 - `workflows/release.md` — optional manual checklist, not part of the mandatory SDLC profile
 
+For `feature`, `bugfix`, `refactor`, `review`, and `docs` work, the profile is now role-enforced before completion. Hooks track canonical subagent aliases in session state, so full names like `@code-reviewer` normalize to `cr`.
+
+Required handoffs by workflow:
+- `feature` -> `@t`, `@cr`, and one of `@e|@a`
+- `bugfix` -> `@t`, `@cr`, and one of `@bug|@e|@dbg`
+- `refactor` -> `@t`, `@cr`, and one of `@a|@e|@hk`
+- `review` -> `@cr`
+- `docs` -> `@doc`
+
 ### Hooks
 
 The profile uses hooks as enforcement points, not markdown alone:
 
 - `SessionStart` — bootstrap SDLC context and detect test/lint/build commands
-- `UserPromptSubmit` — classify task into `bugfix|feature|refactor`
+- `UserPromptSubmit` — classify task into `bugfix|feature|refactor|review|docs` and seed required subagent roles
 - `PreToolUse` / `PermissionRequest` — block destructive or out-of-scope actions, including force-push, `mkfs*`, and remote bootstrap pipes such as `curl|bash` or `wget|bash`
 - `PostToolUse` / `PostToolUseFailure` — track edits plus successful or failed test/lint/build commands
 - `SubagentStart` / `SubagentStop` — enforce the subagent handoff contract through shell hooks instead of prompt hooks
-- `TaskCompleted` / `Stop` / `TeammateIdle` — use the shared session state to block completion after missing verification or failed test/lint/build runs
+- `TaskCompleted` / `Stop` / `TeammateIdle` — use the shared session state to block completion after missing verification, failed test/lint/build runs, or missing required subagent roles for the current workflow
 - `SessionEnd` — index transcript paths and session metadata for later dataset work
 
 `Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs. If a repo has no detected `test`, `lint`, or `build` command, `Stop` no longer deadlocks the session, but the final summary must explicitly say that verification was not run and why.

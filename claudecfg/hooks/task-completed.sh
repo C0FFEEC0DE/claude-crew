@@ -12,3 +12,8 @@ if reason="$(session_block_reason)"; then
     echo "Task cannot be completed yet: ${reason}" >&2
     exit 2
 fi
+
+if reason="$(session_agent_enforcement_reason)"; then
+    echo "Task cannot be completed yet: ${reason}" >&2
+    exit 2
+fi

@@ -28,3 +28,4 @@ The @architect agent will:
 - Don't over-engineer
 - YAGNI — don't do for "later"
 - Start simple, improve as needed
+- This handoff satisfies the design/exploration branch of the agent gate for `feature` and `refactor` workflows

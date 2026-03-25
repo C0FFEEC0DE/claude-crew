@@ -16,6 +16,11 @@ if reason="$(session_block_reason)"; then
     exit 0
 fi
 
+if reason="$(session_agent_enforcement_reason)"; then
+    emit_loop_aware_block "stop" "$reason" "$last_message"
+    exit 0
+fi
+
 if [ "$code_changed" = "true" ] && [ -z "$last_message" ]; then
     emit_loop_aware_block "stop" "Code or config changed, but no assistant summary message was found for this stop event." "$last_message"
     exit 0

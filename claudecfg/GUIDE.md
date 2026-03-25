@@ -72,14 +72,23 @@ Mandatory flow:
 Main checkpoints:
 
 - `SessionStart` — bootstrap SDLC context and detect test/lint/build commands
-- `UserPromptSubmit` — classify work as feature, bugfix, or refactor
+- `UserPromptSubmit` — classify work as feature, bugfix, refactor, review, or docs and seed required subagent roles
 - `PreToolUse` / `PermissionRequest` — block dangerous or out-of-scope commands, including force-push, `mkfs*`, and remote bootstrap pipes
 - `PostToolUse` / `PostToolUseFailure` — record edits and successful or failed test/lint/build status
 - `SubagentStart` / `SubagentStop` — enforce the subagent output contract with shell guards
-- `TaskCompleted` / `TeammateIdle` / `Stop` — share the same gate logic and block completion after missing verification or failed test/lint/build runs
+- `TaskCompleted` / `TeammateIdle` / `Stop` — share the same gate logic and block completion after missing verification, failed test/lint/build runs, or missing required subagent roles
 - `SessionEnd` — log transcript path and session metadata for later indexing
 
-`Stop` is shell-enforced by `hooks/stop-guard.sh`, and `SubagentStop` is shell-enforced by `hooks/subagent-stop-guard.sh`. After code or config changes, the final assistant summary must mention verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`. If the repo exposes no detectable `test`, `lint`, or `build` command, the stop guard allows completion without deadlock, but the summary must explicitly say verification was not run and why. Subagent summaries must include outcome, changed files or `no files changed`, verification status, and remaining risks or next step.
+`Stop` is shell-enforced by `hooks/stop-guard.sh`, and `SubagentStop` is shell-enforced by `hooks/subagent-stop-guard.sh`. After code or config changes, the final assistant summary must mention verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`. If the repo exposes no detectable `test`, `lint`, or `build` command, the stop guard allows completion without deadlock, but the summary must explicitly say verification was not run and why. Feature, bugfix, refactor, review, and docs workflows also require role-specific subagent handoffs before completion, tracked in shared session state with alias normalization such as `@code-reviewer -> cr`.
+
+Required handoffs:
+- `feature` -> `@t`, `@cr`, and one of `@e|@a`
+- `bugfix` -> `@t`, `@cr`, and one of `@bug|@e|@dbg`
+- `refactor` -> `@t`, `@cr`, and one of `@a|@e|@hk`
+- `review` -> `@cr`
+- `docs` -> `@doc`
+
+Subagent summaries must include outcome, changed files or `no changes`, verification status, and remaining risks or next step.
 
 ## Standard Output
 
@@ -122,7 +131,7 @@ Manager returns a plan with steps and agents.
 
 **Execution policy:**
 - manager coordination is optional
-- hooks, not markdown, enforce verification and stop conditions
+- hooks, not markdown, enforce verification, required subagent roles, and stop conditions
 - code review remains a required final gate for implementation work
 
 **Direct agent invocation:**

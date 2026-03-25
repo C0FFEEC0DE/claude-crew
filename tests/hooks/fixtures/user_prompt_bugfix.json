@@ -1,0 +1,4 @@
+{
+  "session_id": "case-bugfix",
+  "prompt": "Please fix the regression in hook verification gating."
+}

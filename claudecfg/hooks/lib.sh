@@ -71,6 +71,10 @@ ensure_state() {
             last_test_command: "",
             last_lint_command: "",
             last_build_command: "",
+            subagent_start_count: 0,
+            subagents_started: [],
+            required_subagents: [],
+            required_subagent_any_of: [],
             stop_block_count: 0,
             stop_block_reason: "",
             stop_block_message: "",
@@ -258,6 +262,114 @@ emit_permission_request_deny() {
                 }
             }
         }'
+}
+
+extract_subagent_label() {
+    local raw
+
+    raw="$(
+        jq -r '
+        .agent_alias
+        // .alias
+        // .subagent_alias
+        // .agent_name
+        // .subagent_name
+        // .name
+        // .agent_type
+        // .type
+        // .tool_input.agent
+        // .tool_input.agent_name
+        // .tool_input.name
+        // empty
+    ' <<<"$HOOK_INPUT"
+    )"
+
+    canonicalize_subagent_label "$raw"
+}
+
+canonicalize_subagent_label() {
+    local raw="$1"
+    local normalized
+
+    normalized="$(printf "%s" "$raw" \
+        | tr '[:upper:]' '[:lower:]' \
+        | sed -E 's/^@//; s/[[:space:]_]+/-/g; s/[^a-z0-9.-]+/-/g; s/^-+//; s/-+$//; s/-+/-/g')"
+
+    case "$normalized" in
+        "")
+            printf ""
+            ;;
+        a|architect|the-architect)
+            printf "a"
+            ;;
+        e|explorer|nerd)
+            printf "e"
+            ;;
+        bug|bugbuster|bug-pattern-hunter|bug-pattern)
+            printf "bug"
+            ;;
+        dbg|debugger|debugging-specialist)
+            printf "dbg"
+            ;;
+        t|tester|paranoid)
+            printf "t"
+            ;;
+        cr|code-reviewer|code-review|reviewer|toxic-senior)
+            printf "cr"
+            ;;
+        doc|docwriter|wiki-wiki|documentation-writer|docs-writer)
+            printf "doc"
+            ;;
+        hk|housekeeper|the-cleaner|cleaner)
+            printf "hk"
+            ;;
+        m|manager|big-boss)
+            printf "m"
+            ;;
+        *)
+            printf "%s" "$normalized"
+            ;;
+    esac
+}
+
+array_contains() {
+    local needle="$1"
+    shift
+
+    local item
+    for item in "$@"; do
+        if [ "$item" = "$needle" ]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+format_subagent_list() {
+    local item result=""
+
+    for item in "$@"; do
+        if [ -n "$result" ]; then
+            result="${result}, "
+        fi
+        result="${result}@${item}"
+    done
+
+    printf "%s" "${result:-none}"
+}
+
+format_subagent_group() {
+    local item result=""
+
+    for item in "$@"; do
+        if [ -n "$result" ]; then
+            result="${result}/"
+        fi
+        result="${result}@${item}"
+    done
+
+    printf "%s" "$result"
 }
 
 detect_node_script() {
@@ -466,6 +578,63 @@ session_block_reason() {
         printf "Code or config changed, but no successful verification command was recorded in this session. Run a detected test, lint, or build command before stopping."
         return 0
     fi
+
+    return 1
+}
+
+session_agent_enforcement_reason() {
+    local state task_type started_json group_json group_label missing_groups_text satisfied alias
+    local -a started=() required=() group=() missing=() missing_groups=()
+
+    state="$(state_file)"
+    task_type="$(jq -r '.task_type // "other"' "$state")"
+
+    mapfile -t started < <(jq -r '.subagents_started[]? // empty' "$state")
+    mapfile -t required < <(jq -r '.required_subagents[]? // empty' "$state")
+
+    while IFS= read -r group_json; do
+        [ -z "$group_json" ] && continue
+        mapfile -t group < <(jq -r '.[]? // empty' <<<"$group_json")
+        [ "${#group[@]}" -eq 0 ] && continue
+
+        satisfied="false"
+        for alias in "${group[@]}"; do
+            if array_contains "$alias" "${started[@]}"; then
+                satisfied="true"
+                break
+            fi
+        done
+        if [ "$satisfied" != "true" ]; then
+            group_label="$(format_subagent_group "${group[@]}")"
+            missing_groups+=("$group_label")
+        fi
+    done < <(jq -c '.required_subagent_any_of[]? // empty' "$state")
+
+    if [ "${#required[@]}" -eq 0 ] && [ "${#missing_groups[@]}" -eq 0 ]; then
+        return 1
+    fi
+
+    for alias in "${required[@]}"; do
+        if ! array_contains "$alias" "${started[@]}"; then
+            missing+=("$alias")
+        fi
+    done
+
+    if [ "${#missing[@]}" -eq 0 ] && [ "${#missing_groups[@]}" -eq 0 ]; then
+        return 1
+    fi
+
+    started_json="$(format_subagent_list "${started[@]}")"
+    printf "Agent-enforced workflow requires specific subagent handoffs before completion for %s work." "$task_type"
+    if [ "${#missing[@]}" -gt 0 ]; then
+        printf " Missing required roles: %s." "$(format_subagent_list "${missing[@]}")"
+    fi
+    if [ "${#missing_groups[@]}" -gt 0 ]; then
+        missing_groups_text="$(printf "%s\n" "${missing_groups[@]}" | paste -sd ',' - | sed 's/,/, /g')"
+        printf " Missing one-of groups: %s." "$missing_groups_text"
+    fi
+    printf " Used so far: %s." "$started_json"
+    return 0
 
     return 1
 }

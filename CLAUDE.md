@@ -9,6 +9,10 @@ This profile is hook-gated:
 - release/deploy automation is intentionally disabled
 - session metadata is logged for later audit or dataset indexing
 - final completion and subagent handoff are enforced by shell hooks using shared session state for test/lint/build results and summary requirements
+- feature work requires `@t`, `@cr`, and one of `@e|@a`
+- bugfix work requires `@t`, `@cr`, and one of `@bug|@e|@dbg`
+- refactor work requires `@t`, `@cr`, and one of `@a|@e|@hk`
+- review work requires `@cr`; docs work requires `@doc`
 
 ## Quick Start
 

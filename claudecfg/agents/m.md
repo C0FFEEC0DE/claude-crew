@@ -62,6 +62,15 @@ Default path for change work:
 
 Hooks enforce completion and stop gates. Your job is to keep the plan aligned with those gates.
 
+Required role gates by workflow:
+- `feature` -> `@t`, `@cr`, and one of `@e|@a`
+- `bugfix` -> `@t`, `@cr`, and one of `@bug|@e|@dbg`
+- `refactor` -> `@t`, `@cr`, and one of `@a|@e|@hk`
+- `review` -> `@cr`
+- `docs` -> `@doc`
+
+If the user asks for change work, your plan should explicitly satisfy the required roles before completion.
+
 ## Strategies
 
 ### Single Agent

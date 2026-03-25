@@ -10,34 +10,63 @@ ensure_state
 
 prompt="$(json_get '.prompt' | tr '[:upper:]' '[:lower:]')"
 task_type="other"
+required_subagents='[]'
+required_subagent_any_of='[]'
+context_message=""
 
-if grep -Eiq '(bug|fix|regression|defect|баг|ошиб|исправ)' <<<"$prompt"; then
+if grep -Eiq '(review|audit|ревью|аудит|проверь)' <<<"$prompt"; then
+    task_type="review"
+elif grep -Eiq '(docs|readme|document|док|ридми)' <<<"$prompt"; then
+    task_type="docs"
+elif grep -Eiq '(bug|fix|regression|defect|баг|ошиб|исправ)' <<<"$prompt"; then
     task_type="bugfix"
 elif grep -Eiq '(refactor|rename|cleanup|tech debt|рефактор|почист|переимен)' <<<"$prompt"; then
     task_type="refactor"
 elif grep -Eiq '(feature|implement|add support|integrat|new capability|фич|добав|интеграц|подключ|модел|pyrit|openrouter)' <<<"$prompt"; then
     task_type="feature"
-elif grep -Eiq '(docs|readme|document|док|ридми)' <<<"$prompt"; then
-    task_type="docs"
-elif grep -Eiq '(review|audit|ревью|аудит|проверь)' <<<"$prompt"; then
-    task_type="review"
 fi
-
-tmp="$(mktemp)"
-jq --arg task_type "$task_type" '.task_type = $task_type' "$(state_file)" > "$tmp"
-mv "$tmp" "$(state_file)"
 
 case "$task_type" in
     feature)
-        emit_context "UserPromptSubmit" "Treat this as a feature workflow. Before completion, ensure implementation is done, tests were executed successfully, review findings were addressed, and docs impact was handled when user-facing behavior changed. release/deploy remains out of scope."
+        required_subagents='["t","cr"]'
+        required_subagent_any_of='[["e","a"]]'
+        context_message="Treat this as a feature workflow. Required subagent handoffs before completion: @t, @cr, and one of @e/@a. Finish implementation, run verification successfully, address review findings, and update docs when behavior changes. release/deploy remains out of scope."
         ;;
     bugfix)
-        emit_context "UserPromptSubmit" "Treat this as a bugfix workflow. Reproduce or describe failure mode, implement the fix, execute regression tests, summarize verification, and finish with review plus docs update if behavior changed."
+        required_subagents='["t","cr"]'
+        required_subagent_any_of='[["bug","e","dbg"]]'
+        context_message="Treat this as a bugfix workflow. Required subagent handoffs before completion: @t, @cr, and one of @bug/@e/@dbg. Reproduce or describe the failure mode, implement the fix, execute regression verification, and update docs if behavior changed."
         ;;
     refactor)
-        emit_context "UserPromptSubmit" "Treat this as a refactor workflow. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and summarize risks plus changed files before stopping."
+        required_subagents='["t","cr"]'
+        required_subagent_any_of='[["a","e","hk"]]'
+        context_message="Treat this as a refactor workflow. Required subagent handoffs before completion: @t, @cr, and one of @a/@e/@hk. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and summarize risks plus changed files before stopping."
         ;;
-    *)
-        exit 0
+    review)
+        required_subagents='["cr"]'
+        required_subagent_any_of='[]'
+        context_message="Treat this as a review workflow. Required subagent handoff before completion: @cr. Focus on findings first, call out residual risks or testing gaps, and keep implementation out of scope unless the user explicitly asks for fixes."
+        ;;
+    docs)
+        required_subagents='["doc"]'
+        required_subagent_any_of='[]'
+        context_message="Treat this as a docs workflow. Required subagent handoff before completion: @doc. Keep documentation accurate to current behavior, include examples when they materially help, and note any remaining drift or missing verification."
         ;;
 esac
+
+tmp="$(mktemp)"
+jq \
+    --arg task_type "$task_type" \
+    --argjson required_subagents "$required_subagents" \
+    --argjson required_subagent_any_of "$required_subagent_any_of" \
+    '.task_type = $task_type
+    | .required_subagents = $required_subagents
+    | .required_subagent_any_of = $required_subagent_any_of' "$(state_file)" > "$tmp"
+mv "$tmp" "$(state_file)"
+
+if [ -n "$context_message" ]; then
+    emit_context "UserPromptSubmit" "$context_message"
+    exit 0
+fi
+
+exit 0

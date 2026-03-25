@@ -28,3 +28,4 @@ The @housekeeper agent will:
 - Separate commits for refactor
 - Don't add features with refactor
 - Leave code cleaner than it was
+- This handoff satisfies the refactor design/cleanup branch of the gate together with required `@t` and `@cr` handoffs

@@ -28,3 +28,4 @@ The @tester agent will:
 - Don't test internals — only API
 - Mock external dependencies
 - 100% coverage is not the goal
+- This handoff satisfies the required `@t` gate for `feature`, `bugfix`, and `refactor` workflows
