@@ -273,6 +273,18 @@ message_mentions_remaining_risks() {
     grep -Eiq '(remaining risks|risks:|risk: none|risks: none|no known risks|residual risk|остаточн(ые|ых) риски|риски: нет|риски отсутствуют|remaining risk: none)' <<<"$message"
 }
 
+message_mentions_next_step() {
+    local message="$1"
+
+    grep -Eiq '(next step|next steps|next:|follow-up|follow up|pending next|следующ(ий|ие) шаг|дальше:|следующее:)' <<<"$message"
+}
+
+message_mentions_concrete_outcome() {
+    local message="$1"
+
+    grep -Eiq '(outcome|result|implemented|updated|fixed|investigated|reviewed|documented|added|removed|refactored|changed|created|no changes|completed|done|исправил|обновил|добавил|удалил|проверил|нашел|сделал|без изменений)' <<<"$message"
+}
+
 session_block_reason() {
     local state code_changed tests_ok tests_failed lint_failed build_failed
     local last_test_command last_lint_command last_build_command

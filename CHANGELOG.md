@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated GitHub Actions workflows to run on every push
 - Replaced the custom benchmark coding-agent workflow with automatic real Claude Code CLI runs via OpenRouter
 - Tightened hook safety and completion gates: expanded dangerous-command blocking, unified failed test/lint/build gating, and moved `Stop` enforcement fully into shell hooks to avoid tool-only prompt-hook failures
+- Moved `SubagentStop` enforcement into a shell hook so subagent stop validation no longer depends on prompt-hook message availability
 
 ### Fixed
 - New Feature workflow missing implementation and test steps
@@ -37,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `make lint` is now tracked as lint instead of build in hook session state
 - `Stop`/`TaskCompleted`/`TeammateIdle` now consistently block after failed verification commands
 - Added regression coverage for force-push, `mkfs*`, remote bootstrap pipes, tool-only stop turns, and incomplete final summaries
+- Added shell-based regression coverage for incomplete subagent summaries and missing subagent assistant messages
 
 ## [1.0.0] - 2026-03-19
 

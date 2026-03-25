@@ -71,10 +71,11 @@ The profile uses hooks as enforcement points, not markdown alone:
 - `UserPromptSubmit` — classify task into `bugfix|feature|refactor`
 - `PreToolUse` / `PermissionRequest` — block destructive or out-of-scope actions, including force-push, `mkfs*`, and remote bootstrap pipes such as `curl|bash` or `wget|bash`
 - `PostToolUse` / `PostToolUseFailure` — track edits plus successful or failed test/lint/build commands
+- `SubagentStart` / `SubagentStop` — enforce the subagent handoff contract through shell hooks instead of prompt hooks
 - `TaskCompleted` / `Stop` / `TeammateIdle` — use the shared session state to block completion after missing verification or failed test/lint/build runs
 - `SessionEnd` — index transcript paths and session metadata for later dataset work
 
-`Stop` is enforced by the shell `stop-guard` hook only. This avoids prompt-hook failures on tool-only turns while still requiring a final assistant summary after code/config changes with verification status, review outcome, changed files, and remaining risks.
+`Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs.
 
 ## Usage
 

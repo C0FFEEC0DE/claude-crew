@@ -49,6 +49,40 @@
     "stdout_jq": ".hookSpecificOutput.decision.behavior == \"deny\" and (.hookSpecificOutput.decision.message | contains(\"remote shell bootstrap\"))"
   },
   {
+    "name": "subagent_stop_blocks_without_assistant_message",
+    "script": "claudecfg/hooks/subagent-stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/subagent_stop_no_message.json",
+    "expect_exit": 0,
+    "stdout_jq": ".decision == \"block\" and (.reason | contains(\"No assistant summary message\"))"
+  },
+  {
+    "name": "subagent_stop_blocks_without_changed_files",
+    "script": "claudecfg/hooks/subagent-stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/subagent_stop_missing_files.json",
+    "expect_exit": 0,
+    "stdout_jq": ".decision == \"block\" and (.reason | contains(\"changed files\"))"
+  },
+  {
+    "name": "subagent_stop_blocks_without_verification_status",
+    "script": "claudecfg/hooks/subagent-stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/subagent_stop_missing_verification.json",
+    "expect_exit": 0,
+    "stdout_jq": ".decision == \"block\" and (.reason | contains(\"verification status\"))"
+  },
+  {
+    "name": "subagent_stop_blocks_without_risks_or_next_step",
+    "script": "claudecfg/hooks/subagent-stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/subagent_stop_missing_risks_or_next.json",
+    "expect_exit": 0,
+    "stdout_jq": ".decision == \"block\" and (.reason | contains(\"remaining risks or the next step\"))"
+  },
+  {
+    "name": "subagent_stop_allows_complete_summary",
+    "script": "claudecfg/hooks/subagent-stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/subagent_stop_complete.json",
+    "expect_exit": 0
+  },
+  {
     "name": "user_prompt_submit_classifies_feature",
     "script": "claudecfg/hooks/user-prompt-submit.sh",
     "stdin": "tests/hooks/fixtures/user_prompt_feature.json",

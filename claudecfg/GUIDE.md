@@ -75,10 +75,11 @@ Main checkpoints:
 - `UserPromptSubmit` — classify work as feature, bugfix, or refactor
 - `PreToolUse` / `PermissionRequest` — block dangerous or out-of-scope commands, including force-push, `mkfs*`, and remote bootstrap pipes
 - `PostToolUse` / `PostToolUseFailure` — record edits and successful or failed test/lint/build status
+- `SubagentStart` / `SubagentStop` — enforce the subagent output contract with shell guards
 - `TaskCompleted` / `TeammateIdle` / `Stop` — share the same gate logic and block completion after missing verification or failed test/lint/build runs
 - `SessionEnd` — log transcript path and session metadata for later indexing
 
-`Stop` is shell-enforced by `hooks/stop-guard.sh`, not by a prompt hook. After code or config changes, the final assistant summary must mention verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`.
+`Stop` is shell-enforced by `hooks/stop-guard.sh`, and `SubagentStop` is shell-enforced by `hooks/subagent-stop-guard.sh`. After code or config changes, the final assistant summary must mention verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`. Subagent summaries must include outcome, changed files or `no files changed`, verification status, and remaining risks or next step.
 
 ## Standard Output
 

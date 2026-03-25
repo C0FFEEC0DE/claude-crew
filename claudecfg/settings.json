@@ -183,8 +183,8 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "You are validating whether a subagent may stop. Context: $ARGUMENTS\n\nAllow stopping only if the subagent output clearly includes: 1) a concrete outcome, 2) changed files or an explicit 'no changes', 3) verification status or an explicit statement that verification was not run, and 4) remaining risks or next step. Respond with JSON only: {\"ok\": true} or {\"ok\": false, \"reason\": \"...\"}."
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/subagent-stop-guard.sh"
           }
         ]
       }
