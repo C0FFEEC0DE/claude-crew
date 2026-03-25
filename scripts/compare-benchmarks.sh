@@ -45,7 +45,7 @@ jq -n \
     }
     | . as $cmp
     | $cmp + {
-        verdict:
+        verdict: (
             if (
                 $cmp.candidate.rates.task_pass_rate < $cmp.baseline.rates.task_pass_rate
                 or $cmp.candidate.rates.verification_pass_rate < $cmp.baseline.rates.verification_pass_rate
@@ -64,7 +64,8 @@ jq -n \
                 or $cmp.candidate.median_runtime_seconds < $cmp.baseline.median_runtime_seconds
             ) then "improved"
             else "no_significant_change"
-            end,
+            end
+        ),
         reasons: [
             if $cmp.candidate.rates.task_pass_rate < $cmp.baseline.rates.task_pass_rate then "task_pass_rate decreased" else empty end,
             if $cmp.candidate.rates.verification_pass_rate < $cmp.baseline.rates.verification_pass_rate then "verification_pass_rate decreased" else empty end,
