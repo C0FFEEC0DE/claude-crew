@@ -5,6 +5,9 @@ coverage/
 .DS_Store
 .agent-kit/runs/
 .claude/settings.local.json
+__pycache__/
+*.py[cod]
+.pytest_cache/
 
 # Editor files
 *.tmp

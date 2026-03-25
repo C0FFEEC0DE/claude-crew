@@ -1,7 +1,5 @@
 # Claude Code Configuration
 
-Claude Code configuration with custom agents, workflows, and hook-gated SDLC.
-
 ## Status
 
 [![Validate](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml)
