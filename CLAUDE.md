@@ -37,3 +37,12 @@ Commands `/debug`, `/test`, `/design`, `/refactor`, `/review`, `/docs` invoke sp
 ## Docs
 
 See `claudecfg/GUIDE.md` for full documentation.
+
+## Repository Automation
+
+Repository CI now includes:
+- status badges in `README.md`
+- `Validate`, `Hook Tests`, and `Security Scan` on every push and PR
+- `Benchmark` on every push, plus manual and scheduled benchmark comparisons
+
+OpenRouter benchmarking is supported via repository secrets/variables. See `docs/benchmarking.md`.

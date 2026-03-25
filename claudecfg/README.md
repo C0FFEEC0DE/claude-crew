@@ -15,6 +15,8 @@ Source configuration directory. Contains:
 - `install.sh` — installation script
 - `GUIDE.md` — complete guide
 
+Repository-level CI and benchmarking live under `.github/workflows/`, `scripts/`, `tests/hooks/`, and `bench/`.
+
 ### `.claude/`
 
 Target Claude Code directory (`$HOME/.claude/`). Files are copied here during installation. Hook logs are stored under `$HOME/.claude/logs/`.
@@ -38,3 +40,4 @@ The script:
 - `claudecfg/` — tracked source of truth
 - `~/.claude/` — Claude Code working directory
 - `$HOME/.claude/logs/` — hook logs and transcript index
+- repository root — GitHub Actions, hook test harness, and benchmark fixtures

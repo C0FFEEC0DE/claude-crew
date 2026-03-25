@@ -1,6 +1,7 @@
 name: Benchmark
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       baseline_ref:
@@ -25,7 +26,6 @@ on:
         required: false
         default: "bench/tasks/*.json"
   pull_request:
-    branches: [ main, master ]
   schedule:
     - cron: "0 3 * * *"
 
@@ -53,6 +53,7 @@ jobs:
           INPUT_TASK_GLOB: ${{ inputs.task_glob }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
           GH_SHA: ${{ github.sha }}
           EVENT_NAME: ${{ github.event_name }}
           BENCH_RUNNER_CMD_SECRET: ${{ secrets.BENCH_RUNNER_CMD }}
@@ -65,6 +66,15 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ]; then
             baseline_ref="${PR_BASE_SHA}"
             candidate_ref="${PR_HEAD_SHA}"
+          elif [ "$EVENT_NAME" = "push" ]; then
+            candidate_ref="${GH_SHA}"
+            if [ -n "${PUSH_BEFORE_SHA:-}" ] && [ "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]; then
+              baseline_ref="${PUSH_BEFORE_SHA}"
+            elif git rev-parse --verify "${GH_SHA}^" >/dev/null 2>&1; then
+              baseline_ref="${GH_SHA}^"
+            else
+              baseline_ref="${GH_SHA}"
+            fi
           elif [ "$EVENT_NAME" = "schedule" ]; then
             if git rev-parse --verify "${GH_SHA}^" >/dev/null 2>&1; then
               baseline_ref="${GH_SHA}^"
@@ -82,6 +92,26 @@ jobs:
           if [ "$EVENT_NAME" = "pull_request" ]; then
             mode="mock"
             note="pull_request events always run in mock mode to avoid exposing benchmark secrets to untrusted code"
+          elif [ "$EVENT_NAME" = "push" ] && [ "${INPUT_MODE:-}" = "" ]; then
+            case "$requested_mode" in
+              auto|"")
+                if [ -n "$bench_runner_cmd" ]; then
+                  mode="command"
+                  note="push event: comparing previous commit against current commit with the configured benchmark runner"
+                elif [ -n "$OPENROUTER_API_KEY" ]; then
+                  mode="command"
+                  bench_runner_cmd="python3 scripts/bench_runner_openrouter.py"
+                  note="push event: comparing previous commit against current commit with the built-in OpenRouter benchmark runner"
+                else
+                  mode="mock"
+                  note="push event: no benchmark runner credentials were configured, so benchmark plumbing runs in mock mode"
+                fi
+                ;;
+              *)
+                echo "Unexpected mode resolution for push event: $requested_mode" >&2
+                exit 1
+                ;;
+            esac
           else
             case "$requested_mode" in
               auto|"")

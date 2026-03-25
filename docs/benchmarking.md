@@ -46,10 +46,14 @@ Purpose:
 - compute a comparison verdict
 - publish a markdown report to the job summary
 
-On pull requests, the workflow intentionally uses `mock` mode.
-That prevents benchmark secrets from being exposed to untrusted code.
+Event behavior:
 
-For real measurements, use `workflow_dispatch` or the nightly schedule and configure either:
+- `push` — runs automatically and compares the previous commit to the current commit
+- `pull_request` — intentionally uses `mock` mode to avoid exposing benchmark secrets to untrusted code
+- `workflow_dispatch` — lets you choose explicit baseline and candidate refs
+- `schedule` — compares the previous commit to the current default-branch commit
+
+For real measurements on push, manual runs, or the nightly schedule, configure either:
 
 - `OPENROUTER_API_KEY` for the built-in OpenRouter runner
 - `BENCH_RUNNER_CMD` for your own runner
@@ -65,11 +69,20 @@ Repository settings:
 3. `Settings -> Secrets and variables -> Actions -> Variables`
 4. Optionally add `OPENROUTER_MODEL`
 
-Suggested starting value:
+Suggested starting value for routine push benchmarking:
 
 ```text
-anthropic/claude-sonnet-4.5
+qwen/qwen3-coder-next
 ```
+
+Lower-cost but less reliable smoke-test options:
+
+```text
+qwen/qwen3-coder:free
+openrouter/free
+```
+
+Free models can rate-limit aggressively, so they are usually a bad choice if you want benchmark jobs to stay green on every push.
 
 The benchmark workflow will automatically switch to:
 
@@ -78,6 +91,12 @@ python3 scripts/bench_runner_openrouter.py
 ```
 
 when `OPENROUTER_API_KEY` is present and no custom `BENCH_RUNNER_CMD` is configured.
+
+Minimum GitHub setup:
+
+1. Add secret `OPENROUTER_API_KEY`
+2. Add variable `OPENROUTER_MODEL`
+3. Push a commit or run the `Benchmark` workflow manually
 
 Important limitation:
 
@@ -141,6 +160,12 @@ Typical pattern:
 ```
 
 That runner can internally call Claude Code, Codex, OpenRouter, or another agent harness, as long as it obeys the `result.json` contract.
+
+## Related Workflows
+
+- `.github/workflows/validate.yml` — fast structural validation on every push and PR
+- `.github/workflows/hooks-test.yml` — deterministic hook behavior tests on every push and PR
+- `.github/workflows/security-scan.yml` — secret scanning on every push and PR plus a weekly scheduled run
 
 ## Verdict Logic
 

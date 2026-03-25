@@ -132,3 +132,19 @@ Manager returns a plan with steps and agents.
 ## Docs
 - https://docs.anthropic.com/en/docs/claude-code/settings
 - https://code.claude.com/docs/en/hooks
+
+## Repository Automation
+
+Repository-level checks are separate from the local Claude profile:
+
+- `.github/workflows/validate.yml` — structural validation on every push and PR
+- `.github/workflows/hooks-test.yml` — deterministic hook behavior tests on every push and PR
+- `.github/workflows/security-scan.yml` — repository secret scan on every push and PR, plus weekly schedule
+- `.github/workflows/benchmark.yml` — benchmark comparison on every push, mock on PRs, and manual/scheduled runs for full comparisons
+
+Benchmark support files:
+
+- `tests/hooks/` — hook fixtures and assertions
+- `bench/tasks/` — benchmark task definitions
+- `bench/fixtures/` — benchmark fixture repositories
+- `docs/benchmarking.md` — runner contract and GitHub setup

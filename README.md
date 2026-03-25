@@ -2,6 +2,15 @@
 
 Claude Code configuration with custom agents, workflows, and hook-gated SDLC.
 
+## Status
+
+[![Validate](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml)
+[![Hook Tests](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml)
+[![Benchmark](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/benchmark.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/benchmark.yml)
+[![Security Scan](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml)
+
+Badges reflect the latest workflow result for the `main` branch.
+
 ## Quick Start
 
 ```bash
@@ -115,6 +124,9 @@ GitHub Actions now covers three levels:
 - `Hook Tests` — behavior tests for the SDLC hook scripts
 - `Benchmark` — baseline vs candidate comparison with a PR/job summary
 
+All three workflows plus `Security Scan` run automatically on every push.
+`Benchmark` compares the previous commit against the current commit on push events.
+
 ### Fast CI
 
 `Validate` runs:
@@ -136,12 +148,22 @@ Benchmark task definitions live under `bench/tasks/`.
 Task fixtures live under `bench/fixtures/`.
 The benchmark summary schema lives in `bench/schema/summary.schema.json`.
 
-By default, the GitHub benchmark workflow uses `mock` mode for pull requests so the pipeline stays safe for untrusted code.
+By default, the GitHub benchmark workflow uses:
+
+- `mock` mode on pull requests
+- previous-commit vs current-commit comparison on push
+- configurable refs on `workflow_dispatch`
+- previous-commit vs current-commit comparison on nightly schedule
 
 To run real benchmark comparisons you have two options:
 
 - set `OPENROUTER_API_KEY` and optionally `OPENROUTER_MODEL` to use the built-in OpenRouter runner
 - set `BENCH_RUNNER_CMD` to a custom runner command if you want another provider or a true Claude Code harness
+
+Recommended low-cost starting point:
+
+- `OPENROUTER_MODEL=qwen/qwen3-coder-next`
+- use `qwen/qwen3-coder:free` or `openrouter/free` only for smoke tests because rate limits can make push-time benchmarking flaky
 
 The runner contract is simple:
 

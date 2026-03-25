@@ -16,6 +16,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - CONTRIBUTING.md guidelines
 - LICENSE file (MIT)
 - Hook-based SDLC gate layer for session start, prompt classification, verification tracking, stop control, and transcript indexing
+- Repository-level `Validate` and `Hook Tests` GitHub Actions workflows
+- Benchmark harness with task fixtures, comparison scripts, and report generation
+- OpenRouter benchmark runner and setup documentation
+- README status badges for repository workflows
 
 ### Changed
 - Fixed agent types to use specialized types instead of `general-purpose`
@@ -23,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Moved release/deploy out of the default profile into an optional manual checklist
 - Updated docs to reflect implemented commands only
 - Updated GUIDE.md with new agents and skills
+- Updated GitHub Actions workflows to run on every push
+- Updated benchmark workflow to compare previous commit versus current commit on push
 
 ### Fixed
 - New Feature workflow missing implementation and test steps
