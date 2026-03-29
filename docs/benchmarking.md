@@ -85,6 +85,8 @@ Each task directory contains:
 - `result.json`
 - `task-prompt.txt`
 - `task-summary.txt`
+- `claude-stream.jsonl`
+- `claude-event-log.txt`
 - `claude-result.json`
 - `claude-result.txt`
 - `claude-debug.log`
@@ -97,4 +99,4 @@ The benchmark root contains:
 - `summary.json`
 
 Use `summary.json` as the machine-readable gate and the per-task artifacts for debugging failures.
-The workflow log now prints task metadata, model, workdir, prompt excerpt, raw Claude JSON excerpt, parsed failure reasons, debug log excerpt, verification output, patch excerpt, and full `result.json` for each task.
+The workflow log now prints task metadata, model, workdir, prompt excerpt, stream event summaries, raw Claude JSON excerpt, parsed failure reasons, debug log excerpt, verification output, patch excerpt, and full `result.json` for each task.
