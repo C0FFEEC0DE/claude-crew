@@ -40,10 +40,11 @@ It:
 
 1. installs `claudecfg/*` into `~/.claude`
 2. installs the Claude Code CLI
-3. runs `scripts/run-benchmark.sh` in `command` mode
-4. uses `scripts/bench_runner_claude_code.py` as the per-task runner
-5. uploads per-task Claude artifacts plus `summary.json`
-6. fails the workflow unless every benchmark task passes
+3. copies the repository `.claude/` directory into each isolated fixture workdir so project-local config is exercised during the benchmark
+4. runs `scripts/run-benchmark.sh` in `command` mode
+5. uses `scripts/bench_runner_claude_code.py` as the per-task runner
+6. uploads per-task Claude artifacts plus `summary.json`
+7. fails the workflow unless every benchmark task passes
 
 ## Required GitHub Setup
 

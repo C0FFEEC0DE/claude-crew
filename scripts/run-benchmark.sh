@@ -8,6 +8,7 @@ TASK_GLOB="bench/tasks/*.json"
 MODE="${BENCH_MODE:-}"
 SOURCE_REF="${BENCH_SOURCE_REF:-working-tree}"
 FAIL_FAST="${BENCH_FAIL_FAST:-0}"
+PROJECT_CLAUDE_DIR="${REPO_ROOT}/.claude"
 
 usage() {
     echo "Usage: $0 --output-dir DIR [--task-glob GLOB] [--mode mock|command] [--ref REF]" >&2
@@ -92,6 +93,10 @@ for task_file in "${task_files[@]}"; do
     rm -rf "$task_output_dir"
     mkdir -p "$task_workdir"
     cp -R "$fixture_dir"/. "$task_workdir"/
+    if [ -d "$PROJECT_CLAUDE_DIR" ]; then
+        mkdir -p "$task_workdir/.claude"
+        cp -R "$PROJECT_CLAUDE_DIR"/. "$task_workdir/.claude"/
+    fi
 
     export BENCH_TASK_FILE="$task_file"
     export BENCH_TASK_ID="$task_id"

@@ -50,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Enabled fail-fast and a wall-clock timeout in `Behavior Benchmark` so CI stops quickly after the first failed task instead of burning the full task set
 - Increased the default `Behavior Benchmark` turn budget from `12` to `16` per task
 - Increased the live benchmark task timeout from `180` to `300` seconds so slower OpenRouter-backed models can finish after successful edits and verification
+- Updated the benchmark harness to copy the repository `.claude/` directory into each fixture workdir so project-local Claude settings are exercised during live behavioral runs
 
 ### Fixed
 - New Feature workflow missing implementation and test steps
