@@ -48,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Taught `Stop` and `SubagentStop` shell guards to recover the last assistant summary from `transcript_path` when live runtime payloads omit `last_assistant_message`
 - Taught the live benchmark runner to recover final summaries from the session transcript when Claude returns an empty `.result` payload after otherwise-valid work
 - Enabled fail-fast and a wall-clock timeout in `Behavior Benchmark` so CI stops quickly after the first failed task instead of burning the full task set
+- Increased the default `Behavior Benchmark` turn budget from `12` to `16` per task
 
 ### Fixed
 - New Feature workflow missing implementation and test steps

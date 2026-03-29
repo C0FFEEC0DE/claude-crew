@@ -26,7 +26,7 @@ CLAUDE_BIN = env_or_default("CLAUDE_BIN", "claude")
 CLAUDE_MODEL = env_or_default(
     "CLAUDE_MODEL", env_or_default("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free")
 )
-MAX_TURNS = env_or_default("MAX_TURNS", "8")
+MAX_TURNS = env_or_default("MAX_TURNS", "16")
 CLAUDE_TIMEOUT_SECONDS = int(env_or_default("CLAUDE_TIMEOUT_SECONDS", "180"))
 
 

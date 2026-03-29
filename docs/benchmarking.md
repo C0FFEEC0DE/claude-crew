@@ -25,7 +25,7 @@ Current task assertions include:
 This makes the benchmark a behavioral acceptance gate, not just a process smoke test.
 
 The runner invokes Claude Code with `--permission-mode acceptEdits` so isolated fixture repositories can be modified non-interactively during CI. If a task still fails, inspect `claude_subtype`, `claude_stop_reason`, `permission_denials_count`, and `first_permission_denial` in the task summary and `result.json`.
-The GitHub workflow default is `12` turns per task so CI stays bounded; raise it manually in `workflow_dispatch` when you want a slower debug run.
+The GitHub workflow default is `16` turns per task so CI stays bounded; raise it manually in `workflow_dispatch` when you want a slower debug run.
 The runner also injects an explicit workflow override into the prompt so bugfix, feature, refactor, and docs tasks are not misclassified as review-only work just because the final summary must mention review outcome.
 The shell stop guards now fall back to the benchmark session transcript when a runtime omits `last_assistant_message` from `Stop` or `SubagentStop` payloads, so valid summaries are still recognized in live CI runs.
 The benchmark runner now mirrors that fallback for Claude CLI results: if `.result` is empty but the session transcript contains a valid multiline summary, the task can still pass. GitHub CI also enables fail-fast, so the live benchmark stops after the first failed task instead of burning time on the rest of the matrix.
