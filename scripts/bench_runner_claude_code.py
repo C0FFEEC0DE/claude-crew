@@ -109,7 +109,7 @@ Final response requirements:
 """
 
 
-def run_claude(prompt: str) -> tuple[int, str, str]:
+def run_claude(prompt: str, debug_log_path: pathlib.Path) -> tuple[int, str, str]:
     command = [
         CLAUDE_BIN,
         "-p",
@@ -118,6 +118,8 @@ def run_claude(prompt: str) -> tuple[int, str, str]:
         CLAUDE_MODEL,
         "--max-turns",
         MAX_TURNS,
+        "--debug-file",
+        str(debug_log_path),
         "--output-format",
         "json",
     ]
@@ -173,23 +175,46 @@ def write_text(path: pathlib.Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def payload_keys(payload: dict | None) -> str:
+    if not isinstance(payload, dict):
+        return "<invalid-or-missing>"
+    return ", ".join(sorted(payload.keys())) or "<empty-object>"
+
+
 def build_task_summary(
     task: dict,
+    prompt: str,
     status: str,
     exit_code: int,
     changed_files: list[str],
     failures: list[str],
+    raw_json: str,
+    payload: dict | None,
     result_text: str,
     verification_output: str,
     stderr_text: str,
+    debug_log_text: str,
+    patch_text: str,
 ) -> str:
     lines = [
         f"Task: {task['id']}",
         f"Category: {task['category']}",
         f"Status: {status}",
         f"Claude exit code: {exit_code}",
+        f"Review required: {bool(task['review_required'])}",
+        f"Docs required: {bool(task['docs_required'])}",
+        f"Verification required: {bool(task['verification_required'])}",
         f"Changed files: {', '.join(changed_files) if changed_files else 'none'}",
         f"Failures: {', '.join(failures) if failures else 'none'}",
+        f"Claude payload keys: {payload_keys(payload)}",
+        f"stdout bytes: {len(raw_json.encode('utf-8'))}",
+        f"stderr bytes: {len(stderr_text.encode('utf-8'))}",
+        "",
+        "Prompt excerpt:",
+        truncate(prompt, 1200) or "<missing>",
+        "",
+        "Raw Claude JSON excerpt:",
+        truncate(raw_json, 1200) or "<missing>",
         "",
         "Result excerpt:",
         truncate(result_text, 1200) or "<missing>",
@@ -199,6 +224,12 @@ def build_task_summary(
         "",
         "stderr excerpt:",
         truncate(stderr_text, 1200) or "<empty>",
+        "",
+        "debug log excerpt:",
+        truncate(debug_log_text, 1600) or "<empty>",
+        "",
+        "Patch excerpt:",
+        truncate(patch_text, 1200) or "<empty>",
     ]
     return "\n".join(lines) + "\n"
 
@@ -216,9 +247,10 @@ def main() -> int:
     payload = None
     result_text = ""
     fatal_error = ""
+    debug_log_path = OUTPUT_DIR / "claude-debug.log"
 
     try:
-        exit_code, raw_stdout, raw_stderr = run_claude(prompt)
+        exit_code, raw_stdout, raw_stderr = run_claude(prompt, debug_log_path)
         payload, result_text = extract_result_text(raw_stdout)
         if not raw_stdout.strip():
             fatal_error = "Claude output JSON is missing or empty."
@@ -232,6 +264,7 @@ def main() -> int:
     write_text(OUTPUT_DIR / "claude-result.json", raw_stdout)
     write_text(OUTPUT_DIR / "claude-result.txt", result_text)
     write_text(OUTPUT_DIR / "claude-stderr.log", raw_stderr)
+    debug_log_text = debug_log_path.read_text(encoding="utf-8") if debug_log_path.exists() else ""
     if raw_stderr.strip():
         write_text(OUTPUT_DIR / "claude-stderr-tail.txt", "\n".join(raw_stderr.splitlines()[-200:]) + "\n")
 
@@ -244,6 +277,7 @@ def main() -> int:
     patch_text = build_patch(before, after)
     write_text(OUTPUT_DIR / "workspace.patch", patch_text)
     write_text(OUTPUT_DIR / "changed-files.json", json.dumps(changed_files, ensure_ascii=False, indent=2) + "\n")
+    write_text(OUTPUT_DIR / "task-prompt.txt", prompt + "\n")
 
     verification_required = bool(task["verification_required"])
     tests_run = False
@@ -325,13 +359,18 @@ def main() -> int:
         OUTPUT_DIR / "task-summary.txt",
         build_task_summary(
             task=task,
+            prompt=prompt,
             status=status,
             exit_code=exit_code,
             changed_files=changed_files,
             failures=failures,
+            raw_json=raw_stdout,
+            payload=payload,
             result_text=result_text,
             verification_output=verification_output,
             stderr_text=raw_stderr,
+            debug_log_text=debug_log_text,
+            patch_text=patch_text,
         ),
     )
     if fatal_error:

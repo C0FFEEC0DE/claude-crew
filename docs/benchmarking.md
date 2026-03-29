@@ -80,9 +80,11 @@ bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench-mock --mode mock
 Each task directory contains:
 
 - `result.json`
+- `task-prompt.txt`
 - `task-summary.txt`
 - `claude-result.json`
 - `claude-result.txt`
+- `claude-debug.log`
 - `claude-stderr.log`
 - `workspace.patch`
 - `changed-files.json`
@@ -92,4 +94,4 @@ The benchmark root contains:
 - `summary.json`
 
 Use `summary.json` as the machine-readable gate and the per-task artifacts for debugging failures.
-The workflow log and GitHub step summary also print a compact per-task summary so you can usually see the failure cause without downloading artifacts.
+The workflow log now prints task metadata, model, workdir, prompt excerpt, raw Claude JSON excerpt, parsed failure reasons, debug log excerpt, verification output, patch excerpt, and full `result.json` for each task.

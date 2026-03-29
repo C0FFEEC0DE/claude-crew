@@ -77,6 +77,7 @@ fi
 result_files=()
 for task_file in "${task_files[@]}"; do
     task_id="$(jq -r '.id' "$task_file")"
+    category="$(jq -r '.category' "$task_file")"
     fixture_name="$(jq -r '.fixture' "$task_file")"
     fixture_dir="$REPO_ROOT/bench/fixtures/$fixture_name"
     task_output_dir="$OUTPUT_DIR/tasks/$task_id"
@@ -97,6 +98,14 @@ for task_file in "${task_files[@]}"; do
     export BENCH_WORKDIR="$task_workdir"
     export BENCH_FIXTURE_DIR="$fixture_dir"
     export BENCH_REPO_ROOT="$REPO_ROOT"
+
+    echo "=== Benchmark task: $task_id ==="
+    echo "Runner: $RUNNER_DESCRIPTION"
+    echo "Category: $category"
+    echo "Fixture: $fixture_name"
+    echo "Task file: $task_file"
+    echo "Workdir: $task_workdir"
+    echo "Model: ${CLAUDE_MODEL:-${OPENROUTER_MODEL:-<unset>}}"
 
     if [ "$MODE" = "mock" ]; then
         "$RUNNER_CMD"
@@ -122,7 +131,6 @@ for task_file in "${task_files[@]}"; do
 
     result_files+=("$task_output_dir/result.json")
 
-    echo "=== Benchmark task: $task_id ==="
     if [ -f "$task_output_dir/task-summary.txt" ]; then
         cat "$task_output_dir/task-summary.txt"
     else
@@ -132,6 +140,8 @@ for task_file in "${task_files[@]}"; do
             "Notes: \(.notes)"
         ' "$task_output_dir/result.json"
     fi
+    echo "Structured result:"
+    cat "$task_output_dir/result.json"
 done
 
 source_sha="$(git rev-parse --short HEAD)"

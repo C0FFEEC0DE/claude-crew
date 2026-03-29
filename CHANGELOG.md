@@ -39,6 +39,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated workflow context and stop feedback with a stop-safe no-op footer for later replies in already dirty sessions
 - Reworked benchmark automation so the main acceptance path now uses the real Claude Code CLI instead of a one-shot OpenRouter worker
 - Improved GitHub Actions observability with readable Claude diagnostics in workflow logs, step summaries, and benchmark task artifacts
+- Expanded `Behavior Benchmark` live logs with per-task metadata, prompt excerpts, raw Claude JSON excerpts, patch excerpts, and structured result dumps
+- Added per-task `claude-debug.log` capture for the live benchmark path so empty-result failures can be debugged from Claude CLI traces
 - Switched the default OpenRouter model for the live Claude Code benchmark path to `nvidia/nemotron-3-super-120b-a12b:free`
 
 ### Fixed

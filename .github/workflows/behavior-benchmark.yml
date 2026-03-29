@@ -146,9 +146,11 @@ jobs:
             bench-output/tasks/**/result.json
             bench-output/tasks/**/claude-result.json
             bench-output/tasks/**/claude-result.txt
+            bench-output/tasks/**/claude-debug.log
             bench-output/tasks/**/claude-stderr.log
             bench-output/tasks/**/claude-stderr-tail.txt
             bench-output/tasks/**/workspace.patch
             bench-output/tasks/**/changed-files.json
+            bench-output/tasks/**/task-prompt.txt
             bench-output/tasks/**/task-summary.txt
             bench-output/tasks/**/runner-error.txt
