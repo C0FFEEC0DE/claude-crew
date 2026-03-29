@@ -41,6 +41,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Improved GitHub Actions observability with readable Claude diagnostics in workflow logs, step summaries, and benchmark task artifacts
 - Expanded `Behavior Benchmark` live logs with per-task metadata, prompt excerpts, raw Claude JSON excerpts, patch excerpts, and structured result dumps
 - Added per-task `claude-debug.log` capture for the live benchmark path so empty-result failures can be debugged from Claude CLI traces
+- Updated the live benchmark runner to use `--permission-mode acceptEdits` and surface `subtype`, `stop_reason`, and permission-denial diagnostics in task results
+- Increased the default `Behavior Benchmark` turn budget from `8` to `32` per task
 - Switched the default OpenRouter model for the live Claude Code benchmark path to `nvidia/nemotron-3-super-120b-a12b:free`
 
 ### Fixed

@@ -118,6 +118,8 @@ def run_claude(prompt: str, debug_log_path: pathlib.Path) -> tuple[int, str, str
         CLAUDE_MODEL,
         "--max-turns",
         MAX_TURNS,
+        "--permission-mode",
+        "acceptEdits",
         "--debug-file",
         str(debug_log_path),
         "--output-format",
@@ -181,6 +183,34 @@ def payload_keys(payload: dict | None) -> str:
     return ", ".join(sorted(payload.keys())) or "<empty-object>"
 
 
+def payload_string(payload: dict | None, key: str) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    value = payload.get(key, "")
+    return value if isinstance(value, str) else str(value or "")
+
+
+def payload_permission_denials(payload: dict | None) -> list[dict]:
+    if not isinstance(payload, dict):
+        return []
+    value = payload.get("permission_denials", [])
+    return value if isinstance(value, list) else []
+
+
+def first_permission_denial_summary(denials: list[dict]) -> str:
+    if not denials:
+        return "none"
+    first = denials[0]
+    tool_name = first.get("tool_name", "unknown")
+    tool_input = first.get("tool_input", {})
+    file_path = ""
+    if isinstance(tool_input, dict):
+        file_path = str(tool_input.get("file_path", "") or "")
+    if file_path:
+        return f"{tool_name} -> {file_path}"
+    return str(tool_name)
+
+
 def build_task_summary(
     task: dict,
     prompt: str,
@@ -190,6 +220,9 @@ def build_task_summary(
     failures: list[str],
     raw_json: str,
     payload: dict | None,
+    payload_subtype: str,
+    payload_stop_reason: str,
+    permission_denials: list[dict],
     result_text: str,
     verification_output: str,
     stderr_text: str,
@@ -207,6 +240,10 @@ def build_task_summary(
         f"Changed files: {', '.join(changed_files) if changed_files else 'none'}",
         f"Failures: {', '.join(failures) if failures else 'none'}",
         f"Claude payload keys: {payload_keys(payload)}",
+        f"Claude subtype: {payload_subtype or '<missing>'}",
+        f"Claude stop reason: {payload_stop_reason or '<missing>'}",
+        f"Permission denials: {len(permission_denials)}",
+        f"First permission denial: {first_permission_denial_summary(permission_denials)}",
         f"stdout bytes: {len(raw_json.encode('utf-8'))}",
         f"stderr bytes: {len(stderr_text.encode('utf-8'))}",
         "",
@@ -265,6 +302,9 @@ def main() -> int:
     write_text(OUTPUT_DIR / "claude-result.txt", result_text)
     write_text(OUTPUT_DIR / "claude-stderr.log", raw_stderr)
     debug_log_text = debug_log_path.read_text(encoding="utf-8") if debug_log_path.exists() else ""
+    payload_subtype = payload_string(payload, "subtype")
+    payload_stop_reason = payload_string(payload, "stop_reason")
+    permission_denials = payload_permission_denials(payload)
     if raw_stderr.strip():
         write_text(OUTPUT_DIR / "claude-stderr-tail.txt", "\n".join(raw_stderr.splitlines()[-200:]) + "\n")
 
@@ -350,6 +390,10 @@ def main() -> int:
         "verification_summary_present": verification_summary_present,
         "risk_summary_present": risks_present,
         "claude_exit_code": exit_code,
+        "claude_subtype": payload_subtype,
+        "claude_stop_reason": payload_stop_reason,
+        "permission_denials_count": len(permission_denials),
+        "first_permission_denial": first_permission_denial_summary(permission_denials),
         "fatal_error": fatal_error,
         "failures": failures,
     }
@@ -366,6 +410,9 @@ def main() -> int:
             failures=failures,
             raw_json=raw_stdout,
             payload=payload,
+            payload_subtype=payload_subtype,
+            payload_stop_reason=payload_stop_reason,
+            permission_denials=permission_denials,
             result_text=result_text,
             verification_output=verification_output,
             stderr_text=raw_stderr,
