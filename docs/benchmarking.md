@@ -9,7 +9,7 @@ If you want to know whether the installed profile actually works as a coding age
 
 ## What It Checks
 
-The behavioral benchmark copies each fixture from `bench/fixtures/` into a temporary task workdir, runs the benchmark task from `bench/tasks/`, and then evaluates the outcome.
+The behavioral benchmark copies each fixture from `bench/fixtures/` into a temporary task workdir, runs the benchmark task selected by `task_glob`, and then evaluates the outcome.
 
 Current task assertions include:
 
@@ -23,6 +23,16 @@ Current task assertions include:
 - docs-only tasks did not change non-doc files
 
 This makes the benchmark a behavioral acceptance gate, not just a process smoke test.
+
+The live GitHub workflow now defaults to the lightweight suite in `bench/tasks/lite/`. Those tasks are intentionally small enough for cheaper models, but they still verify the agent loop end to end:
+
+- edit the right files
+- keep docs-only tasks out of runtime code
+- run `pytest -q` when code changed
+- update docs when behavior changed
+- finish with the required verification/review/risk footer
+
+The heavier task files in `bench/tasks/*.json` remain available for manual full-suite runs when you want to compare stronger models.
 
 The runner invokes Claude Code with `--permission-mode acceptEdits` so isolated fixture repositories can be modified non-interactively during CI. If a task still fails, inspect `claude_subtype`, `claude_stop_reason`, `permission_denials_count`, and `first_permission_denial` in the task summary and `result.json`.
 The GitHub workflow default is `16` turns per task so CI stays bounded; raise it manually in `workflow_dispatch` when you want a slower debug run.
@@ -45,7 +55,7 @@ It:
 1. installs the Claude Code CLI
 2. runs `claudecfg/install.sh` so CI uses the same repo installer as local setup
 3. copies the repository `.claude/` directory into each isolated fixture workdir so project-local config is exercised during the benchmark
-4. runs `scripts/run-benchmark.sh` in `command` mode
+4. runs `scripts/run-benchmark.sh` in `command` mode with the default lightweight `bench/tasks/lite/*.json` task glob
 5. uses `scripts/bench_runner_claude_code.py` as the per-task runner
 6. uploads per-task Claude artifacts plus `summary.json`
 7. fails the workflow unless every benchmark task passes
@@ -93,6 +103,12 @@ export CLAUDE_CODE_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-4096}"
 export BENCH_RUNNER_CMD="python3 scripts/bench_runner_claude_code.py"
 bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench --mode command
 bash scripts/assert-benchmark-summary.sh /tmp/claude-bench/summary.json
+```
+
+To run the heavier manual suite instead of the lightweight default:
+
+```bash
+bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench-full --mode command --task-glob 'bench/tasks/*.json'
 ```
 
 For cheap synthetic checks without the real agent:
