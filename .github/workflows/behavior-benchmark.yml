@@ -19,6 +19,11 @@ on:
         required: false
         default: ""
         type: string
+      timeout_seconds:
+        description: "Per-task Claude timeout in seconds"
+        required: false
+        default: "420"
+        type: string
 
 jobs:
   benchmark:
@@ -44,15 +49,21 @@ jobs:
           INPUT_TASK_GLOB: ${{ inputs.task_glob }}
           INPUT_MAX_TURNS: ${{ inputs.max_turns }}
           INPUT_MODEL: ${{ inputs.model }}
-          VAR_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          INPUT_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
+          VAR_BENCHMARK_MODEL: ${{ vars.BEHAVIOR_BENCHMARK_MODEL }}
+          VAR_BENCHMARK_TIMEOUT_SECONDS: ${{ vars.BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS }}
         run: |
           task_glob="${INPUT_TASK_GLOB:-bench/tasks/*.json}"
           max_turns="${INPUT_MAX_TURNS:-16}"
-          model="${INPUT_MODEL:-${VAR_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}}"
+          # Keep the benchmark pinned to a dedicated default instead of inheriting
+          # the repo-wide model override, which can regress latency or reliability.
+          model="${INPUT_MODEL:-${VAR_BENCHMARK_MODEL:-nvidia/nemotron-3-nano-30b-a3b}}"
+          timeout_seconds="${INPUT_TIMEOUT_SECONDS:-${VAR_BENCHMARK_TIMEOUT_SECONDS:-420}}"
 
           echo "task_glob=$task_glob" >> "$GITHUB_OUTPUT"
           echo "max_turns=$max_turns" >> "$GITHUB_OUTPUT"
           echo "model=$model" >> "$GITHUB_OUTPUT"
+          echo "timeout_seconds=$timeout_seconds" >> "$GITHUB_OUTPUT"
 
       - name: Install Claude configuration
         shell: bash
@@ -79,7 +90,7 @@ jobs:
           TASK_GLOB: ${{ steps.cfg.outputs.task_glob }}
           MAX_TURNS: ${{ steps.cfg.outputs.max_turns }}
           BENCH_FAIL_FAST: "1"
-          CLAUDE_TIMEOUT_SECONDS: "300"
+          CLAUDE_TIMEOUT_SECONDS: ${{ steps.cfg.outputs.timeout_seconds }}
           CLAUDE_MODEL: ${{ steps.cfg.outputs.model }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ANTHROPIC_BASE_URL: https://openrouter.ai/api
@@ -108,6 +119,7 @@ jobs:
                 def pct($value): (($value * 1000 | round) / 10 | tostring) + "%";
                 "- Model: `${{ steps.cfg.outputs.model }}`",
                 "- Max turns: `${{ steps.cfg.outputs.max_turns }}`",
+                "- Timeout seconds: `${{ steps.cfg.outputs.timeout_seconds }}`",
                 "- Task glob: `${{ steps.cfg.outputs.task_glob }}`",
                 "",
                 "| Task | Status | Changed Files | Notes |",
