@@ -21,6 +21,16 @@ type: Plan
 - **DRY**: remove duplication when it materially improves the design
 - **Compatibility**: preserve current behavior unless the change explicitly requires otherwise
 
+## System Design Principles
+
+- **Interfaces first**: make boundaries, inputs, outputs, and ownership explicit
+- **State clarity**: say where state lives, who mutates it, and what must stay consistent
+- **Failure-aware design**: identify likely failure modes, timeouts, retries, and degraded behavior
+- **Operational visibility**: include logs, metrics, and debug surfaces when they materially help diagnosis
+- **Incremental rollout**: prefer designs that can be shipped, verified, and rolled back in small steps
+- **Performance by shape, not hype**: note the expected hot path, data volume, and bottlenecks before proposing optimization
+- **Security by default**: account for auth, secrets, trust boundaries, and unsafe inputs when relevant
+
 ## Process
 
 1. **Understand Requirements**
