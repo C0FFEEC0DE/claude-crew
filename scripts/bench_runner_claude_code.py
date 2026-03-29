@@ -750,6 +750,53 @@ def forbidden_doc_pattern_hits(task: dict, after: dict[str, str], changed_files:
     return hits
 
 
+def transcript_text_entries(payload: dict | None) -> tuple[bool, list[tuple[str, str]]]:
+    transcript_path = resolve_transcript_path(payload)
+    if transcript_path is None or not transcript_path.exists():
+        return False, []
+
+    entries: list[tuple[str, str]] = []
+    try:
+        with transcript_path.open(encoding="utf-8") as handle:
+            for index, line in enumerate(handle, start=1):
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(event, dict):
+                    continue
+                text = transcript_candidate_text(event)
+                if not text:
+                    continue
+                entries.append((f"{transcript_path.name}:{index}", text.strip()))
+    except OSError:
+        return False, []
+
+    return True, entries
+
+
+def forbidden_transcript_pattern_hits(task: dict, payload: dict | None) -> tuple[bool, list[str]]:
+    patterns = task.get("forbidden_transcript_patterns", [])
+    if not isinstance(patterns, list) or not patterns:
+        return False, []
+
+    scanned, entries = transcript_text_entries(payload)
+    if not scanned:
+        return False, []
+
+    hits: list[str] = []
+    for source, text in entries:
+        for pattern in patterns:
+            if not isinstance(pattern, str) or not pattern.strip():
+                continue
+            if re.search(pattern, text, re.IGNORECASE | re.MULTILINE):
+                hits.append(f"{source}: /{pattern}/ -> {truncate(text, 200)}")
+    return True, hits
+
+
 def build_task_summary(
     task: dict,
     prompt: str,
@@ -767,6 +814,8 @@ def build_task_summary(
     stderr_text: str,
     debug_log_text: str,
     patch_text: str,
+    transcript_scanned: bool,
+    transcript_pattern_hits: list[str],
 ) -> str:
     lines = [
         f"Task: {task['id']}",
@@ -783,6 +832,8 @@ def build_task_summary(
         f"Claude stop reason: {payload_stop_reason or '<missing>'}",
         f"Permission denials: {len(permission_denials)}",
         f"First permission denial: {first_permission_denial_summary(permission_denials)}",
+        f"Transcript scanned: {transcript_scanned}",
+        f"Forbidden transcript hits: {'; '.join(transcript_pattern_hits) if transcript_pattern_hits else 'none'}",
         f"stdout bytes: {len(raw_json.encode('utf-8'))}",
         f"stderr bytes: {len(stderr_text.encode('utf-8'))}",
         "",
@@ -1006,6 +1057,7 @@ def main() -> int:
     docs_updated = any(is_docs_path(path) for path in changed_files)
     non_doc_changed_files = [path for path in changed_files if not is_docs_path(path)]
     doc_pattern_hits = forbidden_doc_pattern_hits(task, after, changed_files)
+    transcript_scanned, transcript_pattern_hits = forbidden_transcript_pattern_hits(task, payload)
     completed = len(changed_files) > 0
     patch_text = build_patch(before, after)
     write_text(OUTPUT_DIR / "workspace.patch", patch_text)
@@ -1074,6 +1126,8 @@ def main() -> int:
         failures.append("docs_task_changed_non_docs")
     if doc_pattern_hits:
         failures.append("docs_forbidden_content")
+    if transcript_pattern_hits:
+        failures.append("transcript_forbidden_content")
 
     if failures:
         status = "failed"
@@ -1090,6 +1144,8 @@ def main() -> int:
         f"Summary repair attempts: {summary_repair_attempts}. "
         f"Summary repaired by: {summary_repaired_by}. "
         f"Timeout recovered: {timeout_recovered}. "
+        f"Transcript scanned: {transcript_scanned}. "
+        f"Forbidden transcript hits: {'; '.join(transcript_pattern_hits) if transcript_pattern_hits else 'none'}. "
         f"Failures: {', '.join(failures) if failures else 'none'}. "
         f"Result: {truncate(result_text, 700) or 'missing'}. "
         f"Verification: {truncate(verification_output, 700) or 'not required'}"
@@ -1122,6 +1178,8 @@ def main() -> int:
         "permission_denials_count": len(permission_denials),
         "first_permission_denial": first_permission_denial_summary(permission_denials),
         "forbidden_doc_pattern_hits": doc_pattern_hits,
+        "transcript_scanned": transcript_scanned,
+        "forbidden_transcript_pattern_hits": transcript_pattern_hits,
         "fatal_error": fatal_error,
         "failures": failures,
     }
@@ -1146,6 +1204,8 @@ def main() -> int:
             stderr_text=raw_stderr,
             debug_log_text=debug_log_text,
             patch_text=patch_text,
+            transcript_scanned=transcript_scanned,
+            transcript_pattern_hits=transcript_pattern_hits,
         ),
     )
     if fatal_error:
