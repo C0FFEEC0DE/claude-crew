@@ -30,6 +30,7 @@ The runner also injects an explicit workflow override into the prompt so bugfix,
 The benchmark prompt now requires the final response to end with an exact 3-line footer for verification, review, and remaining-risk status. If the model omits any of those lines, the runner performs up to `5` footer-only repair retries and then synthesizes a conservative footer from the known verification facts as a last resort.
 The shell stop guards now fall back to the benchmark session transcript when a runtime omits `last_assistant_message` from `Stop` or `SubagentStop` payloads, so valid summaries are still recognized in live CI runs.
 The benchmark runner now mirrors that fallback for Claude CLI results: if `.result` is empty but the session transcript contains a valid multiline summary, the task can still pass. GitHub CI also enables fail-fast, so the live benchmark stops after the first failed task instead of burning time on the rest of the matrix. The live workflow currently gives each task up to `420` seconds of wall-clock runtime before the runner times it out, and `workflow_dispatch` can override that with `timeout_seconds`.
+The live workflow also caps Claude Code with `CLAUDE_CODE_MAX_OUTPUT_TOKENS=4096` by default, which keeps OpenRouter requests inside cheaper credit limits for benchmark runs; override it with `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS` or the `workflow_dispatch` input when you need a larger response budget.
 The benchmark harness also now exercises the same project-local Claude settings as the repository by copying `.claude/` into each fixture workdir. Root-level read-only tool calls such as `Read(.)`, `Glob(.)`, and `Grep(.)` are allowed so models do not waste turns on harmless repository scans.
 Benchmark tasks may also declare `forbidden_doc_patterns`; the runner scans changed documentation files and fails the task if the edited docs mention forbidden hallucinated paths or commands.
 
@@ -58,6 +59,7 @@ Repository settings:
 3. `Settings -> Secrets and variables -> Actions -> Variables`
 4. Add `OPENROUTER_MODEL`
 5. Optionally add `BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS` to override the benchmark per-task timeout
+6. Optionally add `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS` to override the Claude Code output-token cap
 
 Required benchmark model:
 
@@ -71,6 +73,12 @@ Recommended benchmark timeout:
 420
 ```
 
+Recommended benchmark max output tokens:
+
+```text
+4096
+```
+
 ## Local Usage
 
 With Claude Code CLI and OpenRouter env vars available:
@@ -81,6 +89,7 @@ export ANTHROPIC_BASE_URL=https://openrouter.ai/api
 export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"
 export ANTHROPIC_API_KEY=
 export OPENROUTER_MODEL="${OPENROUTER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}"
+export CLAUDE_CODE_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-4096}"
 export BENCH_RUNNER_CMD="python3 scripts/bench_runner_claude_code.py"
 bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench --mode command
 bash scripts/assert-benchmark-summary.sh /tmp/claude-bench/summary.json

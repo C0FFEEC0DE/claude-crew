@@ -112,6 +112,7 @@ for task_file in "${task_files[@]}"; do
     echo "Task file: $task_file"
     echo "Workdir: $task_workdir"
     echo "Model: ${OPENROUTER_MODEL:-<unset>}"
+    echo "Max output tokens: ${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-<unset>}"
 
     if [ "$MODE" = "mock" ]; then
         "$RUNNER_CMD"

@@ -19,6 +19,11 @@ on:
         required: false
         default: "420"
         type: string
+      max_output_tokens:
+        description: "Claude Code max output tokens per request"
+        required: false
+        default: "4096"
+        type: string
 
 jobs:
   benchmark:
@@ -44,13 +49,16 @@ jobs:
           INPUT_TASK_GLOB: ${{ inputs.task_glob }}
           INPUT_MAX_TURNS: ${{ inputs.max_turns }}
           INPUT_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
+          INPUT_MAX_OUTPUT_TOKENS: ${{ inputs.max_output_tokens }}
           VAR_OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
           VAR_BENCHMARK_TIMEOUT_SECONDS: ${{ vars.BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS }}
+          VAR_BENCHMARK_MAX_OUTPUT_TOKENS: ${{ vars.BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS }}
         run: |
           task_glob="${INPUT_TASK_GLOB:-bench/tasks/*.json}"
           max_turns="${INPUT_MAX_TURNS:-16}"
           model="${VAR_OPENROUTER_MODEL:-}"
           timeout_seconds="${INPUT_TIMEOUT_SECONDS:-${VAR_BENCHMARK_TIMEOUT_SECONDS:-420}}"
+          max_output_tokens="${INPUT_MAX_OUTPUT_TOKENS:-${VAR_BENCHMARK_MAX_OUTPUT_TOKENS:-4096}}"
 
           if [ -z "$model" ]; then
             echo "OPENROUTER_MODEL GitHub Actions variable is required" >&2
@@ -61,6 +69,7 @@ jobs:
           echo "max_turns=$max_turns" >> "$GITHUB_OUTPUT"
           echo "model=$model" >> "$GITHUB_OUTPUT"
           echo "timeout_seconds=$timeout_seconds" >> "$GITHUB_OUTPUT"
+          echo "max_output_tokens=$max_output_tokens" >> "$GITHUB_OUTPUT"
 
       - name: Install Claude Code CLI and pytest
         shell: bash
@@ -86,6 +95,7 @@ jobs:
           MAX_TURNS: ${{ steps.cfg.outputs.max_turns }}
           BENCH_FAIL_FAST: "1"
           CLAUDE_TIMEOUT_SECONDS: ${{ steps.cfg.outputs.timeout_seconds }}
+          CLAUDE_CODE_MAX_OUTPUT_TOKENS: ${{ steps.cfg.outputs.max_output_tokens }}
           OPENROUTER_MODEL: ${{ steps.cfg.outputs.model }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ANTHROPIC_BASE_URL: https://openrouter.ai/api
@@ -115,6 +125,7 @@ jobs:
                 "- Model: `${{ steps.cfg.outputs.model }}`",
                 "- Max turns: `${{ steps.cfg.outputs.max_turns }}`",
                 "- Timeout seconds: `${{ steps.cfg.outputs.timeout_seconds }}`",
+                "- Max output tokens: `${{ steps.cfg.outputs.max_output_tokens }}`",
                 "- Task glob: `${{ steps.cfg.outputs.task_glob }}`",
                 "",
                 "| Task | Status | Changed Files | Notes |",

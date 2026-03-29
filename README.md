@@ -174,6 +174,7 @@ This is now the only real Claude Code workflow in the repository.
 Required benchmark model variable:
 
 - `OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free`
+- optional: `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS=4096`
 
 ## Logs
 
