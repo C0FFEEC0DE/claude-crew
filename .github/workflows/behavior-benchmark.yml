@@ -110,21 +110,22 @@ jobs:
                 "",
                 "| Task | Status | Changed Files | Notes |",
                 "| --- | --- | --- | --- |",
-                (.tasks[] | "| `\(.task_id)` | `\(.status)` | \((.changed_files // []) | join(\", \")) | \(.notes | gsub(\"\\n\"; \" \") | .[0:180]) |"),
+                (.tasks[] | "| `\(.task_id)` | `\(.status)` | \((.changed_files // []) | join(", ")) | \(.notes | gsub("\n"; " ") | .[0:180]) |"),
                 "",
                 "- Pass rate: \(pct(.rates.task_pass_rate))",
                 "- Verification pass rate: \(pct(.rates.verification_pass_rate))",
                 "- Review compliance: \(pct(.rates.review_compliance_rate))",
                 "- Docs compliance: \(pct(.rates.docs_compliance_rate))",
                 (
-                  if ([.tasks[] | select(.status != "passed")] | length) > 0 then
-                    "",
-                    "### Failed Tasks",
-                    "",
-                    ([.tasks[] | select(.status != "passed") | "- `\(.task_id)`: \((.failures // []) | join(\", \")) | \(.notes | gsub(\"\\n\"; \" \") | .[0:220])"][])
-                  else
-                    empty
-                  end
+                  [.tasks[] | select(.status != "passed") | "- `\(.task_id)`: \((.failures // []) | join(", ")) | \(.notes | gsub("\n"; " ") | .[0:220])"] as $failed
+                  | if ($failed | length) > 0 then
+                      "",
+                      "### Failed Tasks",
+                      "",
+                      ($failed[])
+                    else
+                      empty
+                    end
                 )
               ' bench-output/summary.json
             } >> "$GITHUB_STEP_SUMMARY"
