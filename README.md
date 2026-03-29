@@ -176,7 +176,7 @@ The heavier task definitions in `bench/tasks/*.json` remain available for manual
 
 Required benchmark model variable:
 
-- `OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free`
+- `OLLAMA_MODEL=qwen3.5:cloud`
 - optional: `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS=4096`
 
 ## Logs

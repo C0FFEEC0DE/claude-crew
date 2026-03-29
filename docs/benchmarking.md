@@ -65,16 +65,16 @@ It:
 Repository settings:
 
 1. `Settings -> Secrets and variables -> Actions -> New repository secret`
-2. Add `OPENROUTER_API_KEY`
+2. Add `OLLAMA_API_KEY`
 3. `Settings -> Secrets and variables -> Actions -> Variables`
-4. Add `OPENROUTER_MODEL`
+4. Add `OLLAMA_MODEL`
 5. Optionally add `BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS` to override the benchmark per-task timeout
 6. Optionally add `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS` to override the Claude Code output-token cap
 
 Required benchmark model:
 
 ```text
-nvidia/nemotron-3-super-120b-a12b:free
+qwen3.5:cloud
 ```
 
 Recommended benchmark timeout:
@@ -91,14 +91,14 @@ Recommended benchmark max output tokens:
 
 ## Local Usage
 
-With Claude Code CLI and OpenRouter env vars available:
+With Claude Code CLI and Ollama Cloud env vars available:
 
 ```bash
-export OPENROUTER_API_KEY=...
-export ANTHROPIC_BASE_URL=https://openrouter.ai/api
-export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"
+export OLLAMA_API_KEY=...
+export ANTHROPIC_BASE_URL=https://ollama.com
+export ANTHROPIC_AUTH_TOKEN="$OLLAMA_API_KEY"
 export ANTHROPIC_API_KEY=
-export OPENROUTER_MODEL="${OPENROUTER_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}"
+export OLLAMA_MODEL="${OLLAMA_MODEL:-qwen3.5:cloud}"
 export CLAUDE_CODE_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_MAX_OUTPUT_TOKENS:-4096}"
 export BENCH_RUNNER_CMD="python3 scripts/bench_runner_claude_code.py"
 bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench --mode command

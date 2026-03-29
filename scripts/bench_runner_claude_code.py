@@ -23,9 +23,9 @@ def env_or_default(name: str, default: str) -> str:
 
 
 CLAUDE_BIN = env_or_default("CLAUDE_BIN", "claude")
-OPENROUTER_MODEL = os.environ["OPENROUTER_MODEL"].strip()
-if not OPENROUTER_MODEL:
-    raise RuntimeError("OPENROUTER_MODEL must be set")
+MODEL_NAME = env_or_default("OLLAMA_MODEL", os.environ.get("OPENROUTER_MODEL", ""))
+if not MODEL_NAME:
+    raise RuntimeError("OLLAMA_MODEL must be set")
 
 MAX_TURNS = env_or_default("MAX_TURNS", "16")
 CLAUDE_TIMEOUT_SECONDS = int(env_or_default("CLAUDE_TIMEOUT_SECONDS", "180"))
@@ -152,7 +152,7 @@ def run_claude(
         "-p",
         prompt,
         "--model",
-        OPENROUTER_MODEL,
+        MODEL_NAME,
         "--max-turns",
         max_turns,
         "--permission-mode",
@@ -1066,7 +1066,7 @@ def main() -> int:
 
     runtime_seconds = round(time.monotonic() - started_at, 3)
     notes = (
-        f"Claude model={OPENROUTER_MODEL}. "
+        f"Claude model={MODEL_NAME}. "
         f"Exit code: {exit_code}. "
         f"Changed files: {', '.join(changed_files) if changed_files else 'none'}. "
         f"Provider retry attempts: {provider_retry_attempts}. "
