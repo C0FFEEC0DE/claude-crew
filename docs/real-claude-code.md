@@ -15,7 +15,8 @@ On every push, the workflow:
 3. installs the Claude Code CLI
 4. runs `claude -p`
 5. routes Claude Code through OpenRouter
-6. uploads `git status`, `git diff --stat`, the patch, and Claude output as artifacts
+6. fails if Claude output JSON is missing, invalid, or has an empty `.result`
+7. uploads `git status`, `git diff --stat`, the patch, and Claude output as artifacts
 
 You can also run it manually with a custom prompt using `workflow_dispatch`.
 
@@ -63,4 +64,5 @@ to the action.
 - This is the real Claude Code runtime, not a custom benchmark worker.
 - The repository profile under `claudecfg/` is installed into `~/.claude` before Claude runs.
 - The workflow is configured with `contents: read`, so any suggested file changes stay in the runner workspace and are captured as artifacts.
+- A green run means more than process survival: the Claude CLI must also emit valid JSON with a non-empty `.result`.
 - The GitHub Action wrapper was removed from the automatic path because it currently fails on `push` with `Unsupported event type: push`, so the workflow now calls the Claude Code CLI directly.

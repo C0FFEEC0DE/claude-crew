@@ -14,8 +14,18 @@ claude -p "$PROMPT" \
 status=$?
 set -e
 
-if [ -s claude-result.json ] && jq -e '.' claude-result.json >/dev/null 2>&1; then
+if [ ! -s claude-result.json ]; then
+  echo "Claude output JSON is missing or empty" >&2
+  status=1
+elif ! jq -e '.' claude-result.json >/dev/null 2>&1; then
+  echo "Claude output JSON is invalid" >&2
+  status=1
+else
   jq -r '.result // empty' claude-result.json > claude-result.txt
+  if [ ! -s claude-result.txt ] || [ -z "$(tr -d '[:space:]' < claude-result.txt)" ]; then
+    echo "Claude result text is missing or empty" >&2
+    status=1
+  fi
 fi
 
 if [ -s claude-stderr.log ]; then

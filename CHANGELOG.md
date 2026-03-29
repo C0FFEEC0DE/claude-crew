@@ -35,6 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added role-based subagent enforcement for `feature`, `bugfix`, `refactor`, `review`, and `docs` workflows before completion, with alias normalization and workflow-specific required roles
 - Extended `SubagentStart` normalization to prefer alias, name, and subagent-type fields from snake_case and camelCase payloads before generic runtime types
 - Updated workflow context and stop feedback with a stop-safe no-op footer for later replies in already dirty sessions
+- Tightened the Real Claude Code workflow so successful runs now require valid non-empty JSON output from `claude -p`
 
 ### Fixed
 - New Feature workflow missing implementation and test steps

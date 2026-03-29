@@ -163,6 +163,7 @@ That workflow:
 - installs `claudecfg/*` into `~/.claude`
 - installs the Claude Code CLI and runs `claude -p`
 - routes Claude Code through OpenRouter
+- fails if Claude does not emit a valid non-empty JSON result
 - runs automatically on every push
 - can also be started manually with a custom prompt
 - uploads `git status`, `git diff --stat`, the patch, and Claude output as workflow artifacts
