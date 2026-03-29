@@ -78,6 +78,12 @@ def build_patch(before: dict[str, str], after: dict[str, str]) -> str:
 def build_prompt(task: dict) -> str:
     success_criteria = "\n".join(f"- {item}" for item in task.get("success_criteria", []))
     must_not = "\n".join(f"- {item}" for item in task.get("must_not", []))
+    category = str(task["category"])
+    workflow_override = (
+        f"Workflow override: treat this as a {category} workflow, not a review-only workflow. "
+        "Implementation and file edits are in scope when the task asks for them. "
+        "Do not reinterpret this as a review task just because the final summary must include review outcome."
+    )
     return f"""You are running in a tiny benchmark repository fixture.
 
 Complete the task in the current working directory using the installed Claude Code profile from ~/.claude.
@@ -85,9 +91,11 @@ Use tools normally. Make only the changes needed for this task. Do not do releas
 If behavior changes, update docs. If verification is required, run the relevant tests locally.
 Leave the workspace changes in place for artifact collection.
 
+{workflow_override}
+
 Task metadata:
 - id: {task["id"]}
-- category: {task["category"]}
+- workflow_category: {category}
 - review_required: {json.dumps(bool(task["review_required"]))}
 - docs_required: {json.dumps(bool(task["docs_required"]))}
 - verification_required: {json.dumps(bool(task["verification_required"]))}
