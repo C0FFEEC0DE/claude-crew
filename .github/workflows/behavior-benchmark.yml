@@ -153,6 +153,4 @@ jobs:
             bench-output/tasks/**/changed-files.json
             bench-output/tasks/**/task-prompt.txt
             bench-output/tasks/**/task-summary.txt
-            bench-output/tasks/**/claude-stream.jsonl
-            bench-output/tasks/**/claude-event-log.txt
             bench-output/tasks/**/runner-error.txt

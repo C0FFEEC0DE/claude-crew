@@ -8,7 +8,6 @@ import re
 import subprocess
 import sys
 import time
-from typing import Any
 
 
 REPO_ROOT = pathlib.Path(os.environ["BENCH_REPO_ROOT"]).resolve()
@@ -110,72 +109,11 @@ Final response requirements:
 """
 
 
-def collect_tool_names(value: Any) -> list[str]:
-    names: list[str] = []
-    if isinstance(value, dict):
-        tool_name = value.get("tool_name")
-        if isinstance(tool_name, str) and tool_name:
-            names.append(tool_name)
-        item_type = value.get("type")
-        if item_type == "tool_use" and isinstance(value.get("name"), str):
-            names.append(str(value["name"]))
-        for nested in value.values():
-            names.extend(collect_tool_names(nested))
-    elif isinstance(value, list):
-        for item in value:
-            names.extend(collect_tool_names(item))
-    return names
-
-
-def first_text_snippet(value: Any) -> str:
-    if isinstance(value, dict):
-        text_value = value.get("text")
-        if isinstance(text_value, str) and text_value.strip():
-            return text_value.strip()
-        for nested in value.values():
-            snippet = first_text_snippet(nested)
-            if snippet:
-                return snippet
-    elif isinstance(value, list):
-        for item in value:
-            snippet = first_text_snippet(item)
-            if snippet:
-                return snippet
-    return ""
-
-
-def summarize_stream_event(event: dict[str, Any]) -> str:
-    event_type = str(event.get("type", "<missing>"))
-    subtype = str(event.get("subtype", "") or "")
-    role = ""
-    if isinstance(event.get("message"), dict):
-        role = str(event["message"].get("role", "") or "")
-    tools = sorted(set(collect_tool_names(event)))
-    snippet = ""
-    if isinstance(event.get("result"), str):
-        snippet = str(event["result"])
-    else:
-        snippet = first_text_snippet(event)
-
-    parts = [f"type={event_type}"]
-    if subtype:
-        parts.append(f"subtype={subtype}")
-    if role:
-        parts.append(f"role={role}")
-    if tools:
-        parts.append(f"tools={','.join(tools[:6])}")
-    if snippet:
-        parts.append(f"snippet={truncate(snippet, 180)}")
-    return " | ".join(parts)
-
-
 def run_claude(
     prompt: str,
     debug_log_path: pathlib.Path,
-    stream_log_path: pathlib.Path,
-    event_log_path: pathlib.Path,
     stderr_log_path: pathlib.Path,
-) -> tuple[int, dict[str, Any] | None, str]:
+) -> tuple[int, str, str]:
     command = [
         CLAUDE_BIN,
         "-p",
@@ -189,44 +127,29 @@ def run_claude(
         "--debug-file",
         str(debug_log_path),
         "--output-format",
-        "stream-json",
-        "--include-partial-messages",
+        "json",
     ]
-    final_payload: dict[str, Any] | None = None
-    with stream_log_path.open("w", encoding="utf-8") as stream_log, event_log_path.open(
-        "w", encoding="utf-8"
-    ) as event_log, stderr_log_path.open("w", encoding="utf-8") as stderr_log:
-        process = subprocess.Popen(
-            command,
-            cwd=WORKDIR,
-            stdout=subprocess.PIPE,
-            stderr=stderr_log,
-            text=True,
-            bufsize=1,
-        )
-        assert process.stdout is not None
-        for raw_line in process.stdout:
-            stream_log.write(raw_line)
-            line = raw_line.strip()
-            if not line:
-                continue
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError:
-                summary = f"non_json_line={truncate(line, 180)}"
-                event_log.write(summary + "\n")
-                print(summary, flush=True)
-                continue
-            summary = summarize_stream_event(event)
-            event_log.write(summary + "\n")
-            print(summary, flush=True)
-            if event.get("type") == "result":
-                final_payload = event
-        exit_code = process.wait()
-    return exit_code, final_payload, stderr_log_path.read_text(encoding="utf-8")
+    completed = subprocess.run(
+        command,
+        cwd=WORKDIR,
+        capture_output=True,
+        text=True,
+    )
+    write_text(stderr_log_path, completed.stderr)
+    return completed.returncode, completed.stdout, completed.stderr
 
 
-def extract_result_text(payload: dict[str, Any] | None) -> str:
+def extract_result_payload(raw_json: str) -> dict | None:
+    if not raw_json.strip():
+        return None
+    try:
+        payload = json.loads(raw_json)
+    except json.JSONDecodeError:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def extract_result_text(payload: dict | None) -> str:
     if not isinstance(payload, dict):
         return ""
     return str(payload.get("result", "") or "")
@@ -315,7 +238,6 @@ def build_task_summary(
     verification_output: str,
     stderr_text: str,
     debug_log_text: str,
-    event_log_text: str,
     patch_text: str,
 ) -> str:
     lines = [
@@ -341,9 +263,6 @@ def build_task_summary(
         "",
         "Raw Claude JSON excerpt:",
         truncate(raw_json, 1200) or "<missing>",
-        "",
-        "Stream event excerpt:",
-        truncate(event_log_text, 1600) or "<empty>",
         "",
         "Result excerpt:",
         truncate(result_text, 1200) or "<missing>",
@@ -377,20 +296,16 @@ def main() -> int:
     result_text = ""
     fatal_error = ""
     debug_log_path = OUTPUT_DIR / "claude-debug.log"
-    stream_log_path = OUTPUT_DIR / "claude-stream.jsonl"
-    event_log_path = OUTPUT_DIR / "claude-event-log.txt"
     stderr_log_path = OUTPUT_DIR / "claude-stderr.log"
 
     try:
-        exit_code, payload, raw_stderr = run_claude(
-            prompt, debug_log_path, stream_log_path, event_log_path, stderr_log_path
-        )
+        exit_code, raw_stdout, raw_stderr = run_claude(prompt, debug_log_path, stderr_log_path)
+        payload = extract_result_payload(raw_stdout)
         result_text = extract_result_text(payload)
-        raw_stdout = json.dumps(payload, ensure_ascii=False) if payload is not None else ""
-        if not stream_log_path.exists() or not stream_log_path.read_text(encoding="utf-8").strip():
-            fatal_error = "Claude stream output is missing or empty."
+        if not raw_stdout.strip():
+            fatal_error = "Claude output JSON is missing or empty."
         elif payload is None:
-            fatal_error = "Claude final result payload is missing or invalid."
+            fatal_error = "Claude output JSON is invalid."
         elif not result_text.strip():
             fatal_error = "Claude result text is missing or empty."
     except Exception as exc:
@@ -399,7 +314,6 @@ def main() -> int:
     write_text(OUTPUT_DIR / "claude-result.json", raw_stdout)
     write_text(OUTPUT_DIR / "claude-result.txt", result_text)
     debug_log_text = debug_log_path.read_text(encoding="utf-8") if debug_log_path.exists() else ""
-    event_log_text = event_log_path.read_text(encoding="utf-8") if event_log_path.exists() else ""
     payload_subtype = payload_string(payload, "subtype")
     payload_stop_reason = payload_string(payload, "stop_reason")
     permission_denials = payload_permission_denials(payload)
@@ -515,7 +429,6 @@ def main() -> int:
             verification_output=verification_output,
             stderr_text=raw_stderr,
             debug_log_text=debug_log_text,
-            event_log_text=event_log_text,
             patch_text=patch_text,
         ),
     )
