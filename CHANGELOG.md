@@ -51,6 +51,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Increased the default `Behavior Benchmark` turn budget from `12` to `16` per task
 - Increased the live benchmark task timeout from `180` to `300` seconds so slower OpenRouter-backed models can finish after successful edits and verification
 - Updated the benchmark harness to copy the repository `.claude/` directory into each fixture workdir so project-local Claude settings are exercised during live behavioral runs
+- Allowed root-level `Read`, `Glob`, and `Grep` in Claude settings so live benchmark agents can inspect `.` without avoidable permission denials
+- Made the `bugfix-zero-division` benchmark contract explicitly require a `README.md` update so docs compliance is unambiguous for the first bugfix gate
 
 ### Fixed
 - New Feature workflow missing implementation and test steps

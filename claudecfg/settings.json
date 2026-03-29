@@ -7,8 +7,11 @@
 
   "permissions": {
     "allow": [
+      "Read(.)",
       "Read(./**)",
+      "Glob(.)",
       "Glob(./**)",
+      "Grep(.)",
       "Grep(./**)",
       "Bash(python:*)",
       "Bash(python3:*)",
