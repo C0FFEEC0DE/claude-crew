@@ -9,7 +9,7 @@ source "${SCRIPT_DIR}/lib.sh"
 ensure_state
 
 code_changed="$(jq -r '.code_changed // false' "$(state_file)")"
-last_message="$(json_get '.last_assistant_message')"
+last_message="$(resolved_last_assistant_message)"
 
 if reason="$(session_block_reason)"; then
     emit_loop_aware_block "stop" "$reason" "$last_message"

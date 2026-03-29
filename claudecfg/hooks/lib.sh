@@ -16,6 +16,89 @@ json_get_bool() {
     jq -r "if ($filter) == true then \"true\" else \"false\" end" <<<"$HOOK_INPUT"
 }
 
+resolve_transcript_path() {
+    local path
+
+    path="$(json_get '.transcript_path')"
+    if [ -z "$path" ] && [ -f "$(state_file)" ]; then
+        path="$(jq -r '.transcript_path // empty' "$(state_file)")"
+    fi
+
+    printf "%s" "$path"
+}
+
+extract_last_assistant_message_from_transcript() {
+    local transcript_path="$1"
+
+    if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
+        return 0
+    fi
+
+    jq -s -r '
+        def flattened_text:
+            if type == "array" then
+                [
+                    .[]?
+                    | if type == "object" then
+                        .text // .result // .content // empty
+                    else
+                        empty
+                    end
+                ]
+                | map(select(type == "string" and (gsub("\\s+"; " ") | length) > 0))
+                | join("\n")
+            else
+                empty
+            end;
+
+        def assistant_text:
+            [
+                .last_assistant_message?,
+                .result?,
+                .message?.content? | flattened_text,
+                .content? | flattened_text,
+                .message?.text?,
+                .text?
+            ]
+            | map(select(type == "string" and (gsub("\\s+"; " ") | length) > 0))
+            | .[0] // "";
+
+        [
+            reverse[]
+            | select(
+                (.type? == "assistant")
+                or (.type? == "result")
+                or (.role? == "assistant")
+                or (.message?.role? == "assistant")
+            )
+            | assistant_text
+            | select(length > 0)
+        ][0] // ""
+    ' "$transcript_path" 2>/dev/null || true
+}
+
+resolved_last_assistant_message() {
+    local message transcript_path
+
+    message="$(
+        jq -r '
+            .last_assistant_message
+            // .assistant_message
+            // .result
+            // .message.text
+            // .text
+            // empty
+        ' <<<"$HOOK_INPUT"
+    )"
+    if [ -n "$message" ]; then
+        printf "%s" "$message"
+        return 0
+    fi
+
+    transcript_path="$(resolve_transcript_path)"
+    extract_last_assistant_message_from_transcript "$transcript_path"
+}
+
 timestamp_utc() {
     date -u +"%Y-%m-%dT%H:%M:%SZ"
 }

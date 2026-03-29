@@ -45,6 +45,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Increased the default `Behavior Benchmark` turn budget from `8` to `12` per task
 - Added an explicit workflow override to benchmark prompts so implementation tasks are not misclassified as `review` by hook-driven prompt classification
 - Switched the default OpenRouter model for the live Claude Code benchmark path to `nvidia/nemotron-3-super-120b-a12b:free`
+- Taught `Stop` and `SubagentStop` shell guards to recover the last assistant summary from `transcript_path` when live runtime payloads omit `last_assistant_message`
 
 ### Fixed
 - New Feature workflow missing implementation and test steps
@@ -55,6 +56,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added shell-based regression coverage for incomplete subagent summaries and missing subagent assistant messages
 - Fixed false `@general-purpose` role recording when specialized subagents were invoked through generic runtime payload fields
 - Reduced stop-loop UX friction by surfacing a ready-to-use no-change footer in stop-guard feedback
+- Fixed live `SubagentStop` and `Stop` false blocks caused by missing `last_assistant_message` in runtime hook payloads despite valid assistant summaries in the session transcript
 
 ## [1.0.0] - 2026-03-19
 

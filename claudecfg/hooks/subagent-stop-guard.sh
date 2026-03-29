@@ -8,7 +8,7 @@ source "${SCRIPT_DIR}/lib.sh"
 
 ensure_state
 
-last_message="$(json_get '.last_assistant_message')"
+last_message="$(resolved_last_assistant_message)"
 
 if [ -z "$last_message" ]; then
     emit_loop_aware_block "subagent_stop" "No assistant summary message was found for this subagent stop event." "$last_message"
