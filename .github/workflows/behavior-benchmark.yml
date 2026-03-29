@@ -12,7 +12,7 @@ on:
       max_turns:
         description: "Maximum Claude Code turns per task"
         required: false
-        default: "32"
+        default: "12"
         type: string
       model:
         description: "Optional OpenRouter model override"
@@ -47,7 +47,7 @@ jobs:
           VAR_MODEL: ${{ vars.OPENROUTER_MODEL }}
         run: |
           task_glob="${INPUT_TASK_GLOB:-bench/tasks/*.json}"
-          max_turns="${INPUT_MAX_TURNS:-32}"
+          max_turns="${INPUT_MAX_TURNS:-12}"
           model="${INPUT_MODEL:-${VAR_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}}"
 
           echo "task_glob=$task_glob" >> "$GITHUB_OUTPUT"
