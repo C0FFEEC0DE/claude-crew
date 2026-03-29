@@ -32,22 +32,22 @@ if [ "$code_changed" = "true" ] && message_reports_no_changes "$last_message"; t
 fi
 
 if [ "$code_changed" = "true" ] && ! message_mentions_verification_status "$last_message"; then
-    emit_loop_aware_block "stop" "Final response must mention verification status after code or config changes." "$last_message"
+    emit_loop_aware_block "stop" "Final response must mention verification status after code or config changes.$(stop_safe_no_change_footer_hint)" "$last_message"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && ! message_mentions_review_outcome "$last_message"; then
-    emit_loop_aware_block "stop" "Final response must mention review outcome or explicitly say review is pending after code or config changes." "$last_message"
+    emit_loop_aware_block "stop" "Final response must mention review outcome or explicitly say review is pending after code or config changes.$(stop_safe_no_change_footer_hint)" "$last_message"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && ! message_mentions_changed_files "$last_message"; then
-    emit_loop_aware_block "stop" "Final response must name key changed files or explicitly say no files changed." "$last_message"
+    emit_loop_aware_block "stop" "Final response must name key changed files or explicitly say no files changed.$(stop_safe_no_change_footer_hint)" "$last_message"
     exit 0
 fi
 
 if [ "$code_changed" = "true" ] && ! message_mentions_remaining_risks "$last_message"; then
-    emit_loop_aware_block "stop" "Final response must state remaining risks or explicitly mark them as none." "$last_message"
+    emit_loop_aware_block "stop" "Final response must state remaining risks or explicitly mark them as none.$(stop_safe_no_change_footer_hint)" "$last_message"
     exit 0
 fi
 

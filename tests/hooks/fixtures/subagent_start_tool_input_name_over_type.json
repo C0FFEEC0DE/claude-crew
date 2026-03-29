@@ -1,0 +1,7 @@
+{
+  "session_id": "case-subagent-start-tool-input-name",
+  "type": "general-purpose",
+  "tool_input": {
+    "name": "Tester"
+  }
+}

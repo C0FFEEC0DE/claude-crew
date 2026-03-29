@@ -264,22 +264,46 @@ emit_permission_request_deny() {
         }'
 }
 
+stop_safe_no_change_footer_hint() {
+    printf ' If this reply did not introduce additional changes, add a stop-safe footer such as: No changes were made. Verification status: no changes to verify. Review outcome: pending. Remaining risks: none.'
+}
+
 extract_subagent_label() {
     local raw
 
     raw="$(
         jq -r '
         .agent_alias
+        // .agentAlias
         // .alias
         // .subagent_alias
+        // .subagentAlias
+        // .subagent_type
+        // .subagentType
+        // .tool_input.agent_alias
+        // .tool_input.agentAlias
+        // .tool_input.alias
+        // .tool_input.subagent_alias
+        // .tool_input.subagentAlias
+        // .tool_input.subagent_type
+        // .tool_input.subagentType
         // .agent_name
+        // .agentName
         // .subagent_name
+        // .subagentName
         // .name
-        // .agent_type
-        // .type
         // .tool_input.agent
         // .tool_input.agent_name
+        // .tool_input.agentName
+        // .tool_input.subagent_name
+        // .tool_input.subagentName
         // .tool_input.name
+        // .tool_input.type
+        // .tool_input.agent_type
+        // .tool_input.agentType
+        // .agent_type
+        // .agentType
+        // .type
         // empty
     ' <<<"$HOOK_INPUT"
     )"

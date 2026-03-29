@@ -63,7 +63,7 @@ Commands and skills that invoke specialized agents:
 - `workflows/security-scan.md` — scan for private data (API keys, passwords, tokens)
 - `workflows/release.md` — optional manual checklist, not part of the mandatory SDLC profile
 
-For `feature`, `bugfix`, `refactor`, `review`, and `docs` work, the profile is now role-enforced before completion. Hooks track canonical subagent aliases in session state, so full names like `@code-reviewer` normalize to `cr`.
+For `feature`, `bugfix`, `refactor`, `review`, and `docs` work, the profile is now role-enforced before completion. Hooks track canonical subagent aliases in session state, so full names like `@code-reviewer` normalize to `cr`. `SubagentStart` normalization also accepts alias/name/subagent-type fields from both snake_case and camelCase payloads before falling back to generic agent types.
 
 Required handoffs by workflow:
 - `feature` -> `@t`, `@cr`, and one of `@e|@a`
@@ -85,6 +85,10 @@ The profile uses hooks as enforcement points, not markdown alone:
 - `SessionEnd` — index transcript paths and session metadata for later dataset work
 
 `Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs. If a repo has no detected `test`, `lint`, or `build` command, `Stop` no longer deadlocks the session, but the final summary must explicitly say that verification was not run and why.
+
+If a later reply in the same session makes no additional changes, use a stop-safe footer such as:
+
+`No changes were made. Verification status: no changes to verify. Review outcome: pending. Remaining risks: none.`
 
 ## Usage
 

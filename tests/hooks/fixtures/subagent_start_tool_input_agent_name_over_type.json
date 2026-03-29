@@ -1,0 +1,7 @@
+{
+  "session_id": "case-subagent-start-tool-input-agent-name",
+  "type": "general-purpose",
+  "tool_input": {
+    "agentName": "Code Reviewer"
+  }
+}

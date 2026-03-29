@@ -147,6 +147,63 @@
     "state_jq": ".subagent_start_count == 1 and .subagents_started == [\"cr\"]"
   },
   {
+    "name": "subagent_start_prefers_tool_input_name_over_generic_type",
+    "script": "claudecfg/hooks/subagent-start.sh",
+    "stdin": "tests/hooks/fixtures/subagent_start_tool_input_name_over_type.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"SubagentStart\" and (.hookSpecificOutput.additionalContext | contains(\"@t\"))",
+    "state_jq": ".subagent_start_count == 1 and .subagents_started == [\"t\"]"
+  },
+  {
+    "name": "subagent_start_prefers_tool_input_subagent_type_over_agent_type",
+    "script": "claudecfg/hooks/subagent-start.sh",
+    "stdin": "tests/hooks/fixtures/subagent_start_tool_input_subagent_type_over_agent_type.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"SubagentStart\" and (.hookSpecificOutput.additionalContext | contains(\"@t\"))",
+    "state_jq": ".subagent_start_count == 1 and .subagents_started == [\"t\"]"
+  },
+  {
+    "name": "subagent_start_supports_camelcase_subagent_type_over_agent_type",
+    "script": "claudecfg/hooks/subagent-start.sh",
+    "stdin": "tests/hooks/fixtures/subagent_start_camelcase_subagent_type_over_agent_type.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"SubagentStart\" and (.hookSpecificOutput.additionalContext | contains(\"@e\"))",
+    "state_jq": ".subagent_start_count == 1 and .subagents_started == [\"e\"]"
+  },
+  {
+    "name": "subagent_start_prefers_top_level_subagent_type_over_generic_type",
+    "script": "claudecfg/hooks/subagent-start.sh",
+    "stdin": "tests/hooks/fixtures/subagent_start_top_level_subagent_type_over_type.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"SubagentStart\" and (.hookSpecificOutput.additionalContext | contains(\"@a\"))",
+    "state_jq": ".subagent_start_count == 1 and .subagents_started == [\"a\"]"
+  },
+  {
+    "name": "subagent_start_keeps_started_roles_unique",
+    "script": "claudecfg/hooks/subagent-start.sh",
+    "stdin": "tests/hooks/fixtures/subagent_start_duplicate_tester.json",
+    "seed_state": "tests/hooks/fixtures/state_subagent_start_duplicate_tester.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"SubagentStart\" and (.hookSpecificOutput.additionalContext | contains(\"@t\"))",
+    "state_jq": ".subagent_start_count == 2 and .subagents_started == [\"t\"]"
+  },
+  {
+    "name": "subagent_start_supports_tool_input_agent_name",
+    "script": "claudecfg/hooks/subagent-start.sh",
+    "stdin": "tests/hooks/fixtures/subagent_start_tool_input_agent_name_over_type.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"SubagentStart\" and (.hookSpecificOutput.additionalContext | contains(\"@cr\"))",
+    "state_jq": ".subagent_start_count == 1 and .subagents_started == [\"cr\"]"
+  },
+  {
+    "name": "subagent_start_supports_tool_input_agent_alias",
+    "script": "claudecfg/hooks/subagent-start.sh",
+    "stdin": "tests/hooks/fixtures/subagent_start_tool_input_agent_alias_over_type.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"SubagentStart\" and (.hookSpecificOutput.additionalContext | contains(\"@dbg\"))",
+    "state_jq": ".subagent_start_count == 1 and .subagents_started == [\"dbg\"]"
+  },
+  {
     "name": "post_edit_write_marks_code_change",
     "script": "claudecfg/hooks/post-edit-write.sh",
     "stdin": "tests/hooks/fixtures/post_edit_write_code.json",

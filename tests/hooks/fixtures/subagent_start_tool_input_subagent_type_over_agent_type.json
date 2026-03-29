@@ -1,0 +1,10 @@
+{
+  "session_id": "case-subagent-start-tool-input-subagent-type",
+  "tool_name": "Agent",
+  "agent_type": "general-purpose",
+  "tool_input": {
+    "description": "Verify Mars Colony game files",
+    "prompt": "Run validation",
+    "subagent_type": "Tester"
+  }
+}

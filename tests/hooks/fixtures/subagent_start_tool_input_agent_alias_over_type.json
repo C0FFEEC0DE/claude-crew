@@ -1,0 +1,7 @@
+{
+  "session_id": "case-subagent-start-tool-input-agent-alias",
+  "type": "general-purpose",
+  "tool_input": {
+    "agentAlias": "dbg"
+  }
+}

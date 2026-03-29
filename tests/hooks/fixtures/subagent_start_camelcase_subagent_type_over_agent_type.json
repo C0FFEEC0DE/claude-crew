@@ -1,0 +1,7 @@
+{
+  "session_id": "case-subagent-start-camelcase-subagent-type",
+  "agentType": "general-purpose",
+  "tool_input": {
+    "subagentType": "Explorer"
+  }
+}

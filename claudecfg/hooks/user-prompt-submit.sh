@@ -8,6 +8,8 @@ source "${SCRIPT_DIR}/lib.sh"
 
 ensure_state
 
+stop_safe_hint=" If a later reply in the same session makes no additional changes, use a stop-safe footer such as: No changes were made. Verification status: no changes to verify. Review outcome: pending. Remaining risks: none."
+
 prompt="$(json_get '.prompt' | tr '[:upper:]' '[:lower:]')"
 task_type="other"
 required_subagents='[]'
@@ -30,27 +32,27 @@ case "$task_type" in
     feature)
         required_subagents='["t","cr"]'
         required_subagent_any_of='[["e","a"]]'
-        context_message="Treat this as a feature workflow. Required subagent handoffs before completion: @t, @cr, and one of @e/@a. Finish implementation, run verification successfully, address review findings, and update docs when behavior changes. release/deploy remains out of scope."
+        context_message="Treat this as a feature workflow. Required subagent handoffs before completion: @t, @cr, and one of @e/@a. Finish implementation, run verification successfully, address review findings, and update docs when behavior changes. release/deploy remains out of scope.${stop_safe_hint}"
         ;;
     bugfix)
         required_subagents='["t","cr"]'
         required_subagent_any_of='[["bug","e","dbg"]]'
-        context_message="Treat this as a bugfix workflow. Required subagent handoffs before completion: @t, @cr, and one of @bug/@e/@dbg. Reproduce or describe the failure mode, implement the fix, execute regression verification, and update docs if behavior changed."
+        context_message="Treat this as a bugfix workflow. Required subagent handoffs before completion: @t, @cr, and one of @bug/@e/@dbg. Reproduce or describe the failure mode, implement the fix, execute regression verification, and update docs if behavior changed.${stop_safe_hint}"
         ;;
     refactor)
         required_subagents='["t","cr"]'
         required_subagent_any_of='[["a","e","hk"]]'
-        context_message="Treat this as a refactor workflow. Required subagent handoffs before completion: @t, @cr, and one of @a/@e/@hk. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and summarize risks plus changed files before stopping."
+        context_message="Treat this as a refactor workflow. Required subagent handoffs before completion: @t, @cr, and one of @a/@e/@hk. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and summarize risks plus changed files before stopping.${stop_safe_hint}"
         ;;
     review)
         required_subagents='["cr"]'
         required_subagent_any_of='[]'
-        context_message="Treat this as a review workflow. Required subagent handoff before completion: @cr. Focus on findings first, call out residual risks or testing gaps, and keep implementation out of scope unless the user explicitly asks for fixes."
+        context_message="Treat this as a review workflow. Required subagent handoff before completion: @cr. Focus on findings first, call out residual risks or testing gaps, and keep implementation out of scope unless the user explicitly asks for fixes.${stop_safe_hint}"
         ;;
     docs)
         required_subagents='["doc"]'
         required_subagent_any_of='[]'
-        context_message="Treat this as a docs workflow. Required subagent handoff before completion: @doc. Keep documentation accurate to current behavior, include examples when they materially help, and note any remaining drift or missing verification."
+        context_message="Treat this as a docs workflow. Required subagent handoff before completion: @doc. Keep documentation accurate to current behavior, include examples when they materially help, and note any remaining drift or missing verification.${stop_safe_hint}"
         ;;
 esac
 

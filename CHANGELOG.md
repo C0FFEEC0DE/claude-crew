@@ -33,6 +33,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Moved `SubagentStop` enforcement into a shell hook so subagent stop validation no longer depends on prompt-hook message availability
 - Updated shell stop gating so repos without detectable `test`/`lint`/`build` commands do not deadlock completion after config changes
 - Added role-based subagent enforcement for `feature`, `bugfix`, `refactor`, `review`, and `docs` workflows before completion, with alias normalization and workflow-specific required roles
+- Extended `SubagentStart` normalization to prefer alias, name, and subagent-type fields from snake_case and camelCase payloads before generic runtime types
+- Updated workflow context and stop feedback with a stop-safe no-op footer for later replies in already dirty sessions
 
 ### Fixed
 - New Feature workflow missing implementation and test steps
@@ -41,6 +43,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `Stop`/`TaskCompleted`/`TeammateIdle` now consistently block after failed verification commands
 - Added regression coverage for force-push, `mkfs*`, remote bootstrap pipes, tool-only stop turns, and incomplete final summaries
 - Added shell-based regression coverage for incomplete subagent summaries and missing subagent assistant messages
+- Fixed false `@general-purpose` role recording when specialized subagents were invoked through generic runtime payload fields
+- Reduced stop-loop UX friction by surfacing a ready-to-use no-change footer in stop-guard feedback
 
 ## [1.0.0] - 2026-03-19
 
