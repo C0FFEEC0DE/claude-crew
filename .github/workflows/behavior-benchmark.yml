@@ -78,6 +78,8 @@ jobs:
           BENCH_SOURCE_REF: ${{ github.ref }}
           TASK_GLOB: ${{ steps.cfg.outputs.task_glob }}
           MAX_TURNS: ${{ steps.cfg.outputs.max_turns }}
+          BENCH_FAIL_FAST: "1"
+          CLAUDE_TIMEOUT_SECONDS: "180"
           CLAUDE_MODEL: ${{ steps.cfg.outputs.model }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ANTHROPIC_BASE_URL: https://openrouter.ai/api

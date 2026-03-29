@@ -7,6 +7,7 @@ OUTPUT_DIR=""
 TASK_GLOB="bench/tasks/*.json"
 MODE="${BENCH_MODE:-}"
 SOURCE_REF="${BENCH_SOURCE_REF:-working-tree}"
+FAIL_FAST="${BENCH_FAIL_FAST:-0}"
 
 usage() {
     echo "Usage: $0 --output-dir DIR [--task-glob GLOB] [--mode mock|command] [--ref REF]" >&2
@@ -142,6 +143,13 @@ for task_file in "${task_files[@]}"; do
     fi
     echo "Structured result:"
     cat "$task_output_dir/result.json"
+
+    if [ "$FAIL_FAST" = "1" ] || [ "$FAIL_FAST" = "true" ]; then
+        if jq -e '.status != "passed"' "$task_output_dir/result.json" >/dev/null; then
+            echo "Fail-fast enabled; stopping benchmark after first failing task: $task_id"
+            break
+        fi
+    fi
 done
 
 source_sha="$(git rev-parse --short HEAD)"

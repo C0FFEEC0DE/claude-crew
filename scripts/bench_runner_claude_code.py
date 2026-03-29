@@ -27,6 +27,7 @@ CLAUDE_MODEL = env_or_default(
     "CLAUDE_MODEL", env_or_default("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free")
 )
 MAX_TURNS = env_or_default("MAX_TURNS", "8")
+CLAUDE_TIMEOUT_SECONDS = int(env_or_default("CLAUDE_TIMEOUT_SECONDS", "180"))
 
 
 def is_docs_path(path_str: str) -> bool:
@@ -142,6 +143,7 @@ def run_claude(
         cwd=WORKDIR,
         capture_output=True,
         text=True,
+        timeout=CLAUDE_TIMEOUT_SECONDS,
     )
     write_text(stderr_log_path, completed.stderr)
     return completed.returncode, completed.stdout, completed.stderr
@@ -161,6 +163,126 @@ def extract_result_text(payload: dict | None) -> str:
     if not isinstance(payload, dict):
         return ""
     return str(payload.get("result", "") or "")
+
+
+def safe_session_id(raw: str) -> str:
+    if not raw:
+        return "no-session"
+    return re.sub(r"[^A-Za-z0-9._-]", "_", raw)
+
+
+def state_file_for_session(session_id: str) -> pathlib.Path:
+    return pathlib.Path.home() / ".claude" / "state" / f"{safe_session_id(session_id)}.json"
+
+
+def resolve_transcript_path(payload: dict | None) -> pathlib.Path | None:
+    if isinstance(payload, dict):
+        direct = str(payload.get("transcript_path", "") or "").strip()
+        if direct:
+            return pathlib.Path(direct)
+
+        session_id = str(payload.get("session_id", "") or "").strip()
+        if session_id:
+            state_file = state_file_for_session(session_id)
+            if state_file.exists():
+                try:
+                    state = json.loads(state_file.read_text(encoding="utf-8"))
+                except json.JSONDecodeError:
+                    return None
+                transcript_path = str(state.get("transcript_path", "") or "").strip()
+                if transcript_path:
+                    return pathlib.Path(transcript_path)
+    return None
+
+
+def flatten_message_text(value: object) -> str:
+    if isinstance(value, str):
+        return value
+    if not isinstance(value, list):
+        return ""
+
+    chunks: list[str] = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        text = item.get("text")
+        if isinstance(text, str) and text.strip():
+            chunks.append(text)
+            continue
+        content = item.get("content")
+        if isinstance(content, str) and content.strip():
+            chunks.append(content)
+    return "\n".join(chunks)
+
+
+def transcript_candidate_text(event: dict) -> str:
+    candidates = [
+        event.get("last_assistant_message"),
+        event.get("result"),
+        event.get("text"),
+    ]
+    message = event.get("message")
+    if isinstance(message, dict):
+        candidates.append(flatten_message_text(message.get("content")))
+        text = message.get("text")
+        if isinstance(text, str):
+            candidates.append(text)
+    candidates.append(flatten_message_text(event.get("content")))
+
+    for candidate in candidates:
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+    return ""
+
+
+def transcript_candidate_score(text: str) -> int:
+    score = 0
+    lowered = text.lower()
+    if has_line_prefix(text, "Verification status:"):
+        score += 4
+    if has_line_prefix(text, "Review outcome:"):
+        score += 4
+    if has_line_prefix(text, "Remaining risks:"):
+        score += 4
+    if "verification" in lowered or "pytest" in lowered or "test" in lowered:
+        score += 1
+    if "review" in lowered:
+        score += 1
+    if "risk" in lowered:
+        score += 1
+    return score
+
+
+def extract_result_text_from_transcript(payload: dict | None) -> str:
+    transcript_path = resolve_transcript_path(payload)
+    if transcript_path is None or not transcript_path.exists():
+        return ""
+
+    best_text = ""
+    best_score = -1
+    try:
+        with transcript_path.open(encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if not isinstance(event, dict):
+                    continue
+                text = transcript_candidate_text(event)
+                if not text:
+                    continue
+                score = transcript_candidate_score(text)
+                if score > best_score or (score == best_score and score > 0):
+                    best_text = text
+                    best_score = score
+    except OSError:
+        return ""
+
+    return best_text if best_score > 0 else ""
 
 
 def run_verification() -> tuple[bool, bool, str]:
@@ -310,12 +432,24 @@ def main() -> int:
         exit_code, raw_stdout, raw_stderr = run_claude(prompt, debug_log_path, stderr_log_path)
         payload = extract_result_payload(raw_stdout)
         result_text = extract_result_text(payload)
+        if not result_text.strip():
+            result_text = extract_result_text_from_transcript(payload)
         if not raw_stdout.strip():
             fatal_error = "Claude output JSON is missing or empty."
         elif payload is None:
             fatal_error = "Claude output JSON is invalid."
         elif not result_text.strip():
             fatal_error = "Claude result text is missing or empty."
+    except subprocess.TimeoutExpired as exc:
+        exit_code = 124
+        raw_stdout = exc.stdout or ""
+        raw_stderr = exc.stderr or ""
+        write_text(stderr_log_path, raw_stderr)
+        payload = extract_result_payload(raw_stdout)
+        result_text = extract_result_text(payload)
+        if not result_text.strip():
+            result_text = extract_result_text_from_transcript(payload)
+        fatal_error = f"Claude timed out after {CLAUDE_TIMEOUT_SECONDS}s."
     except Exception as exc:
         fatal_error = f"Claude runner exception: {exc}"
 
