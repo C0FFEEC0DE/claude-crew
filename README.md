@@ -171,7 +171,7 @@ That workflow:
 
 This is now the only real Claude Code workflow in the repository.
 
-Recommended model:
+Required benchmark model variable:
 
 - `OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free`
 
