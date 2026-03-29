@@ -65,4 +65,5 @@ to the action.
 - The repository profile under `claudecfg/` is installed into `~/.claude` before Claude runs.
 - The workflow is configured with `contents: read`, so any suggested file changes stay in the runner workspace and are captured as artifacts.
 - A green run means more than process survival: the Claude CLI must also emit valid JSON with a non-empty `.result`.
+- This workflow is still a smoke test for the real runtime path. Behavioral acceptance is enforced separately by `.github/workflows/behavior-benchmark.yml`.
 - The GitHub Action wrapper was removed from the automatic path because it currently fails on `push` with `Unsupported event type: push`, so the workflow now calls the Claude Code CLI directly.

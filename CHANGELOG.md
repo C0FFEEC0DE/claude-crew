@@ -18,7 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Hook-based SDLC gate layer for session start, prompt classification, verification tracking, stop control, and transcript indexing
 - Repository-level `Validate` and `Hook Tests` GitHub Actions workflows
 - Real Claude Code workflow via OpenRouter using headless Claude Code CLI with installed repo config
+- Behavior Benchmark workflow that runs the real Claude Code CLI inside isolated benchmark fixtures and uploads per-task artifacts
 - OpenRouter-backed Claude Code setup documentation
+- Behavioral benchmark documentation and summary gate script
 - README status badges for repository workflows
 
 ### Changed
@@ -36,6 +38,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Extended `SubagentStart` normalization to prefer alias, name, and subagent-type fields from snake_case and camelCase payloads before generic runtime types
 - Updated workflow context and stop feedback with a stop-safe no-op footer for later replies in already dirty sessions
 - Tightened the Real Claude Code workflow so successful runs now require valid non-empty JSON output from `claude -p`
+- Reworked benchmark automation so the main acceptance path now uses the real Claude Code CLI instead of a one-shot OpenRouter worker
 
 ### Fixed
 - New Feature workflow missing implementation and test steps

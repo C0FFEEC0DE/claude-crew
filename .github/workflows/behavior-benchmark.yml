@@ -1,0 +1,142 @@
+name: Behavior Benchmark
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      task_glob:
+        description: "Task glob relative to repository root"
+        required: false
+        default: "bench/tasks/*.json"
+        type: string
+      max_turns:
+        description: "Maximum Claude Code turns per task"
+        required: false
+        default: "8"
+        type: string
+      model:
+        description: "Optional OpenRouter model override"
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  benchmark:
+    name: Behavioral Claude Code Benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: behavior-benchmark-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve benchmark config
+        id: cfg
+        shell: bash
+        env:
+          INPUT_TASK_GLOB: ${{ inputs.task_glob }}
+          INPUT_MAX_TURNS: ${{ inputs.max_turns }}
+          INPUT_MODEL: ${{ inputs.model }}
+          VAR_MODEL: ${{ vars.OPENROUTER_MODEL }}
+        run: |
+          task_glob="${INPUT_TASK_GLOB:-bench/tasks/*.json}"
+          max_turns="${INPUT_MAX_TURNS:-8}"
+          model="${INPUT_MODEL:-${VAR_MODEL:-z-ai/glm-4.7-flash}}"
+
+          echo "task_glob=$task_glob" >> "$GITHUB_OUTPUT"
+          echo "max_turns=$max_turns" >> "$GITHUB_OUTPUT"
+          echo "model=$model" >> "$GITHUB_OUTPUT"
+
+      - name: Install Claude configuration
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.claude"
+          cp -R claudecfg/* "$HOME/.claude/"
+          find "$HOME/.claude/hooks" -type f -name "*.sh" -exec chmod +x {} \;
+
+      - name: Install Claude Code CLI and pytest
+        shell: bash
+        run: |
+          node --version
+          npm --version
+          python3 --version
+          npm install -g @anthropic-ai/claude-code
+          python3 -m pip install --upgrade pip pytest
+          claude --version
+
+      - name: Run behavioral benchmark
+        shell: bash
+        env:
+          BENCH_RUNNER_CMD: python3 "$GITHUB_WORKSPACE/scripts/bench_runner_claude_code.py"
+          BENCH_SOURCE_REF: ${{ github.ref }}
+          TASK_GLOB: ${{ steps.cfg.outputs.task_glob }}
+          MAX_TURNS: ${{ steps.cfg.outputs.max_turns }}
+          CLAUDE_MODEL: ${{ steps.cfg.outputs.model }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          ANTHROPIC_BASE_URL: https://openrouter.ai/api
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.OPENROUTER_API_KEY }}
+          ANTHROPIC_API_KEY: ""
+        run: |
+          if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+            echo "OPENROUTER_API_KEY secret is required" >&2
+            exit 1
+          fi
+          bash scripts/run-benchmark.sh \
+            --output-dir bench-output \
+            --mode command \
+            --task-glob "$TASK_GLOB" \
+            --ref "${GITHUB_REF}"
+
+      - name: Render benchmark summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f bench-output/summary.json ]; then
+            {
+              echo "## Behavior Benchmark"
+              echo ""
+              jq -r '
+                def pct($value): (($value * 1000 | round) / 10 | tostring) + "%";
+                "- Model: `${{ steps.cfg.outputs.model }}`",
+                "- Max turns: `${{ steps.cfg.outputs.max_turns }}`",
+                "- Task glob: `${{ steps.cfg.outputs.task_glob }}`",
+                "",
+                "| Task | Status | Changed Files | Notes |",
+                "| --- | --- | --- | --- |",
+                (.tasks[] | "| `\(.task_id)` | `\(.status)` | \((.changed_files // []) | join(\", \")) | \(.notes | gsub(\"\\n\"; \" \") | .[0:180]) |"),
+                "",
+                "- Pass rate: \(pct(.rates.task_pass_rate))",
+                "- Verification pass rate: \(pct(.rates.verification_pass_rate))",
+                "- Review compliance: \(pct(.rates.review_compliance_rate))",
+                "- Docs compliance: \(pct(.rates.docs_compliance_rate))"
+              ' bench-output/summary.json
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Enforce benchmark gate
+        shell: bash
+        run: |
+          bash scripts/assert-benchmark-summary.sh bench-output/summary.json
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: behavior-benchmark-${{ github.run_id }}
+          path: |
+            bench-output/summary.json
+            bench-output/tasks/**/result.json
+            bench-output/tasks/**/claude-result.json
+            bench-output/tasks/**/claude-result.txt
+            bench-output/tasks/**/claude-stderr.log
+            bench-output/tasks/**/claude-stderr-tail.txt
+            bench-output/tasks/**/workspace.patch
+            bench-output/tasks/**/changed-files.json
+            bench-output/tasks/**/runner-error.txt
