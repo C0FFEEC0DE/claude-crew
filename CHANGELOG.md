@@ -53,6 +53,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated the benchmark harness to copy the repository `.claude/` directory into each fixture workdir so project-local Claude settings are exercised during live behavioral runs
 - Allowed root-level `Read`, `Glob`, and `Grep` in Claude settings so live benchmark agents can inspect `.` without avoidable permission denials
 - Made the `bugfix-zero-division` benchmark contract explicitly require a `README.md` update so docs compliance is unambiguous for the first bugfix gate
+- Added task-level `forbidden_doc_patterns` support to the benchmark runner so docs tasks can fail on hallucinated files, commands, or clone steps in generated README changes
+- Tightened `docs-quickstart-clarity` to forbid invented files or install steps such as `requirements.txt`, `generate_report.py`, `git clone`, and `pip install -r`
 
 ### Fixed
 - New Feature workflow missing implementation and test steps

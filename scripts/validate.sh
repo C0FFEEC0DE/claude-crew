@@ -118,6 +118,7 @@ for task_file in "$REPO_ROOT"/bench/tasks/*.json; do
         and has("verification_required")
         and (.success_criteria | type == "array")
         and (.must_not | type == "array")
+        and ((.forbidden_doc_patterns // []) | type == "array")
     ' "$task_file" >/dev/null; then
         report_error "Benchmark task has missing required fields: $task_file"
         continue

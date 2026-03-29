@@ -352,6 +352,24 @@ def first_permission_denial_summary(denials: list[dict]) -> str:
     return str(tool_name)
 
 
+def forbidden_doc_pattern_hits(task: dict, after: dict[str, str], changed_files: list[str]) -> list[str]:
+    patterns = task.get("forbidden_doc_patterns", [])
+    if not isinstance(patterns, list):
+        return []
+
+    hits: list[str] = []
+    for path in changed_files:
+        if not is_docs_path(path):
+            continue
+        content = after.get(path, "")
+        for pattern in patterns:
+            if not isinstance(pattern, str) or not pattern.strip():
+                continue
+            if re.search(pattern, content, re.IGNORECASE | re.MULTILINE):
+                hits.append(f"{path}: /{pattern}/")
+    return hits
+
+
 def build_task_summary(
     task: dict,
     prompt: str,
@@ -466,6 +484,7 @@ def main() -> int:
     changed_files = sorted(path for path in set(before) | set(after) if before.get(path) != after.get(path))
     docs_updated = any(is_docs_path(path) for path in changed_files)
     non_doc_changed_files = [path for path in changed_files if not is_docs_path(path)]
+    doc_pattern_hits = forbidden_doc_pattern_hits(task, after, changed_files)
     completed = len(changed_files) > 0
 
     patch_text = build_patch(before, after)
@@ -509,6 +528,8 @@ def main() -> int:
         failures.append("docs_not_updated")
     if task["category"] == "docs" and non_doc_changed_files:
         failures.append("docs_task_changed_non_docs")
+    if doc_pattern_hits:
+        failures.append("docs_forbidden_content")
 
     if failures:
         status = "failed"
@@ -548,6 +569,7 @@ def main() -> int:
         "claude_stop_reason": payload_stop_reason,
         "permission_denials_count": len(permission_denials),
         "first_permission_denial": first_permission_denial_summary(permission_denials),
+        "forbidden_doc_pattern_hits": doc_pattern_hits,
         "fatal_error": fatal_error,
         "failures": failures,
     }
