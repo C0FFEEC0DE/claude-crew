@@ -62,13 +62,6 @@ jobs:
           echo "model=$model" >> "$GITHUB_OUTPUT"
           echo "timeout_seconds=$timeout_seconds" >> "$GITHUB_OUTPUT"
 
-      - name: Install Claude configuration
-        shell: bash
-        run: |
-          mkdir -p "$HOME/.claude"
-          cp -R claudecfg/* "$HOME/.claude/"
-          find "$HOME/.claude/hooks" -type f -name "*.sh" -exec chmod +x {} \;
-
       - name: Install Claude Code CLI and pytest
         shell: bash
         run: |
@@ -78,6 +71,11 @@ jobs:
           npm install -g @anthropic-ai/claude-code
           python3 -m pip install --upgrade pip pytest
           claude --version
+
+      - name: Install Claude configuration
+        shell: bash
+        run: |
+          bash claudecfg/install.sh
 
       - name: Run behavioral benchmark
         shell: bash
