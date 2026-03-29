@@ -2,7 +2,6 @@
 
 [![Validate](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml)
 [![Hook Tests](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml)
-[![Real Claude Code](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/real-claude-code.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/real-claude-code.yml)
 [![Behavior Benchmark](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml)
 [![Security Scan](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml)
 
@@ -131,15 +130,14 @@ See `claudecfg/settings.json` for permissions and settings.
 
 ## CI and Claude Code
 
-GitHub Actions now covers five layers:
+GitHub Actions now covers four layers:
 
 - `Validate` — fast structural checks on every push and PR
 - `Hook Tests` — behavior tests for the SDLC hook scripts
-- `Real Claude Code` — headless Claude Code smoke run via OpenRouter using the installed `claudecfg` profile
 - `Behavior Benchmark` — real Claude Code acceptance tasks executed inside isolated fixture repositories
 - `Security Scan` — repository secret and sensitive-file scan
 
-All five workflows run automatically on every push.
+All four workflows run automatically on every push.
 
 ### Fast CI
 
@@ -156,22 +154,6 @@ All five workflows run automatically on every push.
 
 This harness verifies that key hooks block dangerous commands, classify prompts correctly, record verification state, reject incomplete stop summaries, and refuse completion after missing or failed verification when code changed.
 
-### Real Claude Code
-
-The repository now uses `.github/workflows/real-claude-code.yml` as the active coding-agent workflow.
-
-That workflow:
-
-- installs `claudecfg/*` into `~/.claude`
-- installs the Claude Code CLI and runs `claude -p`
-- routes Claude Code through OpenRouter
-- fails if Claude does not emit a valid non-empty JSON result
-- runs automatically on every push
-- can also be started manually with a custom prompt
-- uploads `git status`, `git diff --stat`, the patch, and Claude output as workflow artifacts
-
-This workflow is a runtime smoke test. It proves that Claude Code CLI can run through OpenRouter and emit a valid non-empty JSON result, but it is not the main behavioral gate.
-
 ### Behavior Benchmark
 
 `.github/workflows/behavior-benchmark.yml` is the behavioral acceptance gate for the profile.
@@ -187,9 +169,11 @@ That workflow:
 - uploads per-task Claude logs, results, and workspace patches as artifacts
 - fails unless every benchmark task passes
 
+This is now the only real Claude Code workflow in the repository.
+
 Recommended model:
 
-- `OPENROUTER_MODEL=z-ai/glm-4.7-flash`
+- `OPENROUTER_MODEL=nvidia/nemotron-3-super-120b-a12b:free`
 
 ## Logs
 
@@ -202,7 +186,6 @@ Hook logs are written under `~/.claude/logs/`. Session metadata and transcript p
 - `claudecfg/commands/` — command definitions
 - `claudecfg/skills/` — skill definitions, including `/docs`
 - `docs/benchmarking.md` — behavioral benchmark runner and workflow
-- `docs/real-claude-code.md` — real Claude Code workflow and OpenRouter setup
 
 ## Uninstall
 

@@ -23,7 +23,9 @@ def env_or_default(name: str, default: str) -> str:
 
 
 CLAUDE_BIN = env_or_default("CLAUDE_BIN", "claude")
-CLAUDE_MODEL = env_or_default("CLAUDE_MODEL", env_or_default("OPENROUTER_MODEL", "z-ai/glm-4.7-flash"))
+CLAUDE_MODEL = env_or_default(
+    "CLAUDE_MODEL", env_or_default("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free")
+)
 MAX_TURNS = env_or_default("MAX_TURNS", "8")
 
 
@@ -171,6 +173,36 @@ def write_text(path: pathlib.Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
+def build_task_summary(
+    task: dict,
+    status: str,
+    exit_code: int,
+    changed_files: list[str],
+    failures: list[str],
+    result_text: str,
+    verification_output: str,
+    stderr_text: str,
+) -> str:
+    lines = [
+        f"Task: {task['id']}",
+        f"Category: {task['category']}",
+        f"Status: {status}",
+        f"Claude exit code: {exit_code}",
+        f"Changed files: {', '.join(changed_files) if changed_files else 'none'}",
+        f"Failures: {', '.join(failures) if failures else 'none'}",
+        "",
+        "Result excerpt:",
+        truncate(result_text, 1200) or "<missing>",
+        "",
+        "Verification excerpt:",
+        truncate(verification_output, 1200) or "<not run>",
+        "",
+        "stderr excerpt:",
+        truncate(stderr_text, 1200) or "<empty>",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def main() -> int:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     started_at = time.monotonic()
@@ -284,9 +316,24 @@ def main() -> int:
         "verification_summary_present": verification_summary_present,
         "risk_summary_present": risks_present,
         "claude_exit_code": exit_code,
+        "fatal_error": fatal_error,
+        "failures": failures,
     }
 
     write_text(OUTPUT_DIR / "result.json", json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    write_text(
+        OUTPUT_DIR / "task-summary.txt",
+        build_task_summary(
+            task=task,
+            status=status,
+            exit_code=exit_code,
+            changed_files=changed_files,
+            failures=failures,
+            result_text=result_text,
+            verification_output=verification_output,
+            stderr_text=raw_stderr,
+        ),
+    )
     if fatal_error:
         write_text(OUTPUT_DIR / "runner-error.txt", fatal_error + "\n")
     return 0

@@ -121,6 +121,17 @@ for task_file in "${task_files[@]}"; do
     fi
 
     result_files+=("$task_output_dir/result.json")
+
+    echo "=== Benchmark task: $task_id ==="
+    if [ -f "$task_output_dir/task-summary.txt" ]; then
+        cat "$task_output_dir/task-summary.txt"
+    else
+        jq -r '
+            "Status: \(.status)",
+            "Changed files: \((.changed_files // []) | join(", "))",
+            "Notes: \(.notes)"
+        ' "$task_output_dir/result.json"
+    fi
 done
 
 source_sha="$(git rev-parse --short HEAD)"
@@ -181,3 +192,10 @@ jq -s \
     ' "${result_files[@]}" > "$OUTPUT_DIR/summary.json"
 
 echo "Benchmark summary written to $OUTPUT_DIR/summary.json"
+jq -r '
+    "Benchmark totals:",
+    "- tasks: \(.totals.tasks)",
+    "- passed: \(.totals.passed)",
+    "- tool_failures: \(.totals.tool_failures)",
+    "- task_pass_rate: \(.rates.task_pass_rate)"
+' "$OUTPUT_DIR/summary.json"

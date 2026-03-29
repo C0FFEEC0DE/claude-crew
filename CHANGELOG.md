@@ -17,9 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - LICENSE file (MIT)
 - Hook-based SDLC gate layer for session start, prompt classification, verification tracking, stop control, and transcript indexing
 - Repository-level `Validate` and `Hook Tests` GitHub Actions workflows
-- Real Claude Code workflow via OpenRouter using headless Claude Code CLI with installed repo config
 - Behavior Benchmark workflow that runs the real Claude Code CLI inside isolated benchmark fixtures and uploads per-task artifacts
-- OpenRouter-backed Claude Code setup documentation
+- OpenRouter-backed Claude Code benchmark setup documentation
 - Behavioral benchmark documentation and summary gate script
 - README status badges for repository workflows
 
@@ -31,14 +30,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated GUIDE.md with new agents and skills
 - Updated GitHub Actions workflows to run on every push
 - Replaced the custom benchmark coding-agent workflow with automatic real Claude Code CLI runs via OpenRouter
+- Removed the standalone `Real Claude Code` smoke workflow so `Behavior Benchmark` is now the only real-agent GitHub workflow
 - Tightened hook safety and completion gates: expanded dangerous-command blocking, unified failed test/lint/build gating, and moved `Stop` enforcement fully into shell hooks to avoid tool-only prompt-hook failures
 - Moved `SubagentStop` enforcement into a shell hook so subagent stop validation no longer depends on prompt-hook message availability
 - Updated shell stop gating so repos without detectable `test`/`lint`/`build` commands do not deadlock completion after config changes
 - Added role-based subagent enforcement for `feature`, `bugfix`, `refactor`, `review`, and `docs` workflows before completion, with alias normalization and workflow-specific required roles
 - Extended `SubagentStart` normalization to prefer alias, name, and subagent-type fields from snake_case and camelCase payloads before generic runtime types
 - Updated workflow context and stop feedback with a stop-safe no-op footer for later replies in already dirty sessions
-- Tightened the Real Claude Code workflow so successful runs now require valid non-empty JSON output from `claude -p`
 - Reworked benchmark automation so the main acceptance path now uses the real Claude Code CLI instead of a one-shot OpenRouter worker
+- Improved GitHub Actions observability with readable Claude diagnostics in workflow logs, step summaries, and benchmark task artifacts
+- Switched the default OpenRouter model for the live Claude Code benchmark path to `nvidia/nemotron-3-super-120b-a12b:free`
 
 ### Fixed
 - New Feature workflow missing implementation and test steps

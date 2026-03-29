@@ -48,7 +48,7 @@ jobs:
         run: |
           task_glob="${INPUT_TASK_GLOB:-bench/tasks/*.json}"
           max_turns="${INPUT_MAX_TURNS:-8}"
-          model="${INPUT_MODEL:-${VAR_MODEL:-z-ai/glm-4.7-flash}}"
+          model="${INPUT_MODEL:-${VAR_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}}"
 
           echo "task_glob=$task_glob" >> "$GITHUB_OUTPUT"
           echo "max_turns=$max_turns" >> "$GITHUB_OUTPUT"
@@ -115,7 +115,17 @@ jobs:
                 "- Pass rate: \(pct(.rates.task_pass_rate))",
                 "- Verification pass rate: \(pct(.rates.verification_pass_rate))",
                 "- Review compliance: \(pct(.rates.review_compliance_rate))",
-                "- Docs compliance: \(pct(.rates.docs_compliance_rate))"
+                "- Docs compliance: \(pct(.rates.docs_compliance_rate))",
+                (
+                  if ([.tasks[] | select(.status != "passed")] | length) > 0 then
+                    "",
+                    "### Failed Tasks",
+                    "",
+                    ([.tasks[] | select(.status != "passed") | "- `\(.task_id)`: \((.failures // []) | join(\", \")) | \(.notes | gsub(\"\\n\"; \" \") | .[0:220])"][])
+                  else
+                    empty
+                  end
+                )
               ' bench-output/summary.json
             } >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -139,4 +149,5 @@ jobs:
             bench-output/tasks/**/claude-stderr-tail.txt
             bench-output/tasks/**/workspace.patch
             bench-output/tasks/**/changed-files.json
+            bench-output/tasks/**/task-summary.txt
             bench-output/tasks/**/runner-error.txt

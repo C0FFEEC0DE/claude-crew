@@ -1,11 +1,11 @@
 # Behavioral Benchmarking
 
-This repository has two different benchmark paths:
+This repository has two benchmark paths:
 
 - `scripts/bench_runner_openrouter.py` — legacy one-shot OpenRouter worker for cheap baseline experiments
-- `scripts/bench_runner_claude_code.py` — real Claude Code benchmark runner that executes `claude -p` inside isolated fixture repositories
+- `scripts/bench_runner_claude_code.py` — the primary real Claude Code benchmark runner that executes `claude -p` inside isolated fixture repositories
 
-If you want to know whether the installed profile actually works as a coding agent, use the real Claude Code path.
+If you want to know whether the installed profile actually works as a coding agent, use the real Claude Code path. This is also the only live Claude runtime workflow in GitHub Actions.
 
 ## What It Checks
 
@@ -51,7 +51,7 @@ Repository settings:
 Recommended model:
 
 ```text
-z-ai/glm-4.7-flash
+nvidia/nemotron-3-super-120b-a12b:free
 ```
 
 ## Local Usage
@@ -63,7 +63,7 @@ export OPENROUTER_API_KEY=...
 export ANTHROPIC_BASE_URL=https://openrouter.ai/api
 export ANTHROPIC_AUTH_TOKEN="$OPENROUTER_API_KEY"
 export ANTHROPIC_API_KEY=
-export CLAUDE_MODEL="${CLAUDE_MODEL:-z-ai/glm-4.7-flash}"
+export CLAUDE_MODEL="${CLAUDE_MODEL:-nvidia/nemotron-3-super-120b-a12b:free}"
 export BENCH_RUNNER_CMD="python3 scripts/bench_runner_claude_code.py"
 bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench --mode command
 bash scripts/assert-benchmark-summary.sh /tmp/claude-bench/summary.json
@@ -80,6 +80,7 @@ bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench-mock --mode mock
 Each task directory contains:
 
 - `result.json`
+- `task-summary.txt`
 - `claude-result.json`
 - `claude-result.txt`
 - `claude-stderr.log`
@@ -91,3 +92,4 @@ The benchmark root contains:
 - `summary.json`
 
 Use `summary.json` as the machine-readable gate and the per-task artifacts for debugging failures.
+The workflow log and GitHub step summary also print a compact per-task summary so you can usually see the failure cause without downloading artifacts.

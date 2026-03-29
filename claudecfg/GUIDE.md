@@ -155,7 +155,6 @@ Repository-level checks are separate from the local Claude profile:
 
 - `.github/workflows/validate.yml` — structural validation on every push and PR
 - `.github/workflows/hooks-test.yml` — deterministic hook behavior tests on every push and PR
-- `.github/workflows/real-claude-code.yml` — real Claude Code smoke run on every push, plus manual runs with custom prompts
 - `.github/workflows/behavior-benchmark.yml` — behavioral acceptance tasks using the real Claude Code CLI inside benchmark fixtures
 - `.github/workflows/security-scan.yml` — repository secret scan on every push and PR, plus weekly schedule
 
