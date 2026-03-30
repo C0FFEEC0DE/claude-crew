@@ -81,15 +81,6 @@ cwd="$(json_get '.workspace.current_dir')"
 if [ -z "$cwd" ]; then
     cwd="$(json_get '.cwd')"
 fi
-model="$(json_get '.model.display_name')"
-if [ -z "$model" ]; then
-    model="unknown-model"
-fi
-
-repo_name="${cwd##*/}"
-branch="$(branch_name "$cwd")"
-dirty="$(dirty_marker "$cwd")"
-
 state_file="${HOME}/.claude/state/$(safe_session_id "$session_id").json"
 task_type="other"
 tests_ok="false"
@@ -222,38 +213,33 @@ if [ "$docs_changed" = "true" ] && [ "$task_type" != "docs" ]; then
     workflow_tokens+=("$(state_indicator "DOC" "info")")
 fi
 
-overall="WAIT"
+overall="PENDING"
 overall_state="warn"
 
 if [ -n "$stop_block_reason" ]; then
     overall="BLOCK"
     overall_state="bad"
 elif [ "$verification_state" = "ok" ] && [ "$review_state" = "ok" ] && [ "$workflow_ok" = "true" ]; then
-    overall="OK"
+    overall="READY"
     overall_state="ok"
 fi
 
-first_line_parts=()
-first_line_parts+=("$(colorize "$color_cyan" "${repo_name:-repo}")")
-if [ -n "$branch" ]; then
-    first_line_parts+=("$(colorize "$color_blue" "${branch}${dirty}")")
-fi
-first_line_parts+=("$(colorize "$color_green" "$model")")
+line_parts=()
 if [ -n "$task_type" ] && [ "$task_type" != "other" ]; then
-    first_line_parts+=("$(colorize "$color_yellow" "$task_type")")
+    line_parts+=("$(colorize "$color_yellow" "$task_type")")
 fi
 
-second_line_parts=()
-second_line_parts+=("$(state_indicator "VER" "$verification_state")")
-second_line_parts+=("$(state_indicator "CR" "$review_state")")
-second_line_parts+=("${workflow_tokens[@]}")
-second_line_parts+=("$(state_indicator "$overall" "$overall_state")")
+indicator_parts=()
+indicator_parts+=("$(state_indicator "TEST" "$verification_state")")
+indicator_parts+=("$(state_indicator "REVIEW" "$review_state")")
+indicator_parts+=("${workflow_tokens[@]}")
+indicator_parts+=("$(state_indicator "$overall" "$overall_state")")
 
-printf "%s\n" "$(IFS=' | '; printf "%s" "${first_line_parts[*]}")"
-printf "%s" "$(IFS=' '; printf "%s" "${second_line_parts[*]}")"
+printf "%s" "$(IFS=' | '; printf "%s" "${line_parts[*]}")"
+printf "  %s" "$(IFS=' '; printf "%s" "${indicator_parts[*]}")"
 
 if [ -n "$stop_block_reason" ]; then
     short_reason="$(printf "%s" "$stop_block_reason" | cut -c1-80)"
-    printf "  %s" "$(colorize "$color_red" "$short_reason")"
+    printf "  %s %s" "$(colorize "$color_dim" "|")" "$(colorize "$color_red" "$short_reason")"
 fi
 printf "\n"

@@ -96,11 +96,10 @@ If a later reply in the same session makes no additional changes after earlier c
 
 The bundled status line lives in `statusline.sh` and is enabled from `settings.json`.
 
-It renders:
-- repo and branch on the first line
-- model and workflow type on the first line
-- short gate indicators on the second line: `VER`, `CR`, and workflow-specific agent markers such as `BUG`, `EXP`, `DBG`, `ARC`, `HK`, or `DOC`
-- `OK`, `WAIT`, or `BLOCK` based on the current session state from `~/.claude/state/<session>.json`
+It renders a single line with:
+- workflow type
+- short gate indicators: `TEST`, `REVIEW`, and workflow-specific agent markers such as `BUG`, `EXP`, `DBG`, `ARC`, `HK`, or `DOC`
+- `READY`, `PENDING`, or `BLOCK` based on the current session state from `~/.claude/state/<session>.json`
 
 ## Usage
 

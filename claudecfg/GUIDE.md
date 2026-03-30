@@ -85,18 +85,17 @@ Outside project folders, confirmation is required.
 The bundled config enables `~/.claude/statusline.sh` through `statusLine` in `settings.json`.
 
 Layout:
-- line 1: `repo | branch | model | task_type`
-- line 2: `VER CR ... | OK|WAIT|BLOCK`
+- one line: `task_type  TEST REVIEW ... READY|PENDING|BLOCK`
 
 Indicator semantics:
-- `VER` turns green after successful verification, yellow while pending, red after a failed test/lint/build command
-- `CR` turns green after `@cr`
+- `TEST` turns green after successful verification, yellow while pending, red after a failed test/lint/build command
+- `REVIEW` turns green after `@cr`
 - workflow markers show the relevant agent branch for the current task:
   - `bugfix` -> `BUG EXP DBG`
   - `feature` -> `EXP ARC`
   - `refactor` -> `HK EXP ARC`
   - `docs` -> `DOC`
-- `OK`, `WAIT`, and `BLOCK` reflect the overall gate state, including `stop_block_reason` when present
+- `READY`, `PENDING`, and `BLOCK` reflect the overall gate state, including `stop_block_reason` when present
 
 The script reads Claude Code status-line JSON from stdin and merges it with the hook state stored in `~/.claude/state/<session_id>.json`.
 
