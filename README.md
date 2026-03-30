@@ -120,6 +120,8 @@ If a later reply in the same session makes no additional changes after earlier c
 Manager owns orchestration by default and keeps the workflow moving until completion or a concrete blocker. Use explicit wording like "plan only" when you want planning without execution. Completion is still enforced by hooks. The expected flow is:
 `discover -> design -> implement -> verify -> review -> docs when behavior changes -> cleanup`
 
+Manager may also launch multiple agents of the same role in parallel when their scopes are clearly separated. Completion gates remain role-based; parallel instances are tracked separately for orchestration visibility.
+
 ### Use slash command
 ```
 /manager

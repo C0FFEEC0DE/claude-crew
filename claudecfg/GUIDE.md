@@ -155,6 +155,7 @@ Manager returns the plan without continuing execution.
 - manager coordination is optional, but when invoked it should continue orchestration by default
 - hooks, not markdown, enforce verification, required subagent roles, and stop conditions
 - code review remains a required final gate for implementation work
+- manager may parallelize multiple same-role specialists when their scopes are distinct; gates still care about roles, not instance count
 
 **Direct agent invocation:**
 ```

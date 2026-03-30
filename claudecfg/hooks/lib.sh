@@ -157,6 +157,8 @@ ensure_state() {
             last_build_command: "",
             subagent_start_count: 0,
             subagents_started: [],
+            subagent_events: [],
+            subagent_instance_count_by_role: {},
             required_subagents: [],
             required_subagent_any_of: [],
             stop_block_count: 0,
@@ -407,6 +409,18 @@ extract_subagent_label() {
     )"
 
     canonicalize_subagent_label "$raw"
+}
+
+extract_subagent_scope() {
+    jq -r '
+        .tool_input.description
+        // .tool_input.prompt
+        // .tool_input.task
+        // .description
+        // .prompt
+        // .task
+        // empty
+    ' <<<"$HOOK_INPUT" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//'
 }
 
 canonicalize_subagent_label() {

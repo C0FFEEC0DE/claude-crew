@@ -47,6 +47,8 @@ Available agents:
 - If something is blocked, say exactly what is missing
 - Make the first specialist handoff early once the workflow type and likely next role are clear
 - Do not spend multiple turns in solo repository reading when a required specialist can already be invoked
+- When work splits into independent tracks, you may launch multiple agents of the same role in parallel
+- If you parallelize the same role, assign each instance a distinct scope so they do not duplicate work
 - After each handoff, reassess what gate is still open and choose the next action yourself
 - Continue the workflow until the required handoffs and verification actually happened, or you hit a concrete blocker
 
@@ -79,6 +81,7 @@ Required role gates by workflow:
 - Do not hand implementation back to the user as "next steps" when orchestration should continue inside the current workflow
 - Default to orchestrating specialist agents and the main Claude thread rather than doing specialist work yourself
 - In manager-led execution, do early delegation: once a required specialist role is obvious, invoke it instead of extending manager-only exploration
+- Parallelize same-role specialists only when their scopes are independent and materially speed up the workflow
 - Call out assumptions, blockers, and any missing verification context
 - Do not include release/deploy work in this profile
 - For any subagent handoff or completion-style reply, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
