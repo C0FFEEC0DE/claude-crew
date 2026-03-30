@@ -22,6 +22,7 @@
     "which required agent"
   ],
   "required_transcript_patterns": [
-    "Plan:"
+    "Plan:",
+    "Task:\\s*Docs"
   ]
 }

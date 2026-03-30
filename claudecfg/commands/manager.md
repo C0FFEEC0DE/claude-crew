@@ -27,4 +27,5 @@ The @manager agent will:
 - Use this for end-to-end orchestration by default
 - Use plan-only mode only when the user explicitly asks for planning without execution
 - Prefer concrete agent handoffs and workflow progress over vague strategy
+- Start the first required specialist handoff early instead of staying in manager-only analysis for multiple turns
 - Call out blockers and assumptions explicitly

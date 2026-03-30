@@ -800,6 +800,34 @@ session_agent_enforcement_reason() {
     return 1
 }
 
+session_manager_idle_reason() {
+    local state task_type manager_mode specialist_count
+
+    state="$(state_file)"
+    task_type="$(jq -r '.task_type // "other"' "$state")"
+    manager_mode="$(jq -r '.manager_mode // "none"' "$state")"
+
+    case "$task_type" in
+        feature|bugfix|refactor|review|docs)
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    if [ "$manager_mode" != "orchestrate" ]; then
+        return 1
+    fi
+
+    specialist_count="$(jq -r '[.subagents_started[]? | select(. != "m")] | length' "$state")"
+    if [ "$specialist_count" = "0" ]; then
+        printf "Manager-led orchestration has not handed off to any specialist yet. Start the first required specialist handoff before going idle."
+        return 0
+    fi
+
+    return 1
+}
+
 is_docs_path() {
     local file_path="$1"
 

@@ -90,7 +90,7 @@ if [ -n "$context_message" ]; then
     case "$task_type" in
         feature)
             if [ "$manager_mode" = "orchestrate" ]; then
-                context_message="${context_message} Manager-led orchestration is active. Required before completion: @m, successful verification or @t, plus @cr and one of @e/@a. Keep the workflow moving through implementation, verification, review, and docs when behavior changes.${stop_safe_hint}"
+                context_message="${context_message} Manager-led orchestration is active. Required before completion: @m, successful verification or @t, plus @cr and one of @e/@a. Start the first required specialist handoff early instead of spending multiple turns in manager-only exploration. Keep the workflow moving through implementation, verification, review, and docs when behavior changes.${stop_safe_hint}"
             elif [ "$manager_mode" = "plan_only" ]; then
                 context_message="${context_message} Plan-only manager mode is active. Return a concrete execution plan without continuing implementation or specialist handoffs in this session."
             else
@@ -99,7 +99,7 @@ if [ -n "$context_message" ]; then
             ;;
         bugfix)
             if [ "$manager_mode" = "orchestrate" ]; then
-                context_message="${context_message} Manager-led orchestration is active. Required before completion: @m, successful verification or @t, plus @cr and one of @bug/@e/@dbg. Reproduce or describe the failure mode, implement the fix, execute regression verification, and update docs if behavior changed.${stop_safe_hint}"
+                context_message="${context_message} Manager-led orchestration is active. Required before completion: @m, successful verification or @t, plus @cr and one of @bug/@e/@dbg. Start the first required specialist handoff early instead of spending multiple turns in manager-only exploration. Reproduce or describe the failure mode, implement the fix, execute regression verification, and update docs if behavior changed.${stop_safe_hint}"
             elif [ "$manager_mode" = "plan_only" ]; then
                 context_message="${context_message} Plan-only manager mode is active. Return a concrete bugfix plan without continuing implementation or specialist handoffs in this session."
             else
@@ -108,7 +108,7 @@ if [ -n "$context_message" ]; then
             ;;
         refactor)
             if [ "$manager_mode" = "orchestrate" ]; then
-                context_message="${context_message} Manager-led orchestration is active. Required before completion: @m, successful verification or @t, plus @cr and one of @a/@e/@hk. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and decide whether docs need updates.${stop_safe_hint}"
+                context_message="${context_message} Manager-led orchestration is active. Required before completion: @m, successful verification or @t, plus @cr and one of @a/@e/@hk. Start the first required specialist handoff early instead of spending multiple turns in manager-only exploration. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and decide whether docs need updates.${stop_safe_hint}"
             elif [ "$manager_mode" = "plan_only" ]; then
                 context_message="${context_message} Plan-only manager mode is active. Return a concrete refactor plan without continuing implementation or specialist handoffs in this session."
             else
@@ -117,7 +117,7 @@ if [ -n "$context_message" ]; then
             ;;
         review)
             if [ "$manager_mode" = "orchestrate" ]; then
-                context_message="${context_message} Manager-led orchestration is active. Required subagent handoffs before completion: @m and @cr. Focus on findings first, call out residual risks or testing gaps, and keep implementation out of scope unless the user explicitly asks for fixes.${stop_safe_hint}"
+                context_message="${context_message} Manager-led orchestration is active. Required subagent handoffs before completion: @m and @cr. Start the code-reviewer handoff early instead of extending manager-only analysis. Focus on findings first, call out residual risks or testing gaps, and keep implementation out of scope unless the user explicitly asks for fixes.${stop_safe_hint}"
             elif [ "$manager_mode" = "plan_only" ]; then
                 context_message="${context_message} Plan-only manager mode is active. Return the review plan without continuing specialist handoffs in this session."
             else
@@ -126,7 +126,7 @@ if [ -n "$context_message" ]; then
             ;;
         docs)
             if [ "$manager_mode" = "orchestrate" ]; then
-                context_message="${context_message} Manager-led orchestration is active. Required subagent handoffs before completion: @m and @doc. Keep documentation accurate to current behavior, include examples when they materially help, and note any remaining drift or missing verification.${stop_safe_hint}"
+                context_message="${context_message} Manager-led orchestration is active. Required subagent handoffs before completion: @m and @doc. Start the docwriter handoff early instead of extending manager-only analysis. Keep documentation accurate to current behavior, include examples when they materially help, and note any remaining drift or missing verification.${stop_safe_hint}"
             elif [ "$manager_mode" = "plan_only" ]; then
                 context_message="${context_message} Plan-only manager mode is active. Return the docs plan without continuing specialist handoffs in this session."
             else

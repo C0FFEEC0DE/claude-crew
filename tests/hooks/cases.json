@@ -548,5 +548,13 @@
     "seed_state": "tests/hooks/fixtures/state_failed_lint_after_tests.json",
     "expect_exit": 2,
     "stderr_regex": "latest lint/static-check command failed"
+  },
+  {
+    "name": "teammate_idle_blocks_manager_led_workflow_without_specialist_handoff",
+    "script": "claudecfg/hooks/teammate-idle.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_feature_required_roles.json",
+    "seed_state": "tests/hooks/fixtures/state_feature_manager_only_started.json",
+    "expect_exit": 2,
+    "stderr_regex": "Manager-led orchestration has not handed off to any specialist yet"
   }
 ]

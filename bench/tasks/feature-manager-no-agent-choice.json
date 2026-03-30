@@ -22,5 +22,8 @@
     "which agent would you prefer",
     "would you like me to start with (the )?(explorer|architect|tester|code reviewer)",
     "which required agent"
+  ],
+  "required_transcript_patterns": [
+    "Task:\\s*(Explore|Design|Code Review|Testing)"
   ]
 }
