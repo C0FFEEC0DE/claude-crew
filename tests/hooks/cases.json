@@ -459,6 +459,13 @@
     "stdout_jq": ".decision == \"block\" and (.reason | contains(\"@cr\"))"
   },
   {
+    "name": "stop_guard_allows_review_when_skill_transcript_proves_code_reviewer_started",
+    "script": "claudecfg/hooks/stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/stop_guard_review_skill_transcript.json",
+    "seed_state": "tests/hooks/fixtures/state_review_manager_transcript_skill.json",
+    "expect_exit": 0
+  },
+  {
     "name": "stop_guard_blocks_review_only_without_verification_status",
     "script": "claudecfg/hooks/stop-guard.sh",
     "stdin": "tests/hooks/fixtures/stop_guard_review_only.json",
@@ -603,5 +610,12 @@
     "seed_state": "tests/hooks/fixtures/state_feature_manager_only_started.json",
     "expect_exit": 2,
     "stderr_regex": "Manager-led orchestration has not handed off to any specialist yet"
+  },
+  {
+    "name": "teammate_idle_allows_manager_led_review_when_skill_transcript_shows_specialist",
+    "script": "claudecfg/hooks/teammate-idle.sh",
+    "stdin": "tests/hooks/fixtures/stop_guard_review_skill_transcript.json",
+    "seed_state": "tests/hooks/fixtures/state_review_manager_transcript_skill.json",
+    "expect_exit": 0
   }
 ]

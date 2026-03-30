@@ -482,6 +482,72 @@ array_contains() {
     return 1
 }
 
+sorted_unique_lines() {
+    awk 'NF { seen[$0] = 1 } END { for (line in seen) print line }' | sort
+}
+
+transcript_text_content() {
+    local transcript_path="$1"
+
+    if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
+        return 0
+    fi
+
+    jq -Rr 'fromjson? | .. | strings?' "$transcript_path" 2>/dev/null || true
+}
+
+infer_started_roles_from_transcript() {
+    local transcript_path text roles=""
+
+    transcript_path="$(resolve_transcript_path)"
+    if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
+        return 0
+    fi
+
+    text="$(transcript_text_content "$transcript_path" | tr '[:upper:]' '[:lower:]')"
+    [ -z "$text" ] && return 0
+
+    if grep -Fq 'skill(/manager)' <<<"$text"; then
+        roles="${roles}"$'\n''m'
+    fi
+    if grep -Fq 'skill(/review)' <<<"$text"; then
+        roles="${roles}"$'\n''cr'
+    fi
+    if grep -Fq 'skill(/test)' <<<"$text"; then
+        roles="${roles}"$'\n''t'
+    fi
+    if grep -Fq 'skill(/explore)' <<<"$text"; then
+        roles="${roles}"$'\n''e'
+    fi
+    if grep -Fq 'skill(/design)' <<<"$text"; then
+        roles="${roles}"$'\n''a'
+    fi
+    if grep -Fq 'skill(/bug)' <<<"$text"; then
+        roles="${roles}"$'\n''bug'
+    fi
+    if grep -Fq 'skill(/debug)' <<<"$text"; then
+        roles="${roles}"$'\n''dbg'
+    fi
+    if grep -Fq 'skill(/docs)' <<<"$text"; then
+        roles="${roles}"$'\n''doc'
+    fi
+    if grep -Fq 'skill(/refactor)' <<<"$text"; then
+        roles="${roles}"$'\n''hk'
+    fi
+
+    printf "%s\n" "$roles" | sorted_unique_lines
+}
+
+effective_started_roles() {
+    local state explicit_roles inferred_roles
+
+    state="$(state_file)"
+    explicit_roles="$(jq -r '.subagents_started[]? // empty' "$state")"
+    inferred_roles="$(infer_started_roles_from_transcript)"
+
+    printf "%s\n%s\n" "$explicit_roles" "$inferred_roles" | sorted_unique_lines
+}
+
 format_subagent_list() {
     local item result=""
 
@@ -766,7 +832,7 @@ session_agent_enforcement_reason() {
         successful_verification="true"
     fi
 
-    mapfile -t started < <(jq -r '.subagents_started[]? // empty' "$state")
+    mapfile -t started < <(effective_started_roles)
     mapfile -t required < <(jq -r '.required_subagents[]? // empty' "$state")
 
     while IFS= read -r group_json; do
@@ -839,7 +905,7 @@ session_manager_idle_reason() {
         return 1
     fi
 
-    specialist_count="$(jq -r '[.subagents_started[]? | select(. != "m")] | length' "$state")"
+    specialist_count="$(effective_started_roles | grep -Ev '^(|m)$' | wc -l | tr -d ' ')"
     if [ "$specialist_count" = "0" ]; then
         printf "Manager-led orchestration has not handed off to any specialist yet. Start the first required specialist handoff before going idle."
         return 0
