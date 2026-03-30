@@ -38,7 +38,7 @@ Available agents:
 - `@t` / `@tester` — design or run verification
 - `@cr` / `@code-reviewer` — review code and risks
 - `@doc` / `@docwriter` — update docs
-- `@hk` / `@housekeeper` — cleanup and bounded refactor hygiene
+- `@hk` / `@housekeeper` — Veles, cleanup and bounded refactor hygiene
 
 ### 3. Coordinate Execution
 - Pass concrete context between agents

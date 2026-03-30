@@ -40,7 +40,7 @@ In project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`), ag
 | `@bug` | Bugbuster | Cyber Detective | Bug hunting |
 | `@dbg` | Debugger | Bug Hunter | Debugging issues |
 | `@doc` | Docwriter | Wiki-Wiki | Documentation |
-| `@hk` | Housekeeper | The Cleaner | Cleanup + bounded refactor hygiene |
+| `@hk` | Veles | Veles | Cleanup + bounded refactor hygiene |
 
 Full names also work: `@manager`, `@code-reviewer`, etc.
 
@@ -54,7 +54,7 @@ Slash commands that invoke specialized agents. The hooks still enforce the actua
 - `/debug` — debugging session
 - `/test` — testing session (invokes @tester)
 - `/design` — design session (invokes @architect)
-- `/refactor` — refactoring session (invokes @housekeeper)
+- `/refactor` — refactoring session (invokes @housekeeper, Veles)
 - `/review` — code review (invokes @code-reviewer)
 - `/docs` — documentation session (invokes @docwriter)
 

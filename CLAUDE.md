@@ -38,7 +38,7 @@ Commands `/debug`, `/test`, `/design`, `/refactor`, `/review` and the `/docs` sk
 - `@t` — Tester (design, run, and verify tests)
 - `@cr` — Code Reviewer (review)
 - `@doc` — Docwriter (documentation)
-- `@hk` — Housekeeper (cleanup)
+- `@hk` — Veles (cleanup)
 
 Subagent handoffs normalize aliases, names, and subagent-type fields from both snake_case and camelCase payloads before generic runtime types are considered.
 

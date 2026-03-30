@@ -36,7 +36,7 @@ The hooks enforce the actual handoff and stop gates; the commands below are the 
 - `/debug` — debugging session
 - `/test` — testing session (invokes @tester)
 - `/design` — design session (invokes @architect)
-- `/refactor` — refactoring session (invokes @housekeeper)
+- `/refactor` — refactoring session (invokes @housekeeper, Veles)
 - `/review` — code review (invokes @code-reviewer)
 - `/docs` — documentation session (invokes @docwriter)
 
@@ -52,7 +52,7 @@ The hooks enforce the actual handoff and stop gates; the commands below are the 
 | `@bug` | Bugbuster | Bug hunting |
 | `@dbg` | Debugger | Debugging issues |
 | `@doc` | Docwriter | Documentation |
-| `@hk` | Housekeeper | Cleanup + bounded refactor hygiene |
+| `@hk` | Veles | Cleanup + bounded refactor hygiene |
 
 Also works: `@manager`, `@code-reviewer`, etc.
 

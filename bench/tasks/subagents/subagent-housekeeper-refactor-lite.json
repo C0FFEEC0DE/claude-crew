@@ -10,7 +10,7 @@
     "Duplication between render_title() and render_subtitle() is reduced",
     "Behavior stays unchanged",
     "pytest -q is run successfully",
-    "The transcript shows housekeeper-style warning or cleanup output",
+    "The transcript shows Veles-style warning or cleanup output",
     "The final response includes verification and review status"
   ],
   "must_not": [
@@ -19,7 +19,7 @@
     "Perform release or deploy work"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Housekeeper",
+    "Task:\\s*Veles",
     "Warnings:"
   ]
 }

@@ -1,8 +1,8 @@
 # /refactor
 
-**This command is now a skill that invokes @housekeeper agent.**
+**This command is now a skill that invokes @housekeeper agent, Veles.**
 
-Run refactoring session with the Housekeeper agent.
+Run refactoring session with the Veles agent.
 
 ## When to use
 - Code duplication
@@ -17,7 +17,7 @@ Run refactoring session with the Housekeeper agent.
 ```
 
 ## Agent Actions
-The @housekeeper agent will:
+The @housekeeper agent, Veles, will:
 1. Find the problem
 2. Describe the refactoring approach
 3. Prepare a cleanup and safety checklist for the main implementation thread
