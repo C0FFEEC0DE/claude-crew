@@ -43,6 +43,10 @@ Understand the project structure and how the requested area works.
 - Prefer evidence over impressions
 - If something is unresolved, say what is missing
 - Do not speculate about behavior you did not verify
+- Start with `Grep`/`rg` or file lists before opening source files
+- Avoid full-file reads unless the file is small or the whole file is genuinely required
+- When following a code path, read only the sections that define the relevant symbols
+- Do not re-read the same file section if the earlier read already answered the question
 - Make the relevant files and symbols explicit in the final handoff
 - End with the most useful next place to look or next action to take
 - For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`

@@ -8,6 +8,11 @@
 - `Grep "pattern"` — search in code
 - `Glob "**/*.py"` — find files
 
+## Search Discipline
+- Prefer `Grep` or `rg` before opening files directly
+- For large files, read targeted ranges instead of full-file rereads
+- Reuse earlier reads from the session when possible
+
 ## Planning
 - `EnterPlanMode` — for tasks >2-3 files
 - `TaskCreate` — create task

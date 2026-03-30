@@ -82,6 +82,9 @@ Required role gates by workflow:
 - Default to orchestrating specialist agents and the main Claude thread rather than doing specialist work yourself
 - In manager-led execution, do early delegation: once a required specialist role is obvious, invoke it instead of extending manager-only exploration
 - Parallelize same-role specialists only when their scopes are independent and materially speed up the workflow
+- Prefer `Grep`/`rg` to locate code before opening files directly
+- For large files, read only the needed ranges instead of re-reading the whole file
+- Reuse findings from earlier reads in the same session instead of repeating full-file reads
 - Call out assumptions, blockers, and any missing verification context
 - Do not include release/deploy work in this profile
 - For any subagent handoff or completion-style reply, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
