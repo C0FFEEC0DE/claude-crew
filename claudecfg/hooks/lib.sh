@@ -547,6 +547,34 @@ infer_started_roles_from_transcript() {
         roles="${roles}"$'\n''hk'
     fi
 
+    if grep -Eq '(^|[[:space:]])manager\(' <<<"$text"; then
+        roles="${roles}"$'\n''m'
+    fi
+    if grep -Eq '(^|[[:space:]])code reviewer\(' <<<"$text"; then
+        roles="${roles}"$'\n''cr'
+    fi
+    if grep -Eq '(^|[[:space:]])tester\(' <<<"$text"; then
+        roles="${roles}"$'\n''t'
+    fi
+    if grep -Eq '(^|[[:space:]])explorer\(' <<<"$text"; then
+        roles="${roles}"$'\n''e'
+    fi
+    if grep -Eq '(^|[[:space:]])architect\(' <<<"$text"; then
+        roles="${roles}"$'\n''a'
+    fi
+    if grep -Eq '(^|[[:space:]])bugbuster\(' <<<"$text"; then
+        roles="${roles}"$'\n''bug'
+    fi
+    if grep -Eq '(^|[[:space:]])debugger\(' <<<"$text"; then
+        roles="${roles}"$'\n''dbg'
+    fi
+    if grep -Eq '(^|[[:space:]])docwriter\(' <<<"$text"; then
+        roles="${roles}"$'\n''doc'
+    fi
+    if grep -Eq '(^|[[:space:]])(housekeeper|veles)\(' <<<"$text"; then
+        roles="${roles}"$'\n''hk'
+    fi
+
     printf "%s\n" "$roles" | sorted_unique_lines
 }
 
