@@ -496,6 +496,18 @@ transcript_text_content() {
     jq -Rr 'fromjson? | .. | strings?' "$transcript_path" 2>/dev/null || true
 }
 
+transcript_indicates_backgrounded_agent() {
+    local transcript_path text
+
+    transcript_path="$(resolve_transcript_path)"
+    if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
+        return 1
+    fi
+
+    text="$(transcript_text_content "$transcript_path" | tr '[:upper:]' '[:lower:]')"
+    grep -Fq 'backgrounded agent' <<<"$text"
+}
+
 infer_started_roles_from_transcript() {
     local transcript_path text roles=""
 
@@ -546,6 +558,38 @@ effective_started_roles() {
     inferred_roles="$(infer_started_roles_from_transcript)"
 
     printf "%s\n%s\n" "$explicit_roles" "$inferred_roles" | sorted_unique_lines
+}
+
+session_background_manager_pending() {
+    local state task_type manager_mode code_changed started_roles
+
+    state="$(state_file)"
+    task_type="$(jq -r '.task_type // "other"' "$state")"
+    manager_mode="$(jq -r '.manager_mode // "none"' "$state")"
+    code_changed="$(jq -r '.code_changed // false' "$state")"
+
+    case "$task_type" in
+        feature|bugfix|refactor|review|docs)
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    if [ "$manager_mode" != "orchestrate" ] || [ "$code_changed" = "true" ]; then
+        return 1
+    fi
+
+    if ! transcript_indicates_backgrounded_agent; then
+        return 1
+    fi
+
+    started_roles="$(effective_started_roles)"
+    if ! grep -Fxq 'm' <<<"$started_roles"; then
+        return 1
+    fi
+
+    return 0
 }
 
 format_subagent_list() {

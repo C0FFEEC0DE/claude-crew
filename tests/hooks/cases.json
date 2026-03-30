@@ -459,6 +459,14 @@
     "stdout_jq": ".decision == \"block\" and (.reason | contains(\"@cr\"))"
   },
   {
+    "name": "stop_guard_allows_manager_backgrounded_review_without_specialist_yet",
+    "script": "claudecfg/hooks/stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/stop_guard_manager_backgrounded_review.json",
+    "seed_state": "tests/hooks/fixtures/state_review_manager_backgrounded.json",
+    "expect_exit": 0,
+    "state_jq": ".stop_block_count == 0 and .stop_block_reason == \"\" and .stop_block_message == \"\""
+  },
+  {
     "name": "stop_guard_allows_review_when_skill_transcript_proves_code_reviewer_started",
     "script": "claudecfg/hooks/stop-guard.sh",
     "stdin": "tests/hooks/fixtures/stop_guard_review_skill_transcript.json",
