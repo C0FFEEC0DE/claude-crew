@@ -38,12 +38,12 @@ elif grep -Eiq '(bug|fix|defect|баг|ошиб|исправ)' <<<"$prompt"; the
     task_type="bugfix"
 elif grep -Eiq '(refactor|rename|cleanup|tech debt|рефактор|почист|переимен)' <<<"$prompt"; then
     task_type="refactor"
-elif grep -Eiq '(feature|implement|add support|integrat|new capability|фич|добав|интеграц|подключ|модел|pyrit|openrouter)' <<<"$prompt"; then
-    task_type="feature"
 elif grep -Eiq '(review|audit|ревью|аудит|проверь)' <<<"$prompt"; then
     task_type="review"
 elif grep -Eiq '(docs|readme|document|док|ридми)' <<<"$prompt"; then
     task_type="docs"
+elif grep -Eiq '(feature|implement|add support|integrat|new capability|фич|добав|интеграц|подключ|модел|pyrit|openrouter)' <<<"$prompt"; then
+    task_type="feature"
 fi
 
 if [ "$manager_mode" = "plan_only" ]; then
