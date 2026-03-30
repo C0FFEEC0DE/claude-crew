@@ -92,6 +92,16 @@ For code or config changes, the stop-safe summary is line-oriented: include exac
 
 If a later reply in the same session makes no additional changes after earlier code/config edits, keep reporting the actual verification, review status, changed files, and remaining risks instead of switching to a no-change footer.
 
+### Status Line
+
+The bundled status line lives in `statusline.sh` and is enabled from `settings.json`.
+
+It renders:
+- repo and branch on the first line
+- model and workflow type on the first line
+- short gate indicators on the second line: `VER`, `CR`, and workflow-specific agent markers such as `BUG`, `EXP`, `DBG`, `ARC`, `HK`, or `DOC`
+- `OK`, `WAIT`, or `BLOCK` based on the current session state from `~/.claude/state/<session>.json`
+
 ## Usage
 
 ### Call an agent directly (shortcuts)
