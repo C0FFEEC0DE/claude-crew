@@ -46,7 +46,7 @@ while IFS= read -r py_file; do
     else
         echo "OK: $py_file"
     fi
-done < <(find "$REPO_ROOT/scripts" "$REPO_ROOT/bench/fixtures" -type f -name "*.py" | sort)
+done < <(find "$REPO_ROOT/scripts" "$REPO_ROOT/bench/fixtures" "$REPO_ROOT/tests" -type f -name "*.py" | sort)
 echo ""
 
 echo "--- Checking agent frontmatter ---"
@@ -200,6 +200,8 @@ while IFS= read -r task_file; do
         and (.success_criteria | type == "array")
         and (.must_not | type == "array")
         and ((.forbidden_doc_patterns // []) | type == "array")
+        and ((.forbidden_transcript_patterns // []) | type == "array")
+        and ((.required_transcript_patterns // []) | type == "array")
     ' "$task_file" >/dev/null; then
         report_error "Benchmark task has missing required fields: $task_file"
         continue

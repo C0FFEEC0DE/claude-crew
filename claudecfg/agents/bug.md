@@ -57,21 +57,23 @@ This is static analysis work.
 - If confidence is low, say so explicitly
 - Prefer a short list of defensible findings over a long speculative list
 - If no material findings are present, say that clearly
+- End with the safest next debugging or implementation step
+- For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Output Format
 
 ```
-╔══════════════════════════════════════════════════════════╗
-║  TASK: Bug Scan — <file/module>                          ║
-║  STATUS: <in_progress|completed|blocked>                 ║
-╠══════════════════════════════════════════════════════════╣
-║  FINDINGS:                                               ║
-║  - [CRITICAL] <pattern>: <file:line> — <description>     ║
-║  - [MAJOR] <pattern>: <file:line> — <description>        ║
-║  - [MINOR] <pattern>: <file:line> — <description>        ║
-╠══════════════════════════════════════════════════════════╣
-║  SUMMARY: <N> critical, <N> major, <N> minor issues      ║
-╚══════════════════════════════════════════════════════════╝
+Task: Bug Scan — <file/module>
+Status: <in_progress|completed|blocked>
+Findings:
+- [CRITICAL] <pattern>: <file:line> — <description>
+- [MAJOR] <pattern>: <file:line> — <description>
+- [MINOR] <pattern>: <file:line> — <description>
+Outcome: <what was confirmed>
+Changed files: <files or no changes>
+Verification status: <status or not run>
+Remaining risks: <risks or none>
+Next step: <next debugging or implementation step>
 ```
 
 Fill every field.

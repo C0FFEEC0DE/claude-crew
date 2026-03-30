@@ -34,13 +34,13 @@ In project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`), ag
 |-------|-------|-----------|---------|
 | `@m` | Manager | Big Boss | Coordinates other agents |
 | `@cr` | Code Reviewer | Toxic Senior | Code review + security |
-| `@t` | Tester | Paranoid | Test design, execution, and verification |
+| `@t` | Tester | Paranoid | Verification and regression testing |
 | `@e` | Explorer | Nerd | Exploring code |
 | `@a` | Architect | The Architect | System design + SOLID |
 | `@bug` | Bugbuster | Cyber Detective | Bug hunting |
 | `@dbg` | Debugger | Bug Hunter | Debugging issues |
 | `@doc` | Docwriter | Wiki-Wiki | Documentation |
-| `@hk` | Housekeeper | The Cleaner | Cleanup + DevOps |
+| `@hk` | Housekeeper | The Cleaner | Cleanup + bounded refactor hygiene |
 
 Full names also work: `@manager`, `@code-reviewer`, etc.
 
@@ -88,7 +88,7 @@ The profile uses hooks as enforcement points, not markdown alone:
 - `SessionEnd` — index transcript paths and session metadata for later dataset work
 
 `Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs. If a repo has no detected `test`, `lint`, or `build` command, `Stop` no longer deadlocks the session, but the final summary must explicitly say that verification was not run and why.
-For code or config changes, the stop-safe summary is line-oriented: include verification status, review outcome, changed files, and remaining risks on explicit summary lines rather than relying on loose keywords alone.
+For code or config changes, the stop-safe summary is line-oriented: include exact summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:` rather than relying on loose keywords alone.
 
 If a later reply in the same session makes no additional changes after earlier code/config edits, keep reporting the actual verification, review status, changed files, and remaining risks instead of switching to a no-change footer.
 

@@ -38,7 +38,7 @@ Available agents:
 - `@t` / `@tester` — design or run verification
 - `@cr` / `@code-reviewer` — review code and risks
 - `@doc` / `@docwriter` — update docs
-- `@hk` / `@housekeeper` — cleanup
+- `@hk` / `@housekeeper` — cleanup and bounded refactor hygiene
 
 ### 3. Coordinate Execution
 - Pass concrete context between agents
@@ -69,24 +69,25 @@ Required role gates by workflow:
 
 - For change work, always include verification and review
 - Do not hand agent selection back to the user when the workflow already determines the required roles
+- If the user asked for execution, keep coordinating until the required subagent handoffs have actually happened or you can state a concrete blocker
+- Use a plan-only stopping point only when the user explicitly asked for planning without execution
 - Do not do implementation as Manager unless the user explicitly asks for planning plus direct execution
 - Call out assumptions, blockers, and any missing verification context
 - Do not include release/deploy work in this profile
+- For any subagent handoff or completion-style reply, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Standard Output
 
 ```
-╔══════════════════════════════════════════════════════╗
-║  TASK: <name>                                        ║
-║  STATUS: <pending|in_progress|completed|blocked>     ║
-╠══════════════════════════════════════════════════════╣
-║  RESULTS:                                             ║
-║  - <result>                                           ║
-║  - <result>                                           ║
-╠══════════════════════════════════════════════════════╣
-║  NEXT:                                                ║
-║  - <next step>                                       ║
-╚══════════════════════════════════════════════════════╝
+Task: <name>
+Status: <pending|in_progress|completed|blocked>
+Plan:
+- <current plan or coordination state>
+Outcome: <what was coordinated or confirmed>
+Changed files: <files or no changes>
+Verification status: <status or not run>
+Remaining risks: <risks or none>
+Next step: <next step>
 ```
 
 Fill every field.

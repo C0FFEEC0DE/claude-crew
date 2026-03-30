@@ -9,7 +9,7 @@ This profile is hook-gated:
 - release/deploy automation is intentionally disabled
 - session metadata is logged for later audit or dataset indexing
 - final completion and subagent handoff are enforced by shell hooks using shared session state for test/lint/build results and summary requirements
-- stop-safe no-op replies in an already dirty session should say: `No changes were made. Verification status: no changes to verify. Review outcome: pending. Remaining risks: none.`
+- stop-safe no-op replies are only valid when the session made no code or config changes; after code/config edits, keep reporting the actual verification, review outcome, changed files, and remaining risks instead of using a no-change shortcut
 - feature work requires `@t`, `@cr`, and one of `@e|@a`
 - bugfix work requires `@t`, `@cr`, and one of `@bug|@e|@dbg`
 - refactor work requires `@t`, `@cr`, and one of `@a|@e|@hk`

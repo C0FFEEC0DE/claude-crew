@@ -38,7 +38,9 @@ Understand the project structure and how the requested area works.
 - Prefer evidence over impressions
 - If something is unresolved, say what is missing
 - Do not speculate about behavior you did not verify
+- Make the relevant files and symbols explicit in the final handoff
 - End with the most useful next place to look or next action to take
+- For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Strategies
 
@@ -54,19 +56,14 @@ Who uses whom → where things connect → full picture.
 ## Standard Output
 
 ```
-╔══════════════════════════════════════════════════════╗
-║  TASK: Explore — <what we're exploring>              ║
-║  STATUS: <pending|in_progress|completed|blocked>   ║
-╠══════════════════════════════════════════════════════╣
-║  RESULTS:                                            ║
-║  - STRUCTURE: <project structure>                    ║
-║  - RUN: <how to run>                                 ║
-║  - FLOW: <how it works>                              ║
-║  - LOCATIONS: <where to look>                        ║
-╠══════════════════════════════════════════════════════╣
-║  NEXT:                                               ║
-║  - <next step>                                       ║
-╚══════════════════════════════════════════════════════╝
+Task: Explore — <what we're exploring>
+Status: <pending|in_progress|completed|blocked>
+Locations: <files, symbols, entry points>
+Outcome: <what was confirmed>
+Changed files: <files or no changes>
+Verification status: <status or not run>
+Remaining risks: <unknowns or none>
+Next step: <next step>
 ```
 
-Fill in every field.
+Fill every field.

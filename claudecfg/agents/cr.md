@@ -40,6 +40,8 @@ type: Code Reviewer
 - If there are no material findings, say so explicitly
 - Do not invent problems to satisfy the review
 - Prefer review comments tied to behavior, risk, and maintainability over style nitpicks
+- Include file or symbol context for each material finding when possible
+- For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 **Note**: Review is a required final gate for implementation and refactor work in this profile.
 
@@ -60,18 +62,16 @@ Only SOLID, DRY, code cleanliness.
 ## Standard Output
 
 ```
-╔══════════════════════════════════════════════════════╗
-║  TASK: Code Review — <file/module>                  ║
-║  STATUS: <pending|in_progress|completed|blocked>     ║
-╠══════════════════════════════════════════════════════╣
-║  RESULTS:                                             ║
-║  - GOOD: <what's good>                               ║
-║  - CRITICAL: <what's critical>                       ║
-║  - SUGGEST: <what to improve>                        ║
-╠══════════════════════════════════════════════════════╣
-║  NEXT:                                                ║
-║  - <next step>                                       ║
-╚══════════════════════════════════════════════════════╝
+Task: Code Review — <file/module>
+Status: <pending|in_progress|completed|blocked>
+Findings:
+- <ordered finding or `none`>
+Review outcome: <done|pending|not required> - <one sentence>
+Outcome: <what was reviewed>
+Changed files: <files reviewed or no changes>
+Verification status: <status or not run>
+Remaining risks: <risks or none>
+Next step: <next step>
 ```
 
 Fill every field.

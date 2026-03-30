@@ -33,6 +33,8 @@ type: Tester
 - If you only designed tests but did not run them, say `not-run`
 - Prefer concrete assertions over vague coverage claims
 - Highlight important gaps that still need manual or automated verification
+- Name any changed test or fixture files explicitly
+- For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Strategies
 
@@ -57,19 +59,14 @@ type: Tester
 ## Standard Output
 
 ```
-╔══════════════════════════════════════════════════════╗
-║  TASK: Testing — <what to test>                      ║
-║  STATUS: <pending|in_progress|completed|blocked>     ║
-╠══════════════════════════════════════════════════════╣
-║  RESULTS:                                             ║
-║  - STRUCTURE: <test structure>                        ║
-║  - STATUS: <passed|failed|not-run>                    ║
-║  - COVERED: <what's covered>                          ║
-║  - GAPS: <what's not covered>                         ║
-╠══════════════════════════════════════════════════════╣
-║  NEXT:                                                ║
-║  - <next step>                                       ║
-╚══════════════════════════════════════════════════════╝
+Task: Testing — <what to test>
+Status: <pending|in_progress|completed|blocked>
+Gaps: <what's not covered>
+Outcome: <what was verified>
+Changed files: <files or no changes>
+Verification status: <passed|failed|not-run>
+Remaining risks: <risks or none>
+Next step: <next step>
 ```
 
 Fill every field.

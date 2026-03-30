@@ -29,28 +29,24 @@ type: Debugger
 - Make one causal claim at a time and back it with evidence
 - Prefer minimal probes over broad random changes
 - Document reproduction steps so another agent can continue from your state
+- If you changed files while debugging, name them explicitly
+- For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Output Format
 
 ```
-╔══════════════════════════════════════════════════════════╗
-║  TASK: Debug — <brief description>                       ║
-║  STATUS: <pending|in_progress|completed|blocked>        ║
-╠══════════════════════════════════════════════════════════╣
-║  REPRODUCTION:                                           ║
-║  - Steps to reproduce: <how>                            ║
-║  - Expected: <what should happen>                       ║
-║  - Actual: <what happens instead>                        ║
-╠══════════════════════════════════════════════════════════╣
-║  RESULTS:                                                ║
-║  - ROOT CAUSE: <why it happens>                         ║
-║  - LOCATION: <file:function>                            ║
-║  - FIX: <what to change>                                 ║
-║  - VERIFY: <how to confirm fix>                          ║
-╠══════════════════════════════════════════════════════════╣
-║  NEXT:                                                   ║
-║  - <next step if any>                                   ║
-╚══════════════════════════════════════════════════════════╝
+Task: Debug — <brief description>
+Status: <pending|in_progress|completed|blocked>
+Reproduction:
+- Steps to reproduce: <how>
+- Expected: <what should happen>
+- Actual: <what happens instead>
+Root cause: <why it happens>
+Outcome: <what was reproduced or fixed>
+Changed files: <files or no changes>
+Verification status: <status or not run>
+Remaining risks: <risks or none>
+Next step: <next step if any>
 ```
 
 Fill every field.

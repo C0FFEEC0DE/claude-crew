@@ -38,6 +38,8 @@ type: Docwriter
 - If an example or command was not verified, say so
 - Prefer the smallest doc update that removes ambiguity
 - Call out remaining documentation drift if you see it
+- Name the exact documentation files you changed
+- For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Strategies
 
@@ -53,18 +55,14 @@ Endpoints → parameters → responses → curl examples.
 ## Standard Output
 
 ```
-╔══════════════════════════════════════════════════════╗
-║  TASK: Docs — <what we're documenting>               ║
-║  STATUS: <pending|in_progress|completed|blocked>     ║
-╠══════════════════════════════════════════════════════╣
-║  RESULTS:                                            ║
-║  - TYPE: <type>                                      ║
-║  - FILES: <files>                                    ║
-║  - COVERAGE: <what's covered>                        ║
-╠══════════════════════════════════════════════════════╣
-║  NEXT:                                               ║
-║  - <next step>                                       ║
-╚══════════════════════════════════════════════════════╝
+Task: Docs — <what we're documenting>
+Status: <pending|in_progress|completed|blocked>
+Coverage: <what's covered>
+Outcome: <what was documented>
+Changed files: <files or no changes>
+Verification status: <status or not run>
+Remaining risks: <risks or none>
+Next step: <next step>
 ```
 
-Fill in every field.
+Fill every field.

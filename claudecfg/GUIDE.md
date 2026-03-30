@@ -46,13 +46,13 @@ The hooks enforce the actual handoff and stop gates; the commands below are the 
 |-------|-------|---------|
 | `@m` | Manager | Coordinates other agents |
 | `@cr` | Code Reviewer | Code review + security |
-| `@t` | Tester | Writing tests (TDD, BDD) |
+| `@t` | Tester | Verification and regression testing |
 | `@e` | Explorer | Exploring code |
 | `@a` | Architect | System design + SOLID |
 | `@bug` | Bugbuster | Bug hunting |
 | `@dbg` | Debugger | Debugging issues |
 | `@doc` | Docwriter | Documentation |
-| `@hk` | Housekeeper | Cleanup + DevOps |
+| `@hk` | Housekeeper | Cleanup + bounded refactor hygiene |
 
 Also works: `@manager`, `@code-reviewer`, etc.
 
@@ -107,24 +107,20 @@ Required handoffs:
 - `review` -> `@cr`
 - `docs` -> `@doc`
 
-Subagent summaries must include outcome, changed files or `no changes`, verification status, and remaining risks or next step.
+Subagent summaries must include exact line prefixes for `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:`.
 
 ## Standard Output
 
-All subagents use the same format:
+All subagents may include role-specific sections, but their handoff footer must use exact line prefixes that the shell guards recognize:
 
-```
-╔══════════════════════════════════════════════════════╗
-║  TASK: <name>                                        ║
-║  STATUS: <pending|in_progress|completed|blocked>     ║
-╠══════════════════════════════════════════════════════╣
-║  RESULTS:                                             ║
-║  - <result 1>                                        ║
-║  - <result 2>                                        ║
-╠══════════════════════════════════════════════════════╣
-║  NEXT:                                                ║
-║  - <next step>                                       ║
-╚══════════════════════════════════════════════════════╝
+```text
+Task: <name>
+Status: <pending|in_progress|completed|blocked>
+Outcome: <what was done or confirmed>
+Changed files: <files or no changes>
+Verification status: <passed|failed|not run|not required>
+Remaining risks: <risks or none>
+Next step: <next step>
 ```
 
 ## CLAUDE.md

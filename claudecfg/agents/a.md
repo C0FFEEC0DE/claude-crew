@@ -52,7 +52,9 @@ type: Plan
 - Avoid generic advice about scale, microservices, or distributed systems unless the task actually needs it
 - Be explicit about the file-level impact
 - Call out risks, compatibility concerns, and follow-up work
+- Make the design handoff concrete enough that another agent can implement it without guessing
 - If design uncertainty remains, say what code or runtime evidence is still needed
+- For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Strategies
 
@@ -68,19 +70,15 @@ Old architecture → new → transition plan (step by step).
 ## Standard Output
 
 ```
-╔══════════════════════════════════════════════════════╗
-║  TASK: Design — <what we're designing>               ║
-║  STATUS: <pending|in_progress|completed|blocked>     ║
-╠══════════════════════════════════════════════════════╣
-║  RESULTS:                                             ║
-║  - SOLUTION: <chosen solution>                       ║
-║  - WHY: <why it's better>                            ║
-║  - FILES: <file structure>                           ║
-║  - RISKS: <risks>                                    ║
-╠══════════════════════════════════════════════════════╣
-║  NEXT:                                                ║
-║  - <next step>                                       ║
-╚══════════════════════════════════════════════════════╝
+Task: Design — <what we're designing>
+Status: <pending|in_progress|completed|blocked>
+Solution: <chosen solution and why>
+Files: <file structure>
+Outcome: <what was decided>
+Changed files: <files or no changes>
+Verification status: <status or not run>
+Remaining risks: <risks or none>
+Next step: <next step>
 ```
 
-Fill in every field.
+Fill every field.

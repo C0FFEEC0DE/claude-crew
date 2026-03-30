@@ -298,6 +298,41 @@
     "expect_exit": 0
   },
   {
+    "name": "task_completed_allows_when_feature_architect_branch_is_satisfied",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_feature_architect_roles_satisfied.json",
+    "seed_state": "tests/hooks/fixtures/state_feature_architect_required_subagents_satisfied.json",
+    "expect_exit": 0
+  },
+  {
+    "name": "task_completed_allows_when_bugfix_bug_branch_is_satisfied",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_bugfix_bug_roles_satisfied.json",
+    "seed_state": "tests/hooks/fixtures/state_bugfix_bug_required_subagents_satisfied.json",
+    "expect_exit": 0
+  },
+  {
+    "name": "task_completed_allows_when_bugfix_debugger_branch_is_satisfied",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_bugfix_dbg_roles_satisfied.json",
+    "seed_state": "tests/hooks/fixtures/state_bugfix_dbg_required_subagents_satisfied.json",
+    "expect_exit": 0
+  },
+  {
+    "name": "task_completed_allows_when_refactor_housekeeper_branch_is_satisfied",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_refactor_hk_roles_satisfied.json",
+    "seed_state": "tests/hooks/fixtures/state_refactor_hk_required_subagents_satisfied.json",
+    "expect_exit": 0
+  },
+  {
+    "name": "task_completed_allows_when_docs_docwriter_branch_is_satisfied",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_docs_doc_roles_satisfied.json",
+    "seed_state": "tests/hooks/fixtures/state_docs_doc_required_subagents_satisfied.json",
+    "expect_exit": 0
+  },
+  {
     "name": "task_completed_allows_code_change_when_no_verification_commands_detected",
     "script": "claudecfg/hooks/task-completed.sh",
     "stdin": "tests/hooks/fixtures/task_completed_no_verification_commands.json",

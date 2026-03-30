@@ -44,6 +44,12 @@ The live workflow also caps Claude Code with `CLAUDE_CODE_MAX_OUTPUT_TOKENS=1024
 The benchmark harness also now exercises the same project-local Claude settings as the repository by copying `.claude/` into each fixture workdir. Root-level read-only tool calls such as `Read(.)`, `Glob(.)`, and `Grep(.)` are allowed so models do not waste turns on harmless repository scans.
 Benchmark tasks may also declare `forbidden_doc_patterns`; the runner scans changed documentation files and fails the task if the edited docs mention forbidden hallucinated paths or commands. Those patterns should target invented commands themselves, not negative statements that say an install or clone step is unnecessary.
 Benchmark tasks may also declare `forbidden_transcript_patterns`; the runner scans the Claude session transcript and fails the task if those patterns appear anywhere in the interaction. This is useful for catching orchestration regressions such as asking the user to choose mandatory subagents instead of selecting them automatically.
+Benchmark tasks may also declare `required_transcript_patterns`; the runner scans assistant/result transcript entries and fails the task if those regexes never appear. This is useful for subagent-focused cases where you want evidence of the expected handoff format or review/debug/testing structure without matching the user prompt itself.
+
+Additional focused suites can live under nested globs such as:
+
+- `bench/tasks/subagents/*.json` for single-agent behavior checks
+- `bench/tasks/chains/*.json` for longer orchestration suites when you want them
 
 ## GitHub Workflow
 
