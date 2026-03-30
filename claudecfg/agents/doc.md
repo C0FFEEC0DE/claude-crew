@@ -61,8 +61,8 @@ Coverage: <what's covered>
 Outcome: <what was documented>
 Changed files: <files or no changes>
 Verification status: <status or not run>
-Remaining risks: <risks or none>
-Next step: <next step>
+Remaining risks: <risks or none>   # use this when residual risk or drift remains
+Next step: <next step>             # use this instead when the key handoff is the next action
 ```
 
-Fill every field.
+Fill every field except that the final line may be either `Remaining risks:` or `Next step:` to match the handoff contract.

@@ -663,7 +663,15 @@ message_mentions_remaining_risks() {
 message_mentions_next_step() {
     local message="$1"
 
-    grep -Eiq '(next step|next steps|next:|follow-up|follow up|pending next|следующ(ий|ие) шаг|дальше:|следующее:)' <<<"$message"
+    message_has_line_prefix "$message" "Next step:" \
+        || message_has_line_prefix "$message" "Next steps:" \
+        || message_has_line_prefix "$message" "Follow-up:" \
+        || message_has_line_prefix "$message" "Follow up:" \
+        || message_has_line_prefix "$message" "Pending next:" \
+        || message_has_line_prefix "$message" "Следующий шаг:" \
+        || message_has_line_prefix "$message" "Следующие шаги:" \
+        || message_has_line_prefix "$message" "Дальше:" \
+        || message_has_line_prefix "$message" "Следующее:"
 }
 
 message_mentions_concrete_outcome() {
@@ -810,8 +818,6 @@ session_agent_enforcement_reason() {
     fi
     printf " Used so far: %s." "$started_json"
     return 0
-
-    return 1
 }
 
 session_manager_idle_reason() {
