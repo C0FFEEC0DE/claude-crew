@@ -34,6 +34,7 @@ type: Tester
 - Prefer concrete assertions over vague coverage claims
 - Highlight important gaps that still need manual or automated verification
 - Name any changed test or fixture files explicitly
+- Distinguish automated checks that ran from manual checks that still need a human
 - For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Strategies
@@ -61,6 +62,8 @@ type: Tester
 ```
 Task: Testing — <what to test>
 Status: <pending|in_progress|completed|blocked>
+Commands run: <exact commands or `not-run`>
+Covered behavior: <what assertions or checks actually covered>
 Gaps: <what's not covered>
 Outcome: <what was verified>
 Changed files: <files or no changes>

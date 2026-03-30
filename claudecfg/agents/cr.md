@@ -34,6 +34,13 @@ type: Code Reviewer
 - Assertions actually cover the changed behavior
 - Gaps and residual risks are stated explicitly
 
+### Always Check
+- Hardcoded secrets or credential-shaped values such as `password`, `passwd`, `token`, `api_key`, `secret`, `Bearer`, or `Basic`
+- Tracked env or local config files such as `.env`, `.env.local`, or examples with real-looking credentials
+- Auth, permission, validation, escaping, or encoding boundaries touched by the change
+- Unsafe subprocess or shell patterns such as interpolated commands, `shell=True`, or unquoted arguments
+- Behavior changes that shipped without matching verification or with clearly incomplete assertions
+
 ## Rules
 
 - Present findings in severity order

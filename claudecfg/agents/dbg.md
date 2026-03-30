@@ -23,6 +23,13 @@ type: Debugger
 5. **Explain** — state the root cause clearly
 6. **Verify** — describe how to confirm the fix
 
+## Evidence to Capture
+
+- Exact command, request, or action that triggers the failure
+- Short log excerpt, stack trace, or error text that proves the observed behavior
+- The narrowest file, function, hook, or path that explains the failure
+- The smallest defensible fix direction, even if implementation is deferred
+
 ## Rules
 
 - If you cannot reproduce the issue, say so and explain what is missing
@@ -41,7 +48,11 @@ Reproduction:
 - Steps to reproduce: <how>
 - Expected: <what should happen>
 - Actual: <what happens instead>
+Evidence:
+- Command/log/trace: <key evidence>
+Location: <file:function, hook, or path>
 Root cause: <why it happens>
+Fix direction: <what should change or no fix proposed>
 Outcome: <what was reproduced or fixed>
 Changed files: <files or no changes>
 Verification status: <status or not run>

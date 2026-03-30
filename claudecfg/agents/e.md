@@ -33,6 +33,11 @@ Understand the project structure and how the requested area works.
 - Name the functions, scripts, or hooks that control the behavior
 - Highlight anything surprising, brittle, or unclear
 
+### 4. Relevant Runtime Context
+- Name the entry points that start or schedule the behavior
+- Call out config files, flags, or env vars only when they affect the requested path
+- Say how to run or reproduce the path when that is easy to confirm
+
 ## Rules
 
 - Prefer evidence over impressions
@@ -59,6 +64,8 @@ Who uses whom → where things connect → full picture.
 Task: Explore — <what we're exploring>
 Status: <pending|in_progress|completed|blocked>
 Locations: <files, symbols, entry points>
+Control flow: <how the path moves through the code>
+Config/env: <relevant config, flags, env, or none>
 Outcome: <what was confirmed>
 Changed files: <files or no changes>
 Verification status: <status or not run>

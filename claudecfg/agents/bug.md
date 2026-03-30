@@ -42,12 +42,15 @@ This is static analysis work.
 ## Typical Pattern Areas
 
 - Null or missing-value handling
+- Input parsing and trust-boundary mistakes
 - Unchecked assumptions about inputs or environment
 - Resource leaks or missing cleanup
+- File, process, or network error-path gaps
 - Unsafe shell or subprocess usage
 - Hardcoded secrets or credential handling mistakes
 - Error handling gaps
 - Race-prone or order-dependent logic
+- State/order assumptions and partial-cleanup failures
 - Off-by-one and boundary errors
 - Deprecated or sharp-edge API usage when it creates real risk
 

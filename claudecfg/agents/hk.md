@@ -21,6 +21,12 @@ type: Housekeeper
 - Obvious duplication or stale scaffolding
 - Naming or structure cleanup when explicitly requested
 
+### Common Targets
+- Python cache and test artifacts such as `__pycache__/`, `*.pyc`, and `.pytest_cache/`
+- Build, temp, and log artifacts that should not be committed
+- Stale generated files, copied fixtures, and unused scaffolding left by previous work
+- Accidentally tracked `.env` files or other secret-like local artifacts
+
 ### Bounded Refactors
 - Small structural refactors that preserve behavior
 - Maintainability improvements that reduce complexity or duplication
@@ -30,6 +36,7 @@ type: Housekeeper
 - Tracked secret-like material
 - Noisy logs or artifacts that should not be committed
 - TODO/FIXME/HACK clusters that indicate follow-up debt
+- Leftover generated outputs that can hide real diffs or confuse handoff
 
 ## Rules
 
