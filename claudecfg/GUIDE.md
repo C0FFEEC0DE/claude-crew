@@ -80,24 +80,6 @@ When working in a project folder (`~/projects/**`, `~/code/**`, `~/repos/**`, `~
 
 Outside project folders, confirmation is required.
 
-## Status Line
-
-The bundled config enables `~/.claude/statusline.sh` through `statusLine` in `settings.json`.
-
-Layout:
-- one line: `task_type  TEST REVIEW ... READY|PENDING|BLOCK`
-
-Indicator semantics:
-- `TEST` turns green after successful verification, yellow while pending, red after a failed test/lint/build command
-- `REVIEW` turns green after `@cr`
-- workflow markers show the relevant agent branch for the current task:
-  - `bugfix` -> `BUG EXP DBG`
-  - `feature` -> `EXP ARC`
-  - `refactor` -> `HK EXP ARC`
-  - `docs` -> `DOC`
-- `READY`, `PENDING`, and `BLOCK` reflect the overall gate state, including `stop_block_reason` when present
-
-The script reads Claude Code status-line JSON from stdin and merges it with the hook state stored in `~/.claude/state/<session_id>.json`.
 
 ## Hook-Gated SDLC
 

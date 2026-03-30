@@ -22,7 +22,6 @@ echo "[2/3] Installing new config..."
 mkdir -p "$HOME/.claude"
 cp -r "$SCRIPT_DIR"/* "$HOME/.claude/"
 find "$HOME/.claude/hooks" -type f -name "*.sh" -exec chmod +x {} \;
-find "$HOME/.claude" -maxdepth 1 -type f -name "*.sh" -exec chmod +x {} \;
 echo "      Done!"
 
 # Verify

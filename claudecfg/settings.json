@@ -4,11 +4,6 @@
   "effortLevel": "high",
   "language": "english",
   "outputStyle": "Explanatory",
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.sh",
-    "padding": 1
-  },
 
   "permissions": {
     "allow": [
