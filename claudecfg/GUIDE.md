@@ -96,14 +96,14 @@ Main checkpoints:
 - `TaskCompleted` / `TeammateIdle` / `Stop` — share the same gate logic and block completion after missing verification, failed test/lint/build runs, or missing required subagent roles
 - `SessionEnd` — log transcript path and session metadata for later indexing
 
-`Stop` is shell-enforced by `hooks/stop-guard.sh`, and `SubagentStop` is shell-enforced by `hooks/subagent-stop-guard.sh`. After code or config changes, the final assistant summary must include explicit summary lines for verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`. If the repo exposes no detectable `test`, `lint`, or `build` command, the stop guard allows completion without deadlock, but the summary must explicitly say verification was not run and why. Feature, bugfix, refactor, review, and docs workflows also require role-specific subagent handoffs before completion, tracked in shared session state with alias normalization such as `@code-reviewer -> cr`. `SubagentStart` normalization also accepts alias/name/subagent-type fields in both snake_case and camelCase before falling back to generic runtime types.
+`Stop` is shell-enforced by `hooks/stop-guard.sh`, and `SubagentStop` is shell-enforced by `hooks/subagent-stop-guard.sh`. After code or config changes, the final assistant summary must include explicit summary lines for verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`. If the repo exposes no detectable `test`, `lint`, or `build` command, the stop guard allows completion without deadlock, but the summary must explicitly say verification was not run and why. Feature, bugfix, refactor, review, and docs workflows also require role-specific subagent handoffs before completion, tracked in shared session state with alias normalization such as `@code-reviewer -> cr`. For feature, bugfix, and refactor work, a recorded successful verification command satisfies the tester side of that gate; otherwise `@t` is still required. `SubagentStart` normalization also accepts alias/name/subagent-type fields in both snake_case and camelCase before falling back to generic runtime types.
 
 If a later reply in the same session makes no additional changes after earlier code or config edits, keep reporting the actual verification, review status, changed files, and remaining risks instead of switching to a no-change footer.
 
 Required handoffs:
-- `feature` -> `@t`, `@cr`, and one of `@e|@a`
-- `bugfix` -> `@t`, `@cr`, and one of `@bug|@e|@dbg`
-- `refactor` -> `@t`, `@cr`, and one of `@a|@e|@hk`
+- `feature` -> successful verification or `@t`, plus `@cr` and one of `@e|@a`
+- `bugfix` -> successful verification or `@t`, plus `@cr` and one of `@bug|@e|@dbg`
+- `refactor` -> successful verification or `@t`, plus `@cr` and one of `@a|@e|@hk`
 - `review` -> `@cr`
 - `docs` -> `@doc`
 

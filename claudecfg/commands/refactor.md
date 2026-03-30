@@ -28,4 +28,4 @@ The @housekeeper agent, Veles, will:
 - Separate commits for refactor
 - Don't add features with refactor
 - Leave code cleaner than it was
-- This handoff satisfies the refactor design/cleanup branch of the gate together with required `@t` and `@cr` handoffs
+- This handoff satisfies the refactor design/cleanup branch of the gate together with required `@cr` and either successful verification or `@t`

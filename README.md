@@ -66,12 +66,12 @@ Slash commands that invoke specialized agents. The hooks still enforce the actua
 - `workflows/security-scan.md` — scan for private data (API keys, passwords, tokens)
 - `workflows/release.md` — optional manual checklist, not part of the mandatory SDLC profile
 
-For `feature`, `bugfix`, `refactor`, `review`, and `docs` work, the profile is now role-enforced before completion. Hooks track canonical subagent aliases in session state, so full names like `@code-reviewer` normalize to `cr`. `SubagentStart` normalization also accepts alias/name/subagent-type fields from both snake_case and camelCase payloads before falling back to generic agent types.
+For `feature`, `bugfix`, `refactor`, `review`, and `docs` work, the profile is now role-enforced before completion. Hooks track canonical subagent aliases in session state, so full names like `@code-reviewer` normalize to `cr`. For `feature`, `bugfix`, and `refactor`, a recorded successful verification command also satisfies the tester side of the gate; otherwise `@t` is still required. `SubagentStart` normalization also accepts alias/name/subagent-type fields from both snake_case and camelCase payloads before falling back to generic agent types.
 
 Required handoffs by workflow:
-- `feature` -> `@t`, `@cr`, and one of `@e|@a`
-- `bugfix` -> `@t`, `@cr`, and one of `@bug|@e|@dbg`
-- `refactor` -> `@t`, `@cr`, and one of `@a|@e|@hk`
+- `feature` -> successful verification or `@t`, plus `@cr` and one of `@e|@a`
+- `bugfix` -> successful verification or `@t`, plus `@cr` and one of `@bug|@e|@dbg`
+- `refactor` -> successful verification or `@t`, plus `@cr` and one of `@a|@e|@hk`
 - `review` -> `@cr`
 - `docs` -> `@doc`
 

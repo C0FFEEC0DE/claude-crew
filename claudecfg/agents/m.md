@@ -59,9 +59,9 @@ Default path for change work:
 Hooks enforce completion and stop gates. Your plan must satisfy the required roles before completion.
 
 Required role gates by workflow:
-- `feature` -> `@t`, `@cr`, and one of `@e|@a`
-- `bugfix` -> `@t`, `@cr`, and one of `@bug|@e|@dbg`
-- `refactor` -> `@t`, `@cr`, and one of `@a|@e|@hk`
+- `feature` -> successful verification or `@t`, plus `@cr` and one of `@e|@a`
+- `bugfix` -> successful verification or `@t`, plus `@cr` and one of `@bug|@e|@dbg`
+- `refactor` -> successful verification or `@t`, plus `@cr` and one of `@a|@e|@hk`
 - `review` -> `@cr`
 - `docs` -> `@doc`
 
@@ -69,7 +69,7 @@ Required role gates by workflow:
 
 - For change work, always include verification and review
 - Do not hand agent selection back to the user when the workflow already determines the required roles
-- If the user asked for execution, keep coordinating until the required subagent handoffs have actually happened or you can state a concrete blocker
+- If the user asked for execution, keep coordinating until the required handoffs have actually happened, successful verification has satisfied the tester side when allowed, or you can state a concrete blocker
 - Use a plan-only stopping point only when the user explicitly asked for planning without execution
 - Do not do implementation as Manager unless the user explicitly asks for planning plus direct execution
 - Call out assumptions, blockers, and any missing verification context

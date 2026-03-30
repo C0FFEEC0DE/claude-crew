@@ -720,10 +720,18 @@ session_block_reason() {
 
 session_agent_enforcement_reason() {
     local state task_type started_json group_json group_label missing_groups_text satisfied alias
+    local tests_ok lint_ok build_ok successful_verification
     local -a started=() required=() group=() missing=() missing_groups=()
 
     state="$(state_file)"
     task_type="$(jq -r '.task_type // "other"' "$state")"
+    tests_ok="$(jq -r '.tests_ok // false' "$state")"
+    lint_ok="$(jq -r '.lint_ok // false' "$state")"
+    build_ok="$(jq -r '.build_ok // false' "$state")"
+    successful_verification="false"
+    if [ "$tests_ok" = "true" ] || [ "$lint_ok" = "true" ] || [ "$build_ok" = "true" ]; then
+        successful_verification="true"
+    fi
 
     mapfile -t started < <(jq -r '.subagents_started[]? // empty' "$state")
     mapfile -t required < <(jq -r '.required_subagents[]? // empty' "$state")
@@ -751,6 +759,9 @@ session_agent_enforcement_reason() {
     fi
 
     for alias in "${required[@]}"; do
+        if [ "$alias" = "t" ] && [ "$successful_verification" = "true" ]; then
+            continue
+        fi
         if ! array_contains "$alias" "${started[@]}"; then
             missing+=("$alias")
         fi

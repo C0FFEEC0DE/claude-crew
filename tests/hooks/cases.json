@@ -109,7 +109,7 @@
     "script": "claudecfg/hooks/user-prompt-submit.sh",
     "stdin": "tests/hooks/fixtures/user_prompt_feature.json",
     "expect_exit": 0,
-    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"feature workflow\"))",
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"successful verification or @t\"))",
     "state_jq": ".task_type == \"feature\" and .required_subagents == [\"t\", \"cr\"] and .required_subagent_any_of == [[\"e\", \"a\"]]"
   },
   {
@@ -117,7 +117,7 @@
     "script": "claudecfg/hooks/user-prompt-submit.sh",
     "stdin": "tests/hooks/fixtures/user_prompt_mixed_intent.json",
     "expect_exit": 0,
-    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"bugfix workflow\"))",
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"successful verification or @t\"))",
     "state_jq": ".task_type == \"bugfix\" and .required_subagents == [\"t\", \"cr\"] and .required_subagent_any_of == [[\"bug\", \"e\", \"dbg\"]]"
   },
   {
@@ -125,7 +125,7 @@
     "script": "claudecfg/hooks/user-prompt-submit.sh",
     "stdin": "tests/hooks/fixtures/user_prompt_bugfix.json",
     "expect_exit": 0,
-    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"@t, @cr, and one of @bug/@e/@dbg\"))",
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"successful verification or @t, plus @cr and one of @bug/@e/@dbg\"))",
     "state_jq": ".task_type == \"bugfix\" and .required_subagents == [\"t\", \"cr\"] and .required_subagent_any_of == [[\"bug\", \"e\", \"dbg\"]]"
   },
   {
@@ -133,7 +133,7 @@
     "script": "claudecfg/hooks/user-prompt-submit.sh",
     "stdin": "tests/hooks/fixtures/user_prompt_refactor.json",
     "expect_exit": 0,
-    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"@t, @cr, and one of @a/@e/@hk\"))",
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"successful verification or @t, plus @cr and one of @a/@e/@hk\"))",
     "state_jq": ".task_type == \"refactor\" and .required_subagents == [\"t\", \"cr\"] and .required_subagent_any_of == [[\"a\", \"e\", \"hk\"]]"
   },
   {
@@ -288,7 +288,7 @@
     "stdin": "tests/hooks/fixtures/task_completed_feature_required_roles.json",
     "seed_state": "tests/hooks/fixtures/state_feature_missing_required_subagents.json",
     "expect_exit": 2,
-    "stderr_regex": "Missing required roles: @t, @cr"
+    "stderr_regex": "Missing required roles: @cr"
   },
   {
     "name": "task_completed_allows_when_feature_required_roles_are_satisfied",
@@ -319,11 +319,27 @@
     "expect_exit": 0
   },
   {
+    "name": "task_completed_blocks_when_bugfix_branch_is_missing_even_with_verification",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_bugfix_missing_branch.json",
+    "seed_state": "tests/hooks/fixtures/state_bugfix_missing_branch_verified.json",
+    "expect_exit": 2,
+    "stderr_regex": "Missing one-of groups: @bug/@e/@dbg"
+  },
+  {
     "name": "task_completed_allows_when_refactor_housekeeper_branch_is_satisfied",
     "script": "claudecfg/hooks/task-completed.sh",
     "stdin": "tests/hooks/fixtures/task_completed_refactor_hk_roles_satisfied.json",
     "seed_state": "tests/hooks/fixtures/state_refactor_hk_required_subagents_satisfied.json",
     "expect_exit": 0
+  },
+  {
+    "name": "task_completed_blocks_when_feature_lacks_successful_verification_and_tester_handoff",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_feature_missing_tester_without_verification.json",
+    "seed_state": "tests/hooks/fixtures/state_feature_missing_tester_without_verification.json",
+    "expect_exit": 2,
+    "stderr_regex": "Missing required roles: @t"
   },
   {
     "name": "task_completed_allows_when_docs_docwriter_branch_is_satisfied",

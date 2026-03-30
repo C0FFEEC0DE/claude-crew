@@ -32,17 +32,17 @@ case "$task_type" in
     feature)
         required_subagents='["t","cr"]'
         required_subagent_any_of='[["e","a"]]'
-        context_message="Treat this as a feature workflow. Required subagent handoffs before completion: @t, @cr, and one of @e/@a. Finish implementation, run verification successfully, address review findings, and update docs when behavior changes. release/deploy remains out of scope.${stop_safe_hint}"
+        context_message="Treat this as a feature workflow. Required before completion: successful verification or @t, plus @cr and one of @e/@a. Finish implementation, run verification successfully, address review findings, and update docs when behavior changes. release/deploy remains out of scope.${stop_safe_hint}"
         ;;
     bugfix)
         required_subagents='["t","cr"]'
         required_subagent_any_of='[["bug","e","dbg"]]'
-        context_message="Treat this as a bugfix workflow. Required subagent handoffs before completion: @t, @cr, and one of @bug/@e/@dbg. Reproduce or describe the failure mode, implement the fix, execute regression verification, and update docs if behavior changed.${stop_safe_hint}"
+        context_message="Treat this as a bugfix workflow. Required before completion: successful verification or @t, plus @cr and one of @bug/@e/@dbg. Reproduce or describe the failure mode, implement the fix, execute regression verification, and update docs if behavior changed.${stop_safe_hint}"
         ;;
     refactor)
         required_subagents='["t","cr"]'
         required_subagent_any_of='[["a","e","hk"]]'
-        context_message="Treat this as a refactor workflow. Required subagent handoffs before completion: @t, @cr, and one of @a/@e/@hk. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and summarize risks plus changed files before stopping.${stop_safe_hint}"
+        context_message="Treat this as a refactor workflow. Required before completion: successful verification or @t, plus @cr and one of @a/@e/@hk. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and summarize risks plus changed files before stopping.${stop_safe_hint}"
         ;;
     review)
         required_subagents='["cr"]'
