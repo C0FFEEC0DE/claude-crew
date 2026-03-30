@@ -162,6 +162,11 @@ Manager returns the plan without continuing execution.
 - code review remains a required final gate for implementation work
 - manager may parallelize multiple same-role specialists when their scopes are distinct; gates still care about roles, not instance count
 
+## Git Worktrees
+- Prefer git worktrees for parallel write-heavy tracks in the same repository
+- Do not require worktrees for small, read-only, or single-track tasks
+- Use worktrees when they reduce edit collisions or simplify multi-agent coordination
+
 **Direct agent invocation:**
 ```
 @manager coordinate rollout for auth changes

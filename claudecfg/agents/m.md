@@ -49,6 +49,8 @@ Available agents:
 - Do not spend multiple turns in solo repository reading when a required specialist can already be invoked
 - When work splits into independent tracks, you may launch multiple agents of the same role in parallel
 - If you parallelize the same role, assign each instance a distinct scope so they do not duplicate work
+- For parallel write-heavy tracks in the same repository, prefer separate git worktrees when that materially reduces collision risk
+- Do not require worktrees for small, read-only, or single-track tasks where the overhead outweighs the benefit
 - After each handoff, reassess what gate is still open and choose the next action yourself
 - Continue the workflow until the required handoffs and verification actually happened, or you hit a concrete blocker
 
@@ -82,6 +84,7 @@ Required role gates by workflow:
 - Default to orchestrating specialist agents and the main Claude thread rather than doing specialist work yourself
 - In manager-led execution, do early delegation: once a required specialist role is obvious, invoke it instead of extending manager-only exploration
 - Parallelize same-role specialists only when their scopes are independent and materially speed up the workflow
+- Use git worktrees as an orchestration tool for concurrent code changes, not as mandatory ceremony for every task
 - Prefer `Grep`/`rg` to locate code before opening files directly
 - For large files, read only the needed ranges instead of re-reading the whole file
 - Reuse findings from earlier reads in the same session instead of repeating full-file reads
