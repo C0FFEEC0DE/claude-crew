@@ -110,7 +110,7 @@
     "stdin": "tests/hooks/fixtures/user_prompt_feature.json",
     "expect_exit": 0,
     "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"successful verification or @t\"))",
-    "state_jq": ".task_type == \"feature\" and .required_subagents == [\"t\", \"cr\"] and .required_subagent_any_of == [[\"e\", \"a\"]]"
+    "state_jq": ".task_type == \"feature\" and ((.required_subagents | sort) == [\"cr\", \"t\"]) and .required_subagent_any_of == [[\"e\", \"a\"]]"
   },
   {
     "name": "user_prompt_submit_classifies_mixed_intent_as_bugfix",
@@ -118,7 +118,7 @@
     "stdin": "tests/hooks/fixtures/user_prompt_mixed_intent.json",
     "expect_exit": 0,
     "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"successful verification or @t\"))",
-    "state_jq": ".task_type == \"bugfix\" and .required_subagents == [\"t\", \"cr\"] and .required_subagent_any_of == [[\"bug\", \"e\", \"dbg\"]]"
+    "state_jq": ".task_type == \"bugfix\" and ((.required_subagents | sort) == [\"cr\", \"t\"]) and .required_subagent_any_of == [[\"bug\", \"e\", \"dbg\"]]"
   },
   {
     "name": "user_prompt_submit_classifies_bugfix",
@@ -126,7 +126,7 @@
     "stdin": "tests/hooks/fixtures/user_prompt_bugfix.json",
     "expect_exit": 0,
     "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"successful verification or @t, plus @cr and one of @bug/@e/@dbg\"))",
-    "state_jq": ".task_type == \"bugfix\" and .required_subagents == [\"t\", \"cr\"] and .required_subagent_any_of == [[\"bug\", \"e\", \"dbg\"]]"
+    "state_jq": ".task_type == \"bugfix\" and ((.required_subagents | sort) == [\"cr\", \"t\"]) and .required_subagent_any_of == [[\"bug\", \"e\", \"dbg\"]]"
   },
   {
     "name": "user_prompt_submit_classifies_refactor",
@@ -134,7 +134,7 @@
     "stdin": "tests/hooks/fixtures/user_prompt_refactor.json",
     "expect_exit": 0,
     "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"successful verification or @t, plus @cr and one of @a/@e/@hk\"))",
-    "state_jq": ".task_type == \"refactor\" and .required_subagents == [\"t\", \"cr\"] and .required_subagent_any_of == [[\"a\", \"e\", \"hk\"]]"
+    "state_jq": ".task_type == \"refactor\" and ((.required_subagents | sort) == [\"cr\", \"t\"]) and .required_subagent_any_of == [[\"a\", \"e\", \"hk\"]]"
   },
   {
     "name": "user_prompt_submit_classifies_review",
@@ -151,6 +151,22 @@
     "expect_exit": 0,
     "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"@doc\"))",
     "state_jq": ".task_type == \"docs\" and .required_subagents == [\"doc\"] and .required_subagent_any_of == []"
+  },
+  {
+    "name": "user_prompt_submit_enables_manager_led_orchestration_for_feature",
+    "script": "claudecfg/hooks/user-prompt-submit.sh",
+    "stdin": "tests/hooks/fixtures/user_prompt_manager_feature.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"Manager-led orchestration is active\")) and (.hookSpecificOutput.additionalContext | contains(\"@m, successful verification or @t, plus @cr and one of @e/@a\"))",
+    "state_jq": ".task_type == \"feature\" and .manager_mode == \"orchestrate\" and ((.required_subagents | sort) == [\"cr\", \"m\", \"t\"]) and .required_subagent_any_of == [[\"e\", \"a\"]]"
+  },
+  {
+    "name": "user_prompt_submit_supports_explicit_manager_plan_only_mode",
+    "script": "claudecfg/hooks/user-prompt-submit.sh",
+    "stdin": "tests/hooks/fixtures/user_prompt_manager_plan_only.json",
+    "expect_exit": 0,
+    "stdout_jq": ".hookSpecificOutput.hookEventName == \"UserPromptSubmit\" and (.hookSpecificOutput.additionalContext | contains(\"Plan-only manager mode is active\"))",
+    "state_jq": ".task_type == \"feature\" and .manager_mode == \"plan_only\" and .required_subagents == [] and .required_subagent_any_of == []"
   },
   {
     "name": "subagent_start_canonicalizes_code_reviewer_alias",
@@ -272,7 +288,7 @@
     "stdin": "tests/hooks/fixtures/task_completed_incomplete.json",
     "seed_state": "tests/hooks/fixtures/state_task_incomplete.json",
     "expect_exit": 2,
-    "stderr_regex": "no successful verification command"
+    "stderr_regex": "no successful test command"
   },
   {
     "name": "task_completed_blocks_after_failed_build",
@@ -289,6 +305,14 @@
     "seed_state": "tests/hooks/fixtures/state_feature_missing_required_subagents.json",
     "expect_exit": 2,
     "stderr_regex": "Missing required roles: @cr"
+  },
+  {
+    "name": "task_completed_blocks_when_manager_led_feature_lacks_manager_handoff",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_feature_required_roles.json",
+    "seed_state": "tests/hooks/fixtures/state_feature_manager_missing_manager_handoff.json",
+    "expect_exit": 2,
+    "stderr_regex": "Manager-led orchestration is active\\. Missing required roles: @m"
   },
   {
     "name": "task_completed_allows_when_feature_required_roles_are_satisfied",
@@ -340,6 +364,14 @@
     "seed_state": "tests/hooks/fixtures/state_feature_missing_tester_without_verification.json",
     "expect_exit": 2,
     "stderr_regex": "Missing required roles: @t"
+  },
+  {
+    "name": "task_completed_blocks_when_only_lint_passed_but_tests_are_detected",
+    "script": "claudecfg/hooks/task-completed.sh",
+    "stdin": "tests/hooks/fixtures/task_completed_feature_required_roles.json",
+    "seed_state": "tests/hooks/fixtures/state_feature_only_lint_with_tests_detected.json",
+    "expect_exit": 2,
+    "stderr_regex": "detected test command \\(pytest\\), but no successful test command"
   },
   {
     "name": "task_completed_allows_when_docs_docwriter_branch_is_satisfied",

@@ -42,9 +42,9 @@ If successful verification has not already been recorded in the session:
 
 ## Commands
 
-**Get plan:**
+**Manager-led orchestration:**
 ```
 @manager implement new feature: [description]
 ```
 
-Hooks enforce successful verification before completion. That successful verification also satisfies the tester side of the feature gate; otherwise use `@tester`.
+Manager should keep the feature workflow moving through exploration, design, implementation, verification, review, and docs. Hooks enforce successful verification before completion. That successful verification also satisfies the tester side of the feature gate; otherwise use `@tester`.

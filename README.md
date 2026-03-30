@@ -48,7 +48,7 @@ Full names also work: `@manager`, `@code-reviewer`, etc.
 
 Slash commands that invoke specialized agents. The hooks still enforce the actual handoff and stop gates; these docs describe the intended entry points.
 
-- `/manager` — planning and coordination session (invokes @manager)
+- `/manager` — manager-led orchestration session (invokes @manager)
 - `/explore` — codebase exploration session (invokes @explorer)
 - `/bug` — bug-hunting session (invokes @bugbuster)
 - `/debug` — debugging session
@@ -111,13 +111,13 @@ If a later reply in the same session makes no additional changes after earlier c
 @tester write tests for utils
 ```
 
-### Use workflow (get plan)
+### Use workflow
 ```
 @m fix bug in login
 @manager implement new feature: user authentication
 ```
 
-Manager can coordinate work, but completion is enforced by hooks. The expected flow is:
+Manager owns orchestration by default and keeps the workflow moving until completion or a concrete blocker. Use explicit wording like "plan only" when you want planning without execution. Completion is still enforced by hooks. The expected flow is:
 `discover -> design -> implement -> verify -> review -> docs when behavior changes -> cleanup`
 
 ### Use slash command

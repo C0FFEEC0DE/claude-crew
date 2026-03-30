@@ -42,9 +42,9 @@ If successful verification has not already been recorded in the session:
 
 ## Commands
 
-**Get plan:**
+**Manager-led orchestration:**
 ```
 @manager fix bug in [area]
 ```
 
-Hooks enforce successful verification before task completion. That successful verification also satisfies the tester side of the bugfix gate; otherwise use `@tester`.
+Manager should keep the bugfix workflow moving through investigation, implementation, verification, review, and docs when behavior changed. Hooks enforce successful verification before task completion. That successful verification also satisfies the tester side of the bugfix gate; otherwise use `@tester`.

@@ -30,7 +30,7 @@ These commands invoke specialized agents:
 The hooks enforce the actual handoff and stop gates; the commands below are the documented entry points.
 
 ### General
-- `/manager` — planning and coordination session (invokes @manager)
+- `/manager` — manager-led orchestration session (invokes @manager)
 - `/explore` — codebase exploration session (invokes @explorer)
 - `/bug` — bug-hunting session (invokes @bugbuster)
 - `/debug` — debugging session
@@ -59,7 +59,7 @@ Also works: `@manager`, `@code-reviewer`, etc.
 ### Slash command examples
 
 ```text
-/manager plan a bugfix for flaky login tests
+/manager fix flaky login tests end to end
 /explore trace how auth state is loaded
 /bug investigate why payments retry forever
 /debug reproduce the cache invalidation issue
@@ -139,14 +139,20 @@ Predefined workflows:
 
 ### Usage
 
-**Get plan only:**
+**Manager-led execution:**
 ```
 @m fix bug in login
 ```
-Manager returns a plan with steps and agents.
+Manager coordinates the workflow to completion or a concrete blocker.
+
+**Plan only:**
+```
+@m plan only: fix bug in login
+```
+Manager returns the plan without continuing execution.
 
 **Execution policy:**
-- manager coordination is optional
+- manager coordination is optional, but when invoked it should continue orchestration by default
 - hooks, not markdown, enforce verification, required subagent roles, and stop conditions
 - code review remains a required final gate for implementation work
 

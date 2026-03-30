@@ -139,6 +139,7 @@ ensure_state() {
             transcript_path: $transcript_path,
             created_at: $created_at,
             task_type: "other",
+            manager_mode: "none",
             edited: false,
             code_changed: false,
             docs_changed: false,
@@ -670,7 +671,7 @@ session_block_reason() {
     local detected_test_command detected_lint_command detected_build_command
     local last_test_command last_lint_command last_build_command
     local has_detected_verification="false"
-    local has_successful_verification="false"
+    local has_behavior_verification="false"
 
     state="$(state_file)"
     code_changed="$(jq -r '.code_changed // false' "$state")"
@@ -691,8 +692,10 @@ session_block_reason() {
         has_detected_verification="true"
     fi
 
-    if [ "$tests_ok" = "true" ] || [ "$lint_ok" = "true" ] || [ "$build_ok" = "true" ]; then
-        has_successful_verification="true"
+    if [ "$tests_ok" = "true" ]; then
+        has_behavior_verification="true"
+    elif [ -z "$detected_test_command" ] && { [ "$lint_ok" = "true" ] || [ "$build_ok" = "true" ]; }; then
+        has_behavior_verification="true"
     fi
 
     if [ "$code_changed" = "true" ] && [ "$tests_failed" = "true" ]; then
@@ -710,8 +713,12 @@ session_block_reason() {
         return 0
     fi
 
-    if [ "$code_changed" = "true" ] && [ "$has_detected_verification" = "true" ] && [ "$has_successful_verification" != "true" ]; then
-        printf "Code or config changed, but no successful verification command was recorded in this session. Run a detected test, lint, or build command before stopping."
+    if [ "$code_changed" = "true" ] && [ "$has_detected_verification" = "true" ] && [ "$has_behavior_verification" != "true" ]; then
+        if [ -n "$detected_test_command" ]; then
+            printf "Code or config changed, and this repo has a detected test command (%s), but no successful test command was recorded in this session. Run the detected tests before stopping." "$detected_test_command"
+        else
+            printf "Code or config changed, but no successful verification command was recorded in this session. Run a detected lint or build command before stopping."
+        fi
         return 0
     fi
 
@@ -719,17 +726,21 @@ session_block_reason() {
 }
 
 session_agent_enforcement_reason() {
-    local state task_type started_json group_json group_label missing_groups_text satisfied alias
-    local tests_ok lint_ok build_ok successful_verification
+    local state task_type manager_mode started_json group_json group_label missing_groups_text satisfied alias
+    local tests_ok lint_ok build_ok detected_test_command successful_verification
     local -a started=() required=() group=() missing=() missing_groups=()
 
     state="$(state_file)"
     task_type="$(jq -r '.task_type // "other"' "$state")"
+    manager_mode="$(jq -r '.manager_mode // "none"' "$state")"
     tests_ok="$(jq -r '.tests_ok // false' "$state")"
     lint_ok="$(jq -r '.lint_ok // false' "$state")"
     build_ok="$(jq -r '.build_ok // false' "$state")"
+    detected_test_command="$(jq -r '.detected_test_command // empty' "$state")"
     successful_verification="false"
-    if [ "$tests_ok" = "true" ] || [ "$lint_ok" = "true" ] || [ "$build_ok" = "true" ]; then
+    if [ "$tests_ok" = "true" ]; then
+        successful_verification="true"
+    elif [ -z "$detected_test_command" ] && { [ "$lint_ok" = "true" ] || [ "$build_ok" = "true" ]; }; then
         successful_verification="true"
     fi
 
@@ -773,6 +784,9 @@ session_agent_enforcement_reason() {
 
     started_json="$(format_subagent_list "${started[@]}")"
     printf "Agent-enforced workflow requires specific subagent handoffs before completion for %s work." "$task_type"
+    if [ "$manager_mode" = "orchestrate" ]; then
+        printf " Manager-led orchestration is active."
+    fi
     if [ "${#missing[@]}" -gt 0 ]; then
         printf " Missing required roles: %s." "$(format_subagent_list "${missing[@]}")"
     fi

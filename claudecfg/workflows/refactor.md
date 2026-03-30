@@ -43,4 +43,4 @@ If successful verification has not already been recorded in the session:
 ## Command
 Just say: "@manager refactor [module/file]"
 
-Hooks enforce successful verification before completion. That successful verification also satisfies the tester side of the refactor gate; otherwise use `@tester`.
+Manager should keep the refactor workflow moving through structural analysis, implementation, verification, review, and docs when public behavior changed. Hooks enforce successful verification before completion. That successful verification also satisfies the tester side of the refactor gate; otherwise use `@tester`.
