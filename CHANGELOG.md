@@ -37,6 +37,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added role-based subagent enforcement for `feature`, `bugfix`, `refactor`, `review`, and `docs` workflows before completion, with alias normalization and workflow-specific required roles
 - Extended `SubagentStart` normalization to prefer alias, name, and subagent-type fields from snake_case and camelCase payloads before generic runtime types
 - Updated workflow context and stop feedback with a stop-safe no-op footer for later replies in already dirty sessions
+- Switched manager-led workflow enforcement to track manager activation via `manager_mode` instead of incorrectly requiring `@m` as a specialist subagent handoff
+- Added an early-specialist-handoff guard so manager-led workflows cannot go idle before delegating to at least one specialist role
 - Reworked benchmark automation so the main acceptance path now uses the real Claude Code CLI instead of a one-shot OpenRouter worker
 - Improved GitHub Actions observability with readable Claude diagnostics in workflow logs, step summaries, and benchmark task artifacts
 - Expanded `Behavior Benchmark` live logs with per-task metadata, prompt excerpts, raw Claude JSON excerpts, patch excerpts, and structured result dumps

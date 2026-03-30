@@ -25,7 +25,6 @@
     "m"
   ],
   "required_subagents": [
-    "m",
     "t",
     "cr"
   ],

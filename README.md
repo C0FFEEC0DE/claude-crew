@@ -66,7 +66,7 @@ Slash commands that invoke specialized agents. The hooks still enforce the actua
 - `workflows/security-scan.md` — scan for private data (API keys, passwords, tokens)
 - `workflows/release.md` — optional manual checklist, not part of the mandatory SDLC profile
 
-For `feature`, `bugfix`, `refactor`, `review`, and `docs` work, the profile is now role-enforced before completion. Hooks track canonical subagent aliases in session state, so full names like `@code-reviewer` normalize to `cr`. For `feature`, `bugfix`, and `refactor`, a recorded successful verification command also satisfies the tester side of the gate; otherwise `@t` is still required. `SubagentStart` normalization also accepts alias/name/subagent-type fields from both snake_case and camelCase payloads before falling back to generic agent types.
+For `feature`, `bugfix`, `refactor`, `review`, and `docs` work, the profile is now role-enforced before completion. Hooks track canonical subagent aliases in session state, so full names like `@code-reviewer` normalize to `cr`. Manager-led orchestration is tracked separately through `manager_mode=orchestrate`; top-level `@m` use is not treated as a required specialist subagent handoff. For `feature`, `bugfix`, and `refactor`, a recorded successful test command satisfies the tester side of the gate; otherwise `@t` is still required. `SubagentStart` normalization also accepts alias/name/subagent-type fields from both snake_case and camelCase payloads before falling back to generic agent types.
 
 Required handoffs by workflow:
 - `feature` -> successful verification or `@t`, plus `@cr` and one of `@e|@a`
@@ -87,7 +87,7 @@ The profile uses hooks as enforcement points, not markdown alone:
 - `TaskCompleted` / `Stop` / `TeammateIdle` — use the shared session state to block completion after missing verification, failed test/lint/build runs, or missing required subagent roles for the current workflow
 - `SessionEnd` — index transcript paths and session metadata for later dataset work
 
-`Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs. If a repo has no detected `test`, `lint`, or `build` command, `Stop` no longer deadlocks the session, but the final summary must explicitly say that verification was not run and why.
+`Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs. If a repo has no detected `test`, `lint`, or `build` command, `Stop` no longer deadlocks the session, but the final summary must explicitly say that verification was not run and why. In manager-led workflows, `TeammateIdle` also blocks if no specialist handoff happened yet, so `@m` cannot linger in manager-only analysis indefinitely.
 For code or config changes, the stop-safe summary is line-oriented: include exact summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:` rather than relying on loose keywords alone.
 
 If a later reply in the same session makes no additional changes after earlier code/config edits, keep reporting the actual verification, review status, changed files, and remaining risks instead of switching to a no-change footer.
