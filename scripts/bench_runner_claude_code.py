@@ -1106,8 +1106,6 @@ def main() -> int:
     write_text(OUTPUT_DIR / "workspace.patch", patch_text)
     write_text(OUTPUT_DIR / "changed-files.json", json.dumps(changed_files, ensure_ascii=False, indent=2) + "\n")
     write_text(OUTPUT_DIR / "task-prompt.txt", prompt + "\n")
-    if verification_required:
-        tests_run, tests_passed, verification_output = run_verification()
 
     verification_summary_present = has_line_prefix(result_text, "Verification status:")
     review_present = has_line_prefix(result_text, "Review outcome:")
