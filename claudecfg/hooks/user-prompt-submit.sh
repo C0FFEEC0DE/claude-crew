@@ -16,6 +16,7 @@ manager_mode="none"
 required_subagents='[]'
 required_subagent_any_of='[]'
 context_message=""
+informational_model_query="false"
 
 if grep -Eiq '(^|[[:space:]])(@m|@manager|/manager)($|[[:space:][:punct:]])' <<<"$prompt"; then
     manager_mode="orchestrate"
@@ -25,7 +26,15 @@ if grep -Eiq '(plan only|only plan|plan-only|только план|только 
     manager_mode="plan_only"
 fi
 
-if grep -Eiq '(bug|fix|defect|баг|ошиб|исправ)' <<<"$prompt"; then
+if grep -Eiq '(which|what|recommend|recommendation|compare|best|better|vs|versus|какую|какой|посовет|рекоменд|сравн|лучш|выбрат)' <<<"$prompt" \
+    && grep -Eiq '(model|models|llm|ollama|openrouter|qwen|llama|deepseek|модел|модели|модель)' <<<"$prompt" \
+    && ! grep -Eiq '(feature|implement|add support|integrat|new capability|фич|добав|интеграц|подключ|fix|bug|defect|баг|ошиб|исправ|refactor|rename|cleanup|tech debt|рефактор|почист|переимен)' <<<"$prompt"; then
+    informational_model_query="true"
+fi
+
+if [ "$informational_model_query" = "true" ]; then
+    task_type="other"
+elif grep -Eiq '(bug|fix|defect|баг|ошиб|исправ)' <<<"$prompt"; then
     task_type="bugfix"
 elif grep -Eiq '(refactor|rename|cleanup|tech debt|рефактор|почист|переимен)' <<<"$prompt"; then
     task_type="refactor"
