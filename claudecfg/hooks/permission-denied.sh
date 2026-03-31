@@ -13,4 +13,9 @@ if command_is_hard_denied_by_profile "$command"; then
     exit 0
 fi
 
+if ! permission_denied_should_retry; then
+    emit_permission_denied_no_retry
+    exit 0
+fi
+
 emit_permission_denied_retry
