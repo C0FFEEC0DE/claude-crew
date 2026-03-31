@@ -62,7 +62,7 @@ The behavioral benchmark workflow is:
 It:
 
 1. installs the Claude Code CLI
-2. runs `claudecfg/install.sh` so CI uses the same repo installer as local setup
+2. runs `./install.sh` so CI uses the same repo installer as local setup
 3. copies the repository `.claude/` directory into each isolated fixture workdir so project-local config is exercised during the benchmark
 4. runs `scripts/run-benchmark.sh` in `command` mode with the default `bench/tasks/lite/*.json` task glob
 5. uses `scripts/bench_runner_claude_code.py` as the per-task runner

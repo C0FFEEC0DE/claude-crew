@@ -19,7 +19,6 @@ This profile is hook-gated:
 ## Quick Start
 
 ```bash
-cd claudecfg
 ./install.sh
 ```
 

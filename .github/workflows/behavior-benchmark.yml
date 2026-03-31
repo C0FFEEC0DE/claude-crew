@@ -84,7 +84,7 @@ jobs:
       - name: Install Claude configuration
         shell: bash
         run: |
-          bash claudecfg/install.sh
+          bash ./install.sh
 
       - name: Run behavioral benchmark
         shell: bash

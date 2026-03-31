@@ -10,7 +10,6 @@ Badges reflect the latest workflow result for the `main` branch.
 ## Quick Start
 
 ```bash
-cd claudecfg
 ./install.sh
 ```
 
@@ -179,7 +178,7 @@ This harness verifies that key hooks block dangerous commands, classify prompts 
 That workflow:
 
 - installs the Claude Code CLI
-- runs `claudecfg/install.sh` to install the repo config into `~/.claude`
+- runs `./install.sh` to install the repo config into `~/.claude`
 - copies each benchmark fixture into an isolated task workdir
 - runs the real `claude -p` inside that workdir
 - uses the default cheap CI suite under `bench/tasks/lite/` so the gate stays fast enough for small models
