@@ -1,5 +1,6 @@
 {
   "id": "subagent-manager-doc-map-lite",
+  "agent_alias": "m",
   "category": "docs",
   "fixture": "python-math",
   "review_required": false,
@@ -19,7 +20,17 @@
   ],
   "forbidden_transcript_patterns": [
     "which agent would you prefer",
-    "which required agent"
+    "which required agent",
+    "I see the issue",
+    "markdown bold syntax",
+    "prefix match",
+    "footer repair",
+    "shell guard",
+    "stop-guard",
+    "subagent-stop-guard",
+    "hook mechanics",
+    "exact line prefixes",
+    "my formatting is breaking"
   ],
   "required_transcript_patterns": [
     "Plan:",

@@ -80,6 +80,68 @@ def test_required_transcript_patterns_report_unavailable_transcript(tmp_path, mo
     assert misses == ["<assistant transcript unavailable>"]
 
 
+def test_forbidden_transcript_patterns_catch_footer_repair_meta_chatter(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    transcript_path = tmp_path / "session.jsonl"
+    write_transcript(
+        transcript_path,
+        [
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "I see the issue - my markdown bold syntax is breaking the prefix match.",
+                        }
+                    ],
+                },
+            }
+        ],
+    )
+
+    scanned, hits = runner.forbidden_transcript_pattern_hits(
+        {"forbidden_transcript_patterns": [r"I see the issue", r"prefix match"]},
+        {"transcript_path": str(transcript_path)},
+    )
+
+    assert scanned is True
+    assert len(hits) == 2
+
+
+def test_forbidden_transcript_patterns_ignore_user_only_mentions(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    transcript_path = tmp_path / "session.jsonl"
+    write_transcript(
+        transcript_path,
+        [
+            {
+                "type": "user",
+                "message": {
+                    "role": "user",
+                    "content": [{"type": "text", "text": "Do not say: I see the issue or prefix match."}],
+                },
+            },
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Task: Explore - repo map\nLocations: calculator.py"}],
+                },
+            },
+        ],
+    )
+
+    scanned, hits = runner.forbidden_transcript_pattern_hits(
+        {"forbidden_transcript_patterns": [r"I see the issue", r"prefix match"]},
+        {"transcript_path": str(transcript_path)},
+    )
+
+    assert scanned is True
+    assert hits == []
+
+
 def test_completed_task_recovery_mode_accepts_max_turns_after_successful_completion(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
 

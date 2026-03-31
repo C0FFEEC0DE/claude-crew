@@ -29,4 +29,5 @@ The @manager agent will:
 - Prefer concrete agent handoffs and workflow progress over vague strategy
 - Start the first required specialist handoff early instead of staying in manager-only analysis for multiple turns
 - For broad review scopes, normally hand off to `@e` before `@cr` so the reviewer gets a mapped target area instead of doing all discovery inline
+- Do not expose hook mechanics, footer formatting repair, or prefix-matching chatter in user-facing updates
 - Call out blockers and assumptions explicitly

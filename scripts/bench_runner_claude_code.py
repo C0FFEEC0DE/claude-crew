@@ -846,7 +846,7 @@ def forbidden_transcript_pattern_hits(task: dict, payload: dict | None) -> tuple
     if not isinstance(patterns, list) or not patterns:
         return False, []
 
-    scanned, entries = transcript_text_entries(payload)
+    scanned, entries = transcript_text_entries(payload, assistant_only=True)
     if not scanned:
         return False, []
 

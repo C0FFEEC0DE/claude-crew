@@ -15,6 +15,7 @@ This profile is hook-gated:
 - refactor work requires successful verification or `@t`, plus `@cr` and one of `@a|@e|@hk`
 - review work requires `@cr`; docs work requires `@doc`
 - broad multi-file or workflow review should usually use `@e` before `@cr`, even though only `@cr` is hook-enforced
+- footer and stop-guard formatting are internal protocol details; agents should not expose prefix-matching or footer-repair chatter to the user
 
 ## Quick Start
 
@@ -53,5 +54,7 @@ Repository CI now includes:
 - status badges in `README.md`
 - `Validate`, `Hook Tests`, and `Security Scan` on every push and PR
 - `Behavior Benchmark` on every push, plus manual runs with model and task-glob overrides, using real `claude -p` inside isolated benchmark fixtures
+
+Agent-level regressions are covered by the golden suite in `bench/tasks/subagents/`. Use `docs/agent-contracts.md` for the contract matrix and the expected benchmark/hook layers for each agent.
 
 OpenRouter-backed Claude Code is configured via repository secrets/variables. See `docs/benchmarking.md`.

@@ -24,6 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - README status badges for repository workflows
 
 ### Changed
+- Behavior Benchmark recovery metrics now remain visible in `summary.json` and the GitHub summary without failing CI by default; strict recovery caps only apply when explicitly set through GitHub variables or `workflow_dispatch`
+- Benchmark transcript regression coverage now includes a reusable forbidden meta-chatter pattern set and limits forbidden transcript scans to assistant-like entries so user prompts do not trigger false positives
+- Golden subagent regression coverage is now explicit: every canonical agent alias must have at least one focused benchmark task with `agent_alias` plus non-empty required/forbidden transcript assertions, and the contract is documented in `docs/agent-contracts.md`
 - `PermissionDenied` retry behavior now disables retries in benchmark headless runs so denied shell commands do not consume turn budget during automated benchmark tasks
 - Tightened prompt classification so benchmark `Workflow override` and `workflow_category` markers take priority over keyword heuristics, preventing `fixture`/similar text from misclassifying refactor tasks as bugfix work
 - Moved the canonical installer entrypoint to repository root `./install.sh` and kept `claudecfg/install.sh` as a compatibility wrapper

@@ -120,6 +120,7 @@ Review policy:
 - for small localized reviews, `@cr` can review directly without forcing `@e`
 
 Subagent summaries must include exact line prefixes for `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:`.
+Those footer requirements are an internal handoff contract. Agents should not narrate prefix-matching problems, markdown-formatting repairs, or shell-guard mechanics to the user; they should silently fix the footer and keep the substantive answer separate from the handoff block.
 
 ## Standard Output
 
@@ -195,9 +196,15 @@ Repository-level checks are separate from the local Claude profile:
 - `.github/workflows/behavior-benchmark.yml` — behavioral acceptance tasks using the real Claude Code CLI inside benchmark fixtures
 - `.github/workflows/security-scan.yml` — repository secret scan on every push and PR, plus weekly schedule
 
+Behavior benchmark recovery metrics are always reported in `summary.json` and the GitHub step summary. By default they are informational only; strict recovery caps are enabled only when `BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS` or `BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS` are set explicitly, or when matching `workflow_dispatch` inputs are provided.
+
 Benchmark support files:
 
 - `tests/hooks/` — hook fixtures and assertions
 - `bench/tasks/` — benchmark task definitions
+- `bench/tasks/subagents/` — golden regression suite for each specialist agent
 - `bench/fixtures/` — benchmark fixture repositories
+- `docs/agent-contracts.md` — agent contract matrix and how the hook/benchmark layers fit together
 - `docs/benchmarking.md` — runner contract and GitHub setup
+
+Each canonical agent alias must have at least one focused task in `bench/tasks/subagents/` with non-empty `required_transcript_patterns` and `forbidden_transcript_patterns`. This keeps agent prompt regressions catchable in CI instead of depending on manual subagent spot checks.

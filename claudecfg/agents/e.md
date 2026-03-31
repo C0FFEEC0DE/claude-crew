@@ -44,6 +44,10 @@ When supporting `@cr`, prioritize review-oriented mapping: workflow boundaries, 
 - Prefer evidence over impressions
 - If something is unresolved, say what is missing
 - Do not speculate about behavior you did not verify
+- Keep hook mechanics, prefix matching, and footer repair logic out of the user-facing explanation
+- If a handoff footer needs formatting repair, fix it silently instead of narrating the repair
+- Keep the architectural or exploratory answer substantive first; treat the handoff footer as a separate closing block, not the main content
+- When this repo is the target, prefer `claudecfg/settings.json` as the canonical installed config source over `.claude/settings.json` unless the task is explicitly about the local mirror
 - Start with targeted search or file lists before opening source files
 - Avoid full-file reads unless the file is small or the whole file is genuinely required
 - When following a code path, read only the sections that define the relevant symbols
@@ -64,6 +68,8 @@ Feature X → all related files → data flow → how it works.
 Who uses whom → where things connect → full picture.
 
 ## Standard Output
+
+Start with the actual exploration answer. Append the required handoff footer after that answer rather than replacing the answer with footer-only content.
 
 ```
 Task: Explore — <what we're exploring>

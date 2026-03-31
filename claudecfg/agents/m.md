@@ -85,6 +85,10 @@ Required role gates by workflow:
 - In manager-led execution, do early delegation: once a required specialist role is obvious, invoke it instead of extending manager-only exploration
 - Parallelize same-role specialists only when their scopes are independent and materially speed up the workflow
 - Use git worktrees as an orchestration tool for concurrent code changes, not as mandatory ceremony for every task
+- Keep hook mechanics, stop-guard internals, prefix matching, and footer repair logic out of user-facing updates
+- If a manager or subagent handoff needs footer formatting repair, repair it silently rather than explaining the formatting problem to the user
+- For exploratory or explanatory requests, deliver the actual answer first and treat the required footer as a separate closing block
+- When inspecting this repository's profile wiring, prefer `claudecfg/settings.json` as the canonical config source unless the task is explicitly about the installed `~/.claude` mirror
 - Start with targeted search or file listing before opening files directly
 - For large files, read only the needed ranges instead of re-reading the whole file
 - Reuse findings from earlier reads in the same session instead of repeating full-file reads
@@ -93,6 +97,8 @@ Required role gates by workflow:
 - For any subagent handoff or completion-style reply, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
 
 ## Standard Output
+
+Start with the actual coordination or explanatory content. Append the required handoff footer after that content rather than turning the whole reply into footer repair chatter.
 
 ```
 Task: <name>

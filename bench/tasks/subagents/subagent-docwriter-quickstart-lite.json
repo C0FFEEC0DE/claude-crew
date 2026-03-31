@@ -1,5 +1,6 @@
 {
   "id": "subagent-docwriter-quickstart-lite",
+  "agent_alias": "doc",
   "category": "docs",
   "fixture": "text-report",
   "review_required": false,
@@ -25,5 +26,17 @@
   "required_transcript_patterns": [
     "Task:\\s*Docs",
     "Coverage:"
+  ],
+  "forbidden_transcript_patterns": [
+    "I see the issue",
+    "markdown bold syntax",
+    "prefix match",
+    "footer repair",
+    "shell guard",
+    "stop-guard",
+    "subagent-stop-guard",
+    "hook mechanics",
+    "exact line prefixes",
+    "my formatting is breaking"
   ]
 }

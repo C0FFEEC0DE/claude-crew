@@ -1,5 +1,6 @@
 {
   "id": "subagent-explorer-feature-handoff-lite",
+  "agent_alias": "e",
   "category": "feature",
   "fixture": "python-math",
   "review_required": true,
@@ -17,6 +18,18 @@
     "Ask the user for more input",
     "Skip tests",
     "Perform release or deploy work"
+  ],
+  "forbidden_transcript_patterns": [
+    "I see the issue",
+    "markdown bold syntax",
+    "prefix match",
+    "footer repair",
+    "shell guard",
+    "stop-guard",
+    "subagent-stop-guard",
+    "hook mechanics",
+    "exact line prefixes",
+    "my formatting is breaking"
   ],
   "required_transcript_patterns": [
     "Task:\\s*Explore",

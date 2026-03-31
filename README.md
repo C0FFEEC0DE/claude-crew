@@ -187,6 +187,9 @@ That workflow:
 - reports both configured and executed task counts so fail-fast runs are not mistaken for full-suite coverage
 - uploads per-task Claude logs, results, and workspace patches as artifacts
 - fails unless every benchmark task passes
+- reports recovered-task and summary-repair metrics by default without failing on them
+- only turns recovery metrics into a hard gate when explicit GitHub variables or `workflow_dispatch` inputs set recovery limits
+- can also fail on forbidden transcript patterns, which are used to catch prompt regressions such as internal hook/footer repair chatter leaking into user-facing output
 
 This is now the only real Claude Code workflow in the repository.
 
@@ -197,10 +200,14 @@ The default CI suite covers three small agent workflows:
 
 The fuller suite in `bench/tasks/*.json` remains available for manual or slower evaluation runs when you want broader workflow coverage.
 
+The per-agent golden regression suite lives under `bench/tasks/subagents/*.json`. Each canonical agent alias must have at least one focused task with non-empty required and forbidden transcript assertions so agent-level prompt regressions are caught automatically instead of through manual spot checks.
+
 Required benchmark model variable:
 
 - `OLLAMA_MODEL=qwen3.5:cloud`
 - optional: `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS=1024`
+- optional strict mode only: `BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS=<n>`
+- optional strict mode only: `BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS=<n>`
 
 ## Logs
 
@@ -209,6 +216,7 @@ Hook logs are written under `~/.claude/logs/`. Session metadata and transcript p
 ## Docs
 
 - `claudecfg/GUIDE.md` — full cheatsheet
+- `docs/agent-contracts.md` — agent contract matrix, golden regression suite, benchmark assertions, and hook-level contract
 - `claudecfg/agents/` — agent definitions
 - `claudecfg/commands/` — slash command definitions
 - `claudecfg/skills/` — reusable slash-skill prompts
