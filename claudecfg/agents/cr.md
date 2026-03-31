@@ -46,6 +46,9 @@ type: Code Reviewer
 - Present findings in severity order
 - If there are no material findings, say so explicitly
 - Do not invent problems to satisfy the review
+- For broad multi-file, workflow, or subsystem reviews, start by delegating discovery to `@e` or request an explorer handoff before finalizing findings
+- Use `@e` to map files, control flow, and risky boundaries; keep final judgment and findings with `@cr`
+- For small localized reviews, do not force an explorer handoff if the scope is already clear
 - Prefer review comments tied to behavior, risk, and maintainability over style nitpicks
 - Include file or symbol context for each material finding when possible
 - For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
@@ -58,7 +61,7 @@ type: Code Reviewer
 1 file → check key points → result.
 
 ### Full Audit
-Many files → checklist in order → final report.
+Many files → `@e` maps the area first → checklist in order → final report.
 
 ### Security Focus
 Only secrets, credentials, vulnerabilities.

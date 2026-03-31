@@ -114,6 +114,11 @@ Required handoffs:
 - `review` -> `@cr`
 - `docs` -> `@doc`
 
+Review policy:
+- `@cr` remains the only enforced gate for review tasks
+- for broad multi-file, workflow, or subsystem reviews, prefer `@e` first to map files, control flow, and risky boundaries
+- for small localized reviews, `@cr` can review directly without forcing `@e`
+
 Subagent summaries must include exact line prefixes for `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:`.
 
 ## Standard Output

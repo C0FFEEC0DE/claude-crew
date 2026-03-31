@@ -17,6 +17,7 @@ type: Explore
 ## Task
 
 Understand the project structure and how the requested area works.
+When supporting `@cr`, prioritize review-oriented mapping: workflow boundaries, risky paths, missing verification points, and where correctness or security issues are most likely to hide.
 
 ## Process
 

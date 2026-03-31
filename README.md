@@ -75,6 +75,11 @@ Required handoffs by workflow:
 - `review` -> `@cr`
 - `docs` -> `@doc`
 
+Review policy:
+- `review` keeps `@cr` as the only enforced gate
+- broad multi-file, workflow, or subsystem reviews should normally use `@e` first so `@cr` reviews against a code map instead of doing all discovery inline
+- small localized reviews can stay `@cr`-only when the scope is already obvious
+
 ### Hooks
 
 The profile uses hooks as enforcement points, not markdown alone:
