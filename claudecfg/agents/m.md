@@ -85,7 +85,7 @@ Required role gates by workflow:
 - In manager-led execution, do early delegation: once a required specialist role is obvious, invoke it instead of extending manager-only exploration
 - Parallelize same-role specialists only when their scopes are independent and materially speed up the workflow
 - Use git worktrees as an orchestration tool for concurrent code changes, not as mandatory ceremony for every task
-- Prefer `Grep`/`rg` to locate code before opening files directly
+- Start with targeted search or file listing before opening files directly
 - For large files, read only the needed ranges instead of re-reading the whole file
 - Reuse findings from earlier reads in the same session instead of repeating full-file reads
 - Call out assumptions, blockers, and any missing verification context

@@ -9,7 +9,7 @@
 - `Glob "**/*.py"` — find files
 
 ## Search Discipline
-- Prefer `Grep` or `rg` before opening files directly
+- Start with targeted search or file listing before opening files directly
 - For large files, read targeted ranges instead of full-file rereads
 - Reuse earlier reads from the session when possible
 

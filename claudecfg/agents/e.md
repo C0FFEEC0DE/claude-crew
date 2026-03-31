@@ -44,7 +44,7 @@ When supporting `@cr`, prioritize review-oriented mapping: workflow boundaries, 
 - Prefer evidence over impressions
 - If something is unresolved, say what is missing
 - Do not speculate about behavior you did not verify
-- Start with `Grep`/`rg` or file lists before opening source files
+- Start with targeted search or file lists before opening source files
 - Avoid full-file reads unless the file is small or the whole file is genuinely required
 - When following a code path, read only the sections that define the relevant symbols
 - Do not re-read the same file section if the earlier read already answered the question

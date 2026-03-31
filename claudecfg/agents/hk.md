@@ -42,7 +42,7 @@ type: Housekeeper
 
 - Ask for confirmation before deleting branches, large dependency trees, or user-owned artifacts
 - Do not perform destructive cleanup just because it looks safe
-- Prefer `rg` or other precise searches over broad recursive greps
+- Prefer precise targeted searches over broad recursive scans
 - Warn about leftover risk or debt instead of hiding it
 - When invoked for refactor work, keep the scope structural and behavior-preserving unless the user explicitly asked for more
 - For handoff replies, include exact lines that begin with `Outcome:`, `Changed files:`, `Verification status:`, and either `Remaining risks:` or `Next step:`
