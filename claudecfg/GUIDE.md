@@ -96,7 +96,7 @@ Main checkpoints:
 
 - `SessionStart` — bootstrap SDLC context and detect test/lint/build commands
 - `UserPromptSubmit` — classify work as feature, bugfix, refactor, review, or docs and seed required subagent roles
-- `PreToolUse` / `PermissionRequest` — block dangerous or out-of-scope commands, including force-push, `mkfs*`, and remote bootstrap pipes
+- `PreToolUse` / `PermissionRequest` / `PermissionDenied` — block dangerous or out-of-scope commands, including force-push, `mkfs*`, and remote bootstrap pipes; `PermissionDenied` only requests a retry for commands that are not hard-blocked by profile policy
 - `PostToolUse` / `PostToolUseFailure` — record edits and successful or failed test/lint/build status
 - `SubagentStart` / `SubagentStop` — enforce the subagent output contract with shell guards
 - `TaskCompleted` / `TeammateIdle` / `Stop` — share the same gate logic and block completion after missing verification, failed test/lint/build runs, or missing required subagent roles

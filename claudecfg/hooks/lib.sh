@@ -350,6 +350,14 @@ emit_permission_request_deny() {
         }'
 }
 
+emit_permission_denied_retry() {
+    jq -n '{ retry: true }'
+}
+
+emit_permission_denied_no_retry() {
+    jq -n '{ retry: false }'
+}
+
 stop_safe_no_change_footer_hint() {
     printf ' If this reply did not introduce additional changes, still report the actual verification, review, changed files, and remaining risks instead of using a no-change shortcut after code or config changes.'
 }
@@ -755,6 +763,33 @@ is_remote_shell_bootstrap_command() {
 
     if { [[ "$command" =~ (^|[[:space:]])curl($|[[:space:]]) ]] || [[ "$command" =~ (^|[[:space:]])wget($|[[:space:]]) ]]; } \
         && [[ "$command" =~ [|][[:space:]]*[[:alnum:]_./-]*(sh|bash|zsh|dash|ksh)($|[[:space:]]) ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+command_is_hard_denied_by_profile() {
+    local command="$1"
+
+    if [[ "$command" =~ (^|[[:space:]])sudo($|[[:space:]]) ]]; then
+        return 0
+    fi
+
+    if [[ "$command" =~ (^|[[:space:]])mkfs(\.[^[:space:]]+)?($|[[:space:]]) ]] || [[ "$command" =~ (^|[[:space:]])dd($|[[:space:]]) ]]; then
+        return 0
+    fi
+
+    if [[ "$command" == *"rm -rf /"* || "$command" == *"git reset --hard"* ]] \
+        || { [[ "$command" =~ git[[:space:]]+push ]] && [[ "$command" =~ (^|[[:space:]])(-f|--force|--force-with-lease)($|[[:space:]]) ]]; }; then
+        return 0
+    fi
+
+    if is_release_or_deploy_command "$command"; then
+        return 0
+    fi
+
+    if is_remote_shell_bootstrap_command "$command"; then
         return 0
     fi
 

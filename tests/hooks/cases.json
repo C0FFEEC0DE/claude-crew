@@ -49,6 +49,20 @@
     "stdout_jq": ".hookSpecificOutput.decision.behavior == \"deny\" and (.hookSpecificOutput.decision.message | contains(\"remote shell bootstrap\"))"
   },
   {
+    "name": "permission_denied_retries_non_hard_denied_command",
+    "script": "claudecfg/hooks/permission-denied.sh",
+    "stdin": "tests/hooks/fixtures/permission_denied_retry_safe_git_push.json",
+    "expect_exit": 0,
+    "stdout_jq": ".retry == true"
+  },
+  {
+    "name": "permission_denied_does_not_retry_hard_denied_command",
+    "script": "claudecfg/hooks/permission-denied.sh",
+    "stdin": "tests/hooks/fixtures/permission_denied_no_retry_sudo.json",
+    "expect_exit": 0,
+    "stdout_jq": ".retry == false"
+  },
+  {
     "name": "subagent_stop_blocks_without_assistant_message",
     "script": "claudecfg/hooks/subagent-stop-guard.sh",
     "stdin": "tests/hooks/fixtures/subagent_stop_no_message.json",
