@@ -67,7 +67,6 @@
     "script": "claudecfg/hooks/permission-denied.sh",
     "stdin": "tests/hooks/fixtures/permission_denied_no_retry_benchmark_ci.json",
     "env": {
-      "CI": "true",
       "BENCH_TASK_ID": "bugfix-zero-division-lite"
     },
     "expect_exit": 0,

@@ -359,7 +359,7 @@ emit_permission_denied_no_retry() {
 }
 
 permission_denied_should_retry() {
-    if [ "${GITHUB_ACTIONS:-}" = "true" ] || [ "${CI:-}" = "true" ] || [ -n "${BENCH_TASK_ID:-}" ]; then
+    if [ -n "${BENCH_TASK_ID:-}" ] || [ -n "${BENCH_TASK_FILE:-}" ] || [ -n "${BENCH_WORKDIR:-}" ]; then
         return 1
     fi
 

@@ -85,7 +85,7 @@ The profile uses hooks as enforcement points, not markdown alone:
 
 - `SessionStart` — bootstrap SDLC context and detect test/lint/build commands
 - `UserPromptSubmit` — classify task into `bugfix|feature|refactor|review|docs` and seed required subagent roles
-- `PreToolUse` / `PermissionRequest` / `PermissionDenied` — block destructive or out-of-scope actions, including force-push, `mkfs*`, and remote bootstrap pipes such as `curl|bash` or `wget|bash`; `PermissionDenied` retries only when the command was not hard-denied by profile policy and the session is not running in CI or benchmark headless mode
+- `PreToolUse` / `PermissionRequest` / `PermissionDenied` — block destructive or out-of-scope actions, including force-push, `mkfs*`, and remote bootstrap pipes such as `curl|bash` or `wget|bash`; `PermissionDenied` retries only when the command was not hard-denied by profile policy and the session is not running in benchmark headless mode
 - `PostToolUse` / `PostToolUseFailure` — track edits plus successful or failed test/lint/build commands
 - `SubagentStart` / `SubagentStop` — enforce the subagent handoff contract through shell hooks instead of prompt hooks
 - `TaskCompleted` / `Stop` / `TeammateIdle` — use the shared session state to block completion after missing verification, failed test/lint/build runs, or missing required subagent roles for the current workflow
