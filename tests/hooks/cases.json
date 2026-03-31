@@ -620,6 +620,13 @@
     "stdout_jq": ".decision == \"block\" and (.reason | contains(\"Repeated stop-block loop detected\"))"
   },
   {
+    "name": "stop_guard_allows_other_task_type_without_verification",
+    "script": "claudecfg/hooks/stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/stop_guard_other_task_type.json",
+    "seed_state": "tests/hooks/fixtures/state_stop_guard_other_task_type.json",
+    "expect_exit": 0
+  },
+  {
     "name": "session_start_detects_node_scripts",
     "script": "claudecfg/hooks/session-start.sh",
     "stdin": "tests/hooks/fixtures/session_start_node.json",
