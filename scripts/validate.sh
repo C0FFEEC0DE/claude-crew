@@ -10,14 +10,14 @@ cd "$REPO_ROOT"
 
 ERRORS=0
 
-echo "=== Validation Script ==="
-echo "Repository: $REPO_ROOT"
-echo ""
-
 report_error() {
     echo "ERROR: $1"
     ERRORS=$((ERRORS + 1))
 }
+
+echo "=== Validation Script ==="
+echo "Repository: $REPO_ROOT"
+echo ""
 
 echo "--- Checking JSON files ---"
 while IFS= read -r json_file; do
