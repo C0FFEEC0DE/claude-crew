@@ -78,3 +78,53 @@ def test_required_transcript_patterns_report_unavailable_transcript(tmp_path, mo
 
     assert scanned is False
     assert misses == ["<assistant transcript unavailable>"]
+
+
+def test_completed_task_recovery_mode_accepts_max_turns_after_successful_completion(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+
+    recovery = runner.completed_task_recovery_mode(
+        exit_code=1,
+        payload_subtype="error_max_turns",
+        fatal_error="",
+        completed=True,
+        verification_required=True,
+        tests_run=True,
+        tests_passed=True,
+        verification_summary_present=True,
+        review_required=True,
+        review_present=True,
+        risks_present=True,
+        docs_required=True,
+        docs_updated=True,
+        category="bugfix",
+        non_doc_changed_files=["calculator.py"],
+        doc_pattern_hits=[],
+    )
+
+    assert recovery == "max_turns"
+
+
+def test_completed_task_recovery_mode_rejects_max_turns_without_required_review(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+
+    recovery = runner.completed_task_recovery_mode(
+        exit_code=1,
+        payload_subtype="error_max_turns",
+        fatal_error="",
+        completed=True,
+        verification_required=True,
+        tests_run=True,
+        tests_passed=True,
+        verification_summary_present=True,
+        review_required=True,
+        review_present=False,
+        risks_present=True,
+        docs_required=False,
+        docs_updated=False,
+        category="bugfix",
+        non_doc_changed_files=["calculator.py"],
+        doc_pattern_hits=[],
+    )
+
+    assert recovery == "none"

@@ -647,6 +647,49 @@ def synthesize_footer(
     ]
 
 
+def completed_task_recovery_mode(
+    *,
+    exit_code: int,
+    payload_subtype: str,
+    fatal_error: str,
+    completed: bool,
+    verification_required: bool,
+    tests_run: bool,
+    tests_passed: bool,
+    verification_summary_present: bool,
+    review_required: bool,
+    review_present: bool,
+    risks_present: bool,
+    docs_required: bool,
+    docs_updated: bool,
+    category: str,
+    non_doc_changed_files: list[str],
+    doc_pattern_hits: list[str],
+) -> str:
+    if not completed:
+        return "none"
+    if verification_required and not (tests_run and tests_passed and verification_summary_present):
+        return "none"
+    if review_required and not review_present:
+        return "none"
+    if not risks_present:
+        return "none"
+    if docs_required and not docs_updated:
+        return "none"
+    if category == "docs" and non_doc_changed_files:
+        return "none"
+    if doc_pattern_hits:
+        return "none"
+
+    if exit_code == 124 and fatal_error.startswith("Claude timed out after "):
+        return "timeout"
+
+    if exit_code != 0 and payload_subtype == "error_max_turns":
+        return "max_turns"
+
+    return "none"
+
+
 def build_summary_repair_prompt(
     task: dict,
     result_text: str,
@@ -1128,26 +1171,34 @@ def main() -> int:
 
     write_text(OUTPUT_DIR / "claude-result.txt", result_text)
 
-    timeout_recovered = False
-    if (
-        exit_code == 124
-        and fatal_error.startswith("Claude timed out after ")
-        and completed
-        and (not verification_required or (tests_run and tests_passed and verification_summary_present))
-        and (not review_required or review_present)
-        and risks_present
-        and (not docs_required or docs_updated)
-        and not (task["category"] == "docs" and non_doc_changed_files)
-        and not doc_pattern_hits
-    ):
-        timeout_recovered = True
+    recovery_mode = completed_task_recovery_mode(
+        exit_code=exit_code,
+        payload_subtype=payload_subtype,
+        fatal_error=fatal_error,
+        completed=completed,
+        verification_required=verification_required,
+        tests_run=tests_run,
+        tests_passed=tests_passed,
+        verification_summary_present=verification_summary_present,
+        review_required=review_required,
+        review_present=review_present,
+        risks_present=risks_present,
+        docs_required=docs_required,
+        docs_updated=docs_updated,
+        category=task["category"],
+        non_doc_changed_files=non_doc_changed_files,
+        doc_pattern_hits=doc_pattern_hits,
+    )
+    timeout_recovered = recovery_mode == "timeout"
+    max_turns_recovered = recovery_mode == "max_turns"
+    recovered_nonzero_exit = recovery_mode != "none"
 
     status = "passed"
     failures: list[str] = []
 
-    if exit_code != 0 and not timeout_recovered:
+    if exit_code != 0 and not recovered_nonzero_exit:
         failures.append(f"claude_exit_code={exit_code}")
-    if fatal_error and not timeout_recovered:
+    if fatal_error and not recovered_nonzero_exit:
         failures.append(fatal_error)
     if not completed:
         failures.append("workspace_changed=false")
@@ -1187,6 +1238,7 @@ def main() -> int:
         f"Summary repair attempts: {summary_repair_attempts}. "
         f"Summary repaired by: {summary_repaired_by}. "
         f"Timeout recovered: {timeout_recovered}. "
+        f"Max-turns recovered: {max_turns_recovered}. "
         f"Transcript scanned: {transcript_scanned}. "
         f"Forbidden transcript hits: {'; '.join(transcript_pattern_hits) if transcript_pattern_hits else 'none'}. "
         f"Required assistant transcript scanned: {required_transcript_scanned}. "
@@ -1220,6 +1272,7 @@ def main() -> int:
         "claude_subtype": payload_subtype,
         "claude_stop_reason": payload_stop_reason,
         "timeout_recovered": timeout_recovered,
+        "max_turns_recovered": max_turns_recovered,
         "permission_denials_count": len(permission_denials),
         "first_permission_denial": first_permission_denial_summary(permission_denials),
         "forbidden_doc_pattern_hits": doc_pattern_hits,
