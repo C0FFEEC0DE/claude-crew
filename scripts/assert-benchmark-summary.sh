@@ -8,6 +8,8 @@ set -euo pipefail
 }
 
 summary_file="$1"
+max_recovered_tasks="${BENCH_MAX_RECOVERED_TASKS:-0}"
+max_summary_repaired="${BENCH_MAX_SUMMARY_REPAIRED_TASKS:-0}"
 
 jq -e '
     .totals.configured_tasks > 0
@@ -17,4 +19,6 @@ jq -e '
     and .totals.passed == .totals.tasks
     and .totals.tool_failures == 0
     and .totals.policy_violations == 0
-' "$summary_file" >/dev/null
+    and .totals.recovered_tasks <= $max_recovered_tasks
+    and .totals.summary_repaired <= $max_summary_repaired
+' --argjson max_recovered_tasks "$max_recovered_tasks" --argjson max_summary_repaired "$max_summary_repaired" "$summary_file" >/dev/null
