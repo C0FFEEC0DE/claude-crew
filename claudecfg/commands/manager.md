@@ -28,4 +28,5 @@ The @manager agent will:
 - Use plan-only mode only when the user explicitly asks for planning without execution
 - Prefer concrete agent handoffs and workflow progress over vague strategy
 - Start the first required specialist handoff early instead of staying in manager-only analysis for multiple turns
+- For broad review scopes, normally hand off to `@e` before `@cr` so the reviewer gets a mapped target area instead of doing all discovery inline
 - Call out blockers and assumptions explicitly

@@ -481,6 +481,13 @@
     "expect_exit": 0
   },
   {
+    "name": "stop_guard_allows_broad_review_when_explorer_then_reviewer_are_in_transcript",
+    "script": "claudecfg/hooks/stop-guard.sh",
+    "stdin": "tests/hooks/fixtures/stop_guard_review_explorer_then_reviewer.json",
+    "seed_state": "tests/hooks/fixtures/state_review_manager_explorer_then_reviewer.json",
+    "expect_exit": 0
+  },
+  {
     "name": "stop_guard_blocks_review_only_without_verification_status",
     "script": "claudecfg/hooks/stop-guard.sh",
     "stdin": "tests/hooks/fixtures/stop_guard_review_only.json",

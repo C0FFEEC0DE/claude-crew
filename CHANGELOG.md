@@ -57,6 +57,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Made the `bugfix-zero-division` benchmark contract explicitly require a `README.md` update so docs compliance is unambiguous for the first bugfix gate
 - Added task-level `forbidden_doc_patterns` support to the benchmark runner so docs tasks can fail on hallucinated files, commands, or clone steps in generated README changes
 - Tightened `docs-quickstart-clarity` to forbid invented files or install steps such as `requirements.txt`, `generate_report.py`, `git clone`, and `pip install -r`
+- Updated review guidance so broad workflow, subsystem, and multi-file reviews should normally map the area with `@explorer` before `@code-reviewer`, while keeping `@cr` as the only enforced review gate
 
 ### Fixed
 - New Feature workflow missing implementation and test steps
@@ -68,6 +69,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Fixed false `@general-purpose` role recording when specialized subagents were invoked through generic runtime payload fields
 - Reduced stop-loop UX friction by surfacing a ready-to-use no-change footer in stop-guard feedback
 - Fixed live `SubagentStop` and `Stop` false blocks caused by missing `last_assistant_message` in runtime hook payloads despite valid assistant summaries in the session transcript
+- Fixed false review gating when runtimes recorded specialist launches only in transcript lines such as `Skill(/review)` or `Code Reviewer(...)`
+- Fixed stop-loop false blocks when manager-led workflows were backgrounded before the first specialist handoff completed
 
 ## [1.0.0] - 2026-03-19
 

@@ -14,6 +14,7 @@ This profile is hook-gated:
 - bugfix work requires successful verification or `@t`, plus `@cr` and one of `@bug|@e|@dbg`
 - refactor work requires successful verification or `@t`, plus `@cr` and one of `@a|@e|@hk`
 - review work requires `@cr`; docs work requires `@doc`
+- broad multi-file or workflow review should usually use `@e` before `@cr`, even though only `@cr` is hook-enforced
 
 ## Quick Start
 
@@ -41,6 +42,7 @@ Commands `/debug`, `/test`, `/design`, `/refactor`, `/review` and the `/docs` sk
 - `@hk` — Veles (cleanup)
 
 Subagent handoffs normalize aliases, names, and subagent-type fields from both snake_case and camelCase payloads before generic runtime types are considered.
+Transcript fallback also recognizes slash-skill loads and agent launch lines like `Code Reviewer(...)` when runtimes omit explicit `SubagentStart`.
 
 ## Docs
 
