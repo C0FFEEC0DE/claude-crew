@@ -17,6 +17,7 @@ required_subagents='[]'
 required_subagent_any_of='[]'
 context_message=""
 informational_model_query="false"
+override_task_type=""
 
 if grep -Eiq '(^|[[:space:]])(@m|@manager|/manager)($|[[:space:][:punct:]])' <<<"$prompt"; then
     manager_mode="orchestrate"
@@ -26,15 +27,31 @@ if grep -Eiq '(plan only|only plan|plan-only|только план|только 
     manager_mode="plan_only"
 fi
 
+override_task_type="$(
+    grep -Eo 'workflow override: treat this as a (feature|bugfix|refactor|review|docs) workflow' <<<"$prompt" \
+        | sed -E 's/.* a ([a-z]+) workflow/\1/' \
+        | head -n1 || true
+)"
+
+if [ -z "$override_task_type" ]; then
+    override_task_type="$(
+        grep -Eo 'workflow_category:[[:space:]]*(feature|bugfix|refactor|review|docs)' <<<"$prompt" \
+            | sed -E 's/.*workflow_category:[[:space:]]*([a-z]+)/\1/' \
+            | head -n1 || true
+    )"
+fi
+
 if grep -Eiq '(which|what|recommend|recommendation|compare|best|better|vs|versus|какую|какой|посовет|рекоменд|сравн|лучш|выбрат)' <<<"$prompt" \
     && grep -Eiq '(model|models|llm|ollama|openrouter|qwen|llama|deepseek|модел|модели|модель)' <<<"$prompt" \
     && ! grep -Eiq '(feature|implement|add support|integrat|new capability|фич|добав|интеграц|подключ|fix|bug|defect|баг|ошиб|исправ|refactor|rename|cleanup|tech debt|рефактор|почист|переимен)' <<<"$prompt"; then
     informational_model_query="true"
 fi
 
-if [ "$informational_model_query" = "true" ]; then
+if [ -n "$override_task_type" ]; then
+    task_type="$override_task_type"
+elif [ "$informational_model_query" = "true" ]; then
     task_type="other"
-elif grep -Eiq '(bug|fix|defect|баг|ошиб|исправ)' <<<"$prompt"; then
+elif grep -Eiq '(^|[^[:alpha:]])(bugfix|bug|defect|regression|fix|fixes|fixed|fixing|баг|ошиб|исправ)([^[:alpha:]]|$)' <<<"$prompt"; then
     task_type="bugfix"
 elif grep -Eiq '(refactor|rename|cleanup|tech debt|рефактор|почист|переимен)' <<<"$prompt"; then
     task_type="refactor"

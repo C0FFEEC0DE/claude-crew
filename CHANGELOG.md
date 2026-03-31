@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - README status badges for repository workflows
 
 ### Changed
+- Tightened prompt classification so benchmark `Workflow override` and `workflow_category` markers take priority over keyword heuristics, preventing `fixture`/similar text from misclassifying refactor tasks as bugfix work
 - Moved the canonical installer entrypoint to repository root `./install.sh` and kept `claudecfg/install.sh` as a compatibility wrapper
 - Fixed agent types to use specialized types instead of `general-purpose`
 - Reworked workflows around hook-gated execution instead of manager auto-execution promises
