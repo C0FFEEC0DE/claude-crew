@@ -90,8 +90,12 @@
   "hooks": {
     "SessionStart": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/session-start.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/session-start.sh"
+          }
+        ]
       }
     ],
     "InstructionsLoaded": [
@@ -108,8 +112,12 @@
     ],
     "UserPromptSubmit": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/user-prompt-submit.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/user-prompt-submit.sh"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -178,59 +186,95 @@
     ],
     "SubagentStart": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/subagent-start.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/subagent-start.sh"
+          }
+        ]
       }
     ],
     "SubagentStop": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/subagent-stop-guard.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/subagent-stop-guard.sh"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/stop-guard.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/stop-guard.sh"
+          }
+        ]
       }
     ],
     "TeammateIdle": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/teammate-idle.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/teammate-idle.sh"
+          }
+        ]
       }
     ],
     "TaskCompleted": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/task-completed.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/task-completed.sh"
+          }
+        ]
       }
     ],
     "ConfigChange": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/config-change.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/config-change.sh"
+          }
+        ]
       }
     ],
     "PreCompact": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/pre-compact.sh",
-        "async": true
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/pre-compact.sh",
+            "async": true
+          }
+        ]
       }
     ],
     "PostCompact": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/post-compact.sh",
-        "async": true
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/post-compact.sh",
+            "async": true
+          }
+        ]
       }
     ],
     "SessionEnd": [
       {
-        "type": "command",
-        "command": "\"$HOME\"/.claude/hooks/session-end.sh",
-        "async": true
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/session-end.sh",
+            "async": true
+          }
+        ]
       }
     ]
   }

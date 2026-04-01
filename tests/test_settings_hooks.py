@@ -1,4 +1,14 @@
-"""Tests for validating claude-code settings.json hooks structure."""
+"""Tests for validating claude-code settings.json hooks structure.
+
+According to official Claude Code documentation:
+https://code.claude.com/docs/en/hooks.md
+
+All hook events use the nested structure:
+  {"hooks": [{"type": "...", "command": "..."}]}
+
+Matcher-based events add a "matcher" field:
+  {"matcher": "Bash", "hooks": [...]}
+"""
 import json
 from pathlib import Path
 
@@ -23,8 +33,21 @@ HOOK_EVENTS = {
     "SessionEnd",
 }
 
-VALID_HOOK_KEYS = {"type", "command", "async"}
-VALID_EVENT_KEYS = {"matcher", "hooks"}
+# Events that support matcher filtering
+MATCHER_EVENTS = {
+    "InstructionsLoaded",
+    "PreToolUse",
+    "PermissionRequest",
+    "PermissionDenied",
+    "PostToolUse",
+    "PostToolUseFailure",
+}
+
+# Valid keys for hook record objects
+VALID_HOOK_RECORD_KEYS = {"matcher", "hooks"}
+
+# Valid keys for command hook definitions
+VALID_COMMAND_HOOK_KEYS = {"type", "command", "async"}
 
 
 def load_settings_json() -> dict:
@@ -35,54 +58,44 @@ def load_settings_json() -> dict:
         return json.load(f)
 
 
-def validate_hook_object(hook_obj: dict, event_name: str, has_matcher: bool) -> list[str]:
+def validate_hook_record(hook_record: dict, event_name: str, expects_matcher: bool) -> list[str]:
     """
-    Validate a single hook object within an event array.
+    Validate a hook record object.
+
+    According to official docs, ALL events use nested {"hooks": [...]} structure.
+    Matcher-based events also have a "matcher" field.
 
     Args:
-        hook_obj: The hook object to validate
+        hook_record: The hook record to validate
         event_name: Name of the hook event (for error messages)
-        has_matcher: Whether this event uses matcher-based format
+        expects_matcher: Whether this event should have a matcher
 
     Returns:
         List of validation errors
     """
     errors = []
 
-    if has_matcher:
-        # Matcher-based format: {"matcher": "...", "hooks": [...]}
-        if "matcher" not in hook_obj:
-            errors.append(f"{event_name}: hook record missing required 'matcher' key")
-        if "hooks" not in hook_obj:
-            errors.append(f"{event_name}: hook record missing required 'hooks' key")
-        elif not isinstance(hook_obj["hooks"], list):
-            errors.append(f"{event_name}: 'hooks' must be an array")
-        else:
-            # Validate nested hook definitions
-            for idx, nested_hook in enumerate(hook_obj["hooks"]):
-                nested_errors = validate_hook_definition(nested_hook, f"{event_name}[{idx}].hooks")
-                errors.extend(nested_errors)
-
-        # Check for invalid keys (keys other than matcher/hooks)
-        invalid_keys = set(hook_obj.keys()) - VALID_EVENT_KEYS
-        if invalid_keys:
-            errors.append(f"{event_name}: invalid keys in hook record: {invalid_keys}")
+    # All events must have "hooks" key with array value
+    if "hooks" not in hook_record:
+        errors.append(f"{event_name}: missing required 'hooks' key - all events use nested format")
+    elif not isinstance(hook_record["hooks"], list):
+        errors.append(f"{event_name}: 'hooks' must be an array")
+    elif len(hook_record["hooks"]) == 0:
+        errors.append(f"{event_name}: 'hooks' array must not be empty")
     else:
-        # Flat format: {"type": "...", "command": "..."}
-        # Check for invalid nested 'hooks' key (common mistake)
-        if "hooks" in hook_obj:
-            errors.append(
-                f"{event_name}: invalid 'hooks' key in flat format - "
-                f"hook objects should be direct array elements, not nested"
-            )
-        if "matcher" in hook_obj:
-            errors.append(
-                f"{event_name}: has 'matcher' key but event should use flat format"
-            )
+        # Validate each hook definition in the array
+        for idx, hook_def in enumerate(hook_record["hooks"]):
+            nested_errors = validate_hook_definition(hook_def, f"{event_name}.hooks[{idx}]")
+            errors.extend(nested_errors)
 
-        # Validate hook definition keys
-        def_errors = validate_hook_definition(hook_obj, event_name)
-        errors.extend(def_errors)
+    # Check matcher requirement
+    if expects_matcher and "matcher" not in hook_record:
+        errors.append(f"{event_name}: matcher-based event missing 'matcher' key")
+
+    # Check for invalid keys
+    invalid_keys = set(hook_record.keys()) - VALID_HOOK_RECORD_KEYS
+    if invalid_keys:
+        errors.append(f"{event_name}: invalid keys in hook record: {invalid_keys}")
 
     return errors
 
@@ -107,13 +120,14 @@ def validate_hook_definition(hook_def: dict, path: str) -> list[str]:
     if "type" not in hook_def:
         errors.append(f"{path}: hook definition missing required 'type' key")
 
-    if hook_def.get("type") == "command" and "command" not in hook_def:
-        errors.append(f"{path}: command hook missing required 'command' key")
+    if hook_def.get("type") == "command":
+        if "command" not in hook_def:
+            errors.append(f"{path}: command hook missing required 'command' key")
 
-    # Check for invalid keys
-    invalid_keys = set(hook_def.keys()) - VALID_HOOK_KEYS
-    if invalid_keys:
-        errors.append(f"{path}: invalid keys in hook definition: {invalid_keys}")
+        # Check for invalid keys in command hooks
+        invalid_keys = set(hook_def.keys()) - VALID_COMMAND_HOOK_KEYS
+        if invalid_keys:
+            errors.append(f"{path}: invalid keys in command hook definition: {invalid_keys}")
 
     return errors
 
@@ -141,7 +155,7 @@ def test_all_hook_events_are_known():
 
 
 def test_hook_events_have_arrays():
-    """Test that all hook events contain arrays."""
+    """Test that all hook events contain arrays of hook records."""
     settings = load_settings_json()
 
     for event_name, event_value in settings["hooks"].items():
@@ -149,49 +163,65 @@ def test_hook_events_have_arrays():
         assert len(event_value) > 0, f"{event_name}: array must not be empty"
 
 
-def test_session_start_flat_format():
-    """Test that SessionStart uses flat format (no nested 'hooks' key)."""
-    settings = load_settings_json()
-    session_start = settings["hooks"].get("SessionStart", [])
+def test_all_events_use_nested_hooks_format():
+    """
+    Test that ALL events use the nested {"hooks": [...]} format.
 
-    for idx, hook_obj in enumerate(session_start):
-        assert "hooks" not in hook_obj, (
-            f"SessionStart[{idx}]: invalid nested 'hooks' key - "
-            f"use flat format for events without matcher"
-        )
-        assert "matcher" not in hook_obj, (
-            f"SessionStart[{idx}]: should not have 'matcher' key in flat format"
-        )
+    According to official Claude Code documentation, all hook events
+    must use the nested structure, not flat format.
+
+    See: https://code.claude.com/docs/en/hooks.md
+    """
+    settings = load_settings_json()
+
+    for event_name, event_array in settings["hooks"].items():
+        for idx, hook_record in enumerate(event_array):
+            assert "hooks" in hook_record, (
+                f"{event_name}[{idx}]: missing 'hooks' key - "
+                f"ALL events must use nested format per official docs. "
+                f"Correct: {{'hooks': [{{'type': 'command', 'command': '...'}}]}}"
+            )
+            assert isinstance(hook_record["hooks"], list), (
+                f"{event_name}[{idx}]: 'hooks' must be an array"
+            )
 
 
 def test_matcher_based_events_have_correct_structure():
-    """Test that matcher-based events have correct structure with matcher and hooks keys."""
+    """Test that matcher-based events have matcher and hooks keys."""
     settings = load_settings_json()
 
-    # Events that should use matcher-based format
-    matcher_events = {
-        "InstructionsLoaded",
-        "PreToolUse",
-        "PermissionRequest",
-        "PermissionDenied",
-        "PostToolUse",
-        "PostToolUseFailure",
-    }
-
-    for event_name in matcher_events:
+    for event_name in MATCHER_EVENTS:
         if event_name not in settings["hooks"]:
             continue
 
         event_array = settings["hooks"][event_name]
-        for idx, hook_obj in enumerate(event_array):
-            assert "matcher" in hook_obj, (
-                f"{event_name}[{idx}]: matcher-based events must have 'matcher' key"
+        for idx, hook_record in enumerate(event_array):
+            assert "matcher" in hook_record, (
+                f"{event_name}[{idx}]: matcher-based event missing 'matcher' key"
             )
-            assert "hooks" in hook_obj, (
-                f"{event_name}[{idx}]: matcher-based events must have 'hooks' key"
+            assert "hooks" in hook_record, (
+                f"{event_name}[{idx}]: matcher-based event missing 'hooks' key"
             )
-            assert isinstance(hook_obj["hooks"], list), (
+            assert isinstance(hook_record["hooks"], list), (
                 f"{event_name}[{idx}]: 'hooks' must be an array"
+            )
+
+
+def test_non_matcher_events_dont_have_matcher():
+    """Test that non-matcher events don't have matcher key."""
+    settings = load_settings_json()
+
+    non_matcher_events = HOOK_EVENTS - MATCHER_EVENTS
+
+    for event_name in non_matcher_events:
+        if event_name not in settings["hooks"]:
+            continue
+
+        event_array = settings["hooks"][event_name]
+        for idx, hook_record in enumerate(event_array):
+            assert "matcher" not in hook_record, (
+                f"{event_name}[{idx}]: 'matcher' key only valid for: "
+                f"{', '.join(sorted(MATCHER_EVENTS))}"
             )
 
 
@@ -200,18 +230,10 @@ def test_no_invalid_keys_in_hook_records():
     settings = load_settings_json()
 
     for event_name, event_array in settings["hooks"].items():
-        # Determine if this event uses matcher-based format
-        uses_matcher = event_name in {
-            "InstructionsLoaded",
-            "PreToolUse",
-            "PermissionRequest",
-            "PermissionDenied",
-            "PostToolUse",
-            "PostToolUseFailure",
-        }
+        expects_matcher = event_name in MATCHER_EVENTS
 
-        for idx, hook_obj in enumerate(event_array):
-            errors = validate_hook_object(hook_obj, f"{event_name}[{idx}]", uses_matcher)
+        for idx, hook_record in enumerate(event_array):
+            errors = validate_hook_record(hook_record, f"{event_name}[{idx}]", expects_matcher)
             assert not errors, f"Validation errors: {'; '.join(errors)}"
 
 
@@ -220,74 +242,36 @@ def test_hook_definitions_have_required_keys():
     settings = load_settings_json()
 
     for event_name, event_array in settings["hooks"].items():
-        uses_matcher = event_name in {
-            "InstructionsLoaded",
-            "PreToolUse",
-            "PermissionRequest",
-            "PermissionDenied",
-            "PostToolUse",
-            "PostToolUseFailure",
-        }
-
-        for idx, hook_obj in enumerate(event_array):
-            if uses_matcher:
-                # Nested format
-                for nested_idx, hook_def in enumerate(hook_obj.get("hooks", [])):
-                    assert "type" in hook_def, (
-                        f"{event_name}[{idx}].hooks[{nested_idx}]: missing 'type' key"
-                    )
-                    if hook_def.get("type") == "command":
-                        assert "command" in hook_def, (
-                            f"{event_name}[{idx}].hooks[{nested_idx}]: command hook missing 'command' key"
-                        )
-            else:
-                # Flat format
-                hook_def = hook_obj
+        for idx, hook_record in enumerate(event_array):
+            hook_list = hook_record.get("hooks", [])
+            for nested_idx, hook_def in enumerate(hook_list):
                 assert "type" in hook_def, (
-                    f"{event_name}[{idx}]: missing 'type' key"
+                    f"{event_name}[{idx}].hooks[{nested_idx}]: missing 'type' key"
                 )
                 if hook_def.get("type") == "command":
                     assert "command" in hook_def, (
-                        f"{event_name}[{idx}]: command hook missing 'command' key"
+                        f"{event_name}[{idx}].hooks[{nested_idx}]: "
+                        f"command hook missing 'command' key"
                     )
 
 
-def test_flat_format_events_reject_nested_hooks_key():
+def test_regression_no_flat_format_without_hooks_key():
     """
-    Test that flat-format events (without matcher) reject nested 'hooks' key.
+    Regression test: prevent 'PermissionDenied: Invalid key in record' error.
 
-    This is a regression test for: PermissionDenied: Invalid key in record
-    which occurred when hook objects were wrapped in {'hooks': [...]} instead
-    of being direct array elements.
+    This error occurred when hook records were missing the required 'hooks' key.
+    All events must use nested format: {"hooks": [{"type": "...", "command": "..."}]}
+
+    Flat format without 'hooks' key is INVALID per official documentation.
     """
     settings = load_settings_json()
 
-    # Events that must use flat format (no matcher, no nested 'hooks')
-    flat_format_events = {
-        "SessionStart",
-        "UserPromptSubmit",
-        "SubagentStart",
-        "SubagentStop",
-        "Stop",
-        "TeammateIdle",
-        "TaskCompleted",
-        "ConfigChange",
-        "PreCompact",
-        "PostCompact",
-        "SessionEnd",
-    }
-
-    for event_name in flat_format_events:
-        if event_name not in settings["hooks"]:
-            continue
-
-        event_array = settings["hooks"][event_name]
-        for idx, hook_obj in enumerate(event_array):
-            assert "hooks" not in hook_obj, (
-                f"{event_name}[{idx}]: nested 'hooks' key is invalid - "
-                f"this causes 'PermissionDenied: Invalid key in record' error. "
-                f"Use flat format: {{'type': 'command', 'command': '...'}}"
-            )
-            assert "matcher" not in hook_obj, (
-                f"{event_name}[{idx}]: 'matcher' key not allowed in flat format"
+    for event_name, event_array in settings["hooks"].items():
+        for idx, hook_record in enumerate(event_array):
+            # The key assertion: 'hooks' must exist in every record
+            assert "hooks" in hook_record, (
+                f"{event_name}[{idx}]: CRITICAL - missing 'hooks' key causes "
+                f"'PermissionDenied: Invalid key in record' error. "
+                f"Per https://code.claude.com/docs/en/hooks.md, ALL events require "
+                f"nested format: {{'hooks': [{{'type': 'command', 'command': '...'}}]}}"
             )
