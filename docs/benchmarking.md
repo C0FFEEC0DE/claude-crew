@@ -14,7 +14,7 @@ The behavioral benchmark copies each fixture from `bench/fixtures/` into a tempo
 Current task assertions include:
 
 - workspace changes were actually made
-- verification-required tasks still pass `pytest -q`
+- verification-required tasks still pass the fixture-appropriate test command such as `pytest -q`, `npm test`, `cargo test`, or `go test ./...`
 - implementation tasks verify the final Claude response includes exact stop-safe summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`
 - subagent golden tasks verify the transcript includes exact handoff-footer markers for `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:`
 - docs-required tasks changed documentation
@@ -31,8 +31,9 @@ The live GitHub workflow now defaults to the cheaper suite in `bench/tasks/lite/
 - finish with the required stop-safe summary or subagent handoff footer
 
 The fuller suite in `bench/tasks/*.json` remains available for manual or slower runs when you want broader workflow coverage.
+That fuller matrix now includes mixed-language fixtures such as `bench/fixtures/node-app`, so the benchmark can cover non-Python verification without forcing the default PR path to grow.
 
-The runner invokes Claude Code with `--permission-mode acceptEdits` so isolated fixture repositories can be modified non-interactively during CI. The bundled profile also allows `pytest` directly because benchmark tasks explicitly ask for `pytest -q`, so harmless verification runs do not inflate `permission_denials_count`. If a task still fails, inspect `claude_subtype`, `claude_stop_reason`, `permission_denials_count`, and `first_permission_denial` in the task summary and `result.json`.
+The runner invokes Claude Code with `--permission-mode acceptEdits` so isolated fixture repositories can be modified non-interactively during CI. The bundled profile allows the relevant fixture-local test commands directly, including `pytest`, `npm`, `cargo`, and `go`, so harmless verification runs do not inflate `permission_denials_count`. If a task still fails, inspect `claude_subtype`, `claude_stop_reason`, `permission_denials_count`, and `first_permission_denial` in the task summary and `result.json`.
 The GitHub workflow default is `8` turns per task so CI stays bounded for small models; raise it manually in `workflow_dispatch` when you want a slower debug run.
 The runner also injects an explicit workflow override into the prompt so bugfix, feature, refactor, and docs tasks are not misclassified as review-only work just because the final summary must mention review outcome.
 Manager-led tasks are expected to continue orchestration after manager activation unless the prompt explicitly asks for plan-only behavior. The benchmark contract now expects an early specialist handoff rather than prolonged manager-only analysis.
@@ -60,6 +61,15 @@ Additional focused suites can live under nested globs such as:
 - `bench/tasks/chains/*.json` for longer orchestration suites when you want them
 
 The subagent suite under `bench/tasks/subagents/*.json` is the repository's golden regression suite for agent behavior. Every canonical agent alias is expected to have coverage there, and each task should include both `required_transcript_patterns` and `forbidden_transcript_patterns` so the runner can catch “agent did not do the expected thing” failures automatically. In addition to role-specific markers such as `Findings:` or `Root cause:`, every subagent golden task is expected to carry the shared footer markers `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:`.
+
+## Hook Test Layers
+
+Hook behavior is covered by two local harness modes:
+
+- `bash scripts/test-hooks.sh` runs `tests/hooks/cases.json` and checks isolated hook contracts one event at a time.
+- `bash scripts/test-hooks.sh tests/hooks/scenarios.json` runs shared-state scenarios that chain multiple hooks through a single session `HOME`.
+
+Use cases for edge payloads, null/empty field handling, and single-hook contracts. Use scenarios for end-to-end flows such as prompt classification -> edit tracking -> verification -> completion, plus session lifecycle logging.
 
 ## GitHub Workflow
 

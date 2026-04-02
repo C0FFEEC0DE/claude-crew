@@ -28,7 +28,7 @@ if not MODEL_NAME:
     raise RuntimeError("OLLAMA_MODEL must be set")
 
 MAX_TURNS = env_or_default("MAX_TURNS", "16")
-CLAUDE_TIMEOUT_SECONDS = int(env_or_default("CLAUDE_TIMEOUT_SECONDS", "180"))
+CLAUDE_TIMEOUT_SECONDS = int(env_or_default("CLAUDE_TIMEOUT_SECONDS", "300"))
 CLAUDE_CODE_MAX_OUTPUT_TOKENS = env_or_default("CLAUDE_CODE_MAX_OUTPUT_TOKENS", "")
 OUTPUT_TOKEN_BUDGET_RETRIES = 3
 PROVIDER_ERROR_RETRIES = 2
@@ -87,10 +87,14 @@ def build_patch(before: dict[str, str], after: dict[str, str]) -> str:
     return "".join(chunks)
 
 
-def build_prompt(task: dict) -> str:
+def build_prompt(task: dict, verification_label: str) -> str:
     success_criteria = "\n".join(f"- {item}" for item in task.get("success_criteria", []))
     must_not = "\n".join(f"- {item}" for item in task.get("must_not", []))
     category = str(task["category"])
+    if task.get("verification_required") and verification_label != "verification":
+        verification_hint = f"If verification is required, run the relevant tests locally ({verification_label})."
+    else:
+        verification_hint = "If verification is required, run the relevant tests locally."
     workflow_override = (
         f"Workflow override: treat this as a {category} workflow, not a review-only workflow. "
         "Implementation and file edits are in scope when the task asks for them. "
@@ -100,7 +104,7 @@ def build_prompt(task: dict) -> str:
 
 Complete the task in the current working directory using the installed Claude Code profile from ~/.claude.
 Use tools normally. Make only the changes needed for this task. Do not do release or deploy work.
-If behavior changes, update docs. If verification is required, run the relevant tests locally.
+If behavior changes, update docs. {verification_hint}
 Leave the workspace changes in place for artifact collection.
 
 {workflow_override}
@@ -134,7 +138,7 @@ Review outcome: <done|pending|not required> - <one sentence>
 Remaining risks: <one sentence or "none">
 
 Example footer:
-Verification status: passed - pytest -q completed successfully.
+Verification status: passed - {verification_label} completed successfully.
 Review outcome: done - changes were reviewed before completion.
 Remaining risks: none
 """
@@ -557,12 +561,34 @@ def extract_result_text_from_transcript(payload: dict | None) -> str:
     return best_text if best_score > 0 else ""
 
 
-def run_verification() -> tuple[bool, bool, str]:
-    tests_exist = any(WORKDIR.glob("test_*.py")) or any(WORKDIR.glob("tests/*.py"))
-    if not tests_exist:
-        return False, False, "No Python test files were found in the fixture."
+def detect_verification_target(workdir: pathlib.Path) -> tuple[list[str] | None, str | None]:
+    if (workdir / "package.json").exists():
+        return ["npm", "test", "--silent"], "npm test"
+    if (workdir / "Cargo.toml").exists():
+        return ["cargo", "test", "--quiet"], "cargo test"
+    if (workdir / "go.mod").exists():
+        return ["go", "test", "./..."], "go test ./..."
 
-    command = [sys.executable, "-m", "pytest", "-q"]
+    tests_dir = workdir / "tests"
+    has_python_tests = any(workdir.glob("test_*.py")) or (
+        tests_dir.exists() and any(tests_dir.glob("*.py"))
+    )
+    if has_python_tests:
+        return [sys.executable, "-m", "pytest", "-q"], "pytest -q"
+
+    return None, None
+
+
+def run_verification() -> tuple[bool, bool, str, str]:
+    command, verification_label = detect_verification_target(WORKDIR)
+    if command is None or verification_label is None:
+        return (
+            False,
+            False,
+            "No supported automated verification target was found in the fixture.",
+            "verification",
+        )
+
     completed = subprocess.run(
         command,
         cwd=WORKDIR,
@@ -570,7 +596,7 @@ def run_verification() -> tuple[bool, bool, str]:
         text=True,
     )
     output = (completed.stdout + "\n" + completed.stderr).strip()
-    return True, completed.returncode == 0, output
+    return True, completed.returncode == 0, output, verification_label
 
 
 def has_line_prefix(text: str, prefix: str) -> bool:
@@ -602,14 +628,19 @@ def merge_footer(text: str, footer_lines: list[str]) -> str:
     return body or footer
 
 
-def verification_status_line(verification_required: bool, tests_run: bool, tests_passed: bool) -> str:
+def verification_status_line(
+    verification_required: bool,
+    tests_run: bool,
+    tests_passed: bool,
+    verification_label: str,
+) -> str:
     if not verification_required:
         return "Verification status: not required - benchmark task did not require automated verification."
     if not tests_run:
         return "Verification status: not run - required verification did not execute."
     if tests_passed:
-        return "Verification status: passed - pytest -q completed successfully."
-    return "Verification status: failed - pytest -q reported failures."
+        return f"Verification status: passed - {verification_label} completed successfully."
+    return f"Verification status: failed - {verification_label} reported failures."
 
 
 def review_outcome_line(review_required: bool, review_present: bool) -> str:
@@ -637,11 +668,12 @@ def synthesize_footer(
     verification_required: bool,
     tests_run: bool,
     tests_passed: bool,
+    verification_label: str,
     review_required: bool,
     review_present: bool,
 ) -> list[str]:
     return [
-        verification_status_line(verification_required, tests_run, tests_passed),
+        verification_status_line(verification_required, tests_run, tests_passed, verification_label),
         review_outcome_line(review_required, review_present),
         remaining_risks_line(verification_required, tests_run, tests_passed, review_required),
     ]
@@ -696,6 +728,7 @@ def build_summary_repair_prompt(
     verification_required: bool,
     tests_run: bool,
     tests_passed: bool,
+    verification_label: str,
     verification_output: str,
     review_required: bool,
     changed_files: list[str],
@@ -718,6 +751,7 @@ Known facts:
 - verification_required: {json.dumps(verification_required)}
 - tests_run: {json.dumps(tests_run)}
 - tests_passed: {json.dumps(tests_passed)}
+- verification_label: {json.dumps(verification_label)}
 - review_required: {json.dumps(review_required)}
 - changed_files: {", ".join(changed_files) if changed_files else "none"}
 
@@ -951,8 +985,11 @@ def main() -> int:
     started_at = time.monotonic()
     task = json.loads(TASK_FILE.read_text(encoding="utf-8"))
     before = snapshot_files(WORKDIR)
+    _verification_command, verification_label = detect_verification_target(WORKDIR)
+    if verification_label is None:
+        verification_label = "verification"
 
-    prompt = build_prompt(task)
+    prompt = build_prompt(task, verification_label)
     exit_code = 0
     raw_stdout = ""
     raw_stderr = ""
@@ -1063,7 +1100,7 @@ def main() -> int:
         path for path in set(before) | set(repair_after) if before.get(path) != repair_after.get(path)
     )
     if verification_required:
-        tests_run, tests_passed, verification_output = run_verification()
+        tests_run, tests_passed, verification_output, verification_label = run_verification()
 
     review_required = bool(task["review_required"])
     docs_required = bool(task["docs_required"])
@@ -1076,6 +1113,7 @@ def main() -> int:
                 verification_required=verification_required,
                 tests_run=tests_run,
                 tests_passed=tests_passed,
+                verification_label=verification_label,
                 verification_output=verification_output,
                 review_required=review_required,
                 changed_files=repair_changed_files,
@@ -1160,6 +1198,7 @@ def main() -> int:
                 verification_required=verification_required,
                 tests_run=tests_run,
                 tests_passed=tests_passed,
+                verification_label=verification_label,
                 review_required=review_required,
                 review_present=review_present,
             ),
@@ -1237,6 +1276,7 @@ def main() -> int:
         f"Output budget repaired by: {output_budget_repaired_by}. "
         f"Summary repair attempts: {summary_repair_attempts}. "
         f"Summary repaired by: {summary_repaired_by}. "
+        f"Verification command: {verification_label}. "
         f"Timeout recovered: {timeout_recovered}. "
         f"Max-turns recovered: {max_turns_recovered}. "
         f"Transcript scanned: {transcript_scanned}. "

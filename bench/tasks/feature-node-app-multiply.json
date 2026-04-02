@@ -1,0 +1,20 @@
+{
+  "id": "feature-node-app-multiply",
+  "category": "feature",
+  "fixture": "node-app",
+  "review_required": true,
+  "docs_required": true,
+  "verification_required": true,
+  "prompt": "Implement the calculator multiply helper in the node-app fixture so the existing npm test suite passes, and update README.md to describe the available calculator helpers and the npm test command. Keep the change minimal and do not add unnecessary dependencies.",
+  "success_criteria": [
+    "The multiply helper works for ordinary numbers and zero",
+    "npm test passes",
+    "README.md reflects the fixture's actual usage",
+    "Final report includes verification and review status"
+  ],
+  "must_not": [
+    "Add unnecessary dependencies",
+    "Skip verification",
+    "Change release or deploy behavior"
+  ]
+}

@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Shared-state hook scenarios via `tests/hooks/scenarios.json` plus scenario-aware `scripts/test-hooks.sh` coverage for multi-hook flows
 - `Notification` hook wiring plus `hooks/notification.sh` log sink for runtime notification telemetry
 - `PermissionDenied` hook support so auto-mode classifier denials can retry through the normal approval path when the command is not hard-denied by profile policy
 - Auto-execution configuration for project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`)
@@ -25,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - README status badges for repository workflows
 
 ### Changed
+- Expanded the benchmark matrix with a new Node fixture plus fixture-aware verification detection (`pytest`, `npm`, `cargo`, `go`) so manual/full benchmark runs can cover non-Python repos without widening the default PR suite
+- Added workflow linting with `actionlint`, shell linting with `shellcheck`, and an installer smoke/idempotency test to the Validate path
 - Updated `Hook Tests` and `Validate` workflows to `actions/setup-python@v6` so CI is aligned with GitHub's Node 24 migration path
 - Restored the live `Behavior Benchmark` default timeout to `300` seconds and added optional `BEHAVIOR_BENCHMARK_MODEL` support so benchmark CI can use a dedicated model without changing the wider repository default
 - Switched profile `outputStyle` from `Explanatory` to `Default` to preserve built-in coding instructions

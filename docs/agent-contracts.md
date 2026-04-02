@@ -36,6 +36,7 @@ The behavioral runner checks more than pass/fail:
 - `required_transcript_patterns` must appear in assistant-like transcript entries
 - `forbidden_transcript_patterns` must not appear in assistant-like transcript entries
 - changed-file scope, docs scope, and verification requirements are enforced per task
+- verification-required benchmark tasks can use the fixture-appropriate local test command detected by the runner, so the contract covers both Python and non-Python fixtures
 - user prompts do not satisfy transcript assertions
 
 Relevant files:

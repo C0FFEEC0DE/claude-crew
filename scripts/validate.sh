@@ -69,7 +69,45 @@ while IFS= read -r shell_file; do
     else
         echo "OK: $shell_file"
     fi
-done < <(find "$REPO_ROOT/claudecfg" "$REPO_ROOT/scripts" -type f -name "*.sh" | sort)
+done < <(
+    {
+        printf '%s\n' \
+            "$REPO_ROOT/install.sh" \
+            "$REPO_ROOT/claudecfg/install.sh"
+        find "$REPO_ROOT/claudecfg" "$REPO_ROOT/scripts" "$REPO_ROOT/tests/install" -type f -name "*.sh"
+    } | sort
+)
+echo ""
+
+echo "--- Checking workflow syntax ---"
+if command -v actionlint >/dev/null 2>&1; then
+    if ! actionlint "$REPO_ROOT"/.github/workflows/*.yml; then
+        report_error "actionlint reported workflow syntax issues"
+    else
+        echo "OK: actionlint"
+    fi
+else
+    echo "SKIP: actionlint not installed"
+fi
+echo ""
+
+echo "--- Checking shellcheck lint ---"
+if command -v shellcheck >/dev/null 2>&1; then
+    shellcheck_targets=(
+        "$REPO_ROOT/install.sh"
+        "$REPO_ROOT/claudecfg/install.sh"
+        "$REPO_ROOT"/claudecfg/hooks/*.sh
+        "$REPO_ROOT"/scripts/*.sh
+        "$REPO_ROOT"/tests/install/*.sh
+    )
+    if ! shellcheck "${shellcheck_targets[@]}"; then
+        report_error "shellcheck reported shell lint issues"
+    else
+        echo "OK: shellcheck"
+    fi
+else
+    echo "SKIP: shellcheck not installed"
+fi
 echo ""
 
 echo "--- Checking Python syntax ---"
@@ -345,6 +383,14 @@ if [ -f "$HOOK_CASES_FILE" ]; then
     fi
 else
     echo "No hook test manifest found"
+fi
+echo ""
+
+echo "--- Checking installer smoke test ---"
+if ! bash "$REPO_ROOT/tests/install/install-smoke.sh" >/dev/null; then
+    report_error "Installer smoke/idempotency test failed"
+else
+    echo "OK: installer smoke/idempotency"
 fi
 echo ""
 

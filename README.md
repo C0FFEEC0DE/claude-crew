@@ -167,6 +167,9 @@ All four workflows run automatically on every push.
 
 - `bash scripts/validate.sh`
 - shell syntax checks for `claudecfg/hooks/*.sh` and `scripts/*.sh`
+- workflow lint with `actionlint`
+- shell lint with `shellcheck`
+- installer smoke/idempotency check via `tests/install/install-smoke.sh`
 - JSON checks for settings, hook cases, and benchmark metadata
 - slash-command inventory checks across `claudecfg/commands/`, `README.md`, `claudecfg/GUIDE.md`, and `claudecfg/README.md`
 - `git diff --check`
