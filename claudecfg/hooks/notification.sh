@@ -44,5 +44,6 @@ on run argv
 end run
 APPLESCRIPT
 elif command -v powershell.exe >/dev/null 2>&1; then
+    # shellcheck disable=SC2154
     TITLE="$title" MESSAGE="$message" powershell.exe -Command "[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; [System.Windows.Forms.MessageBox]::Show($env:MESSAGE, $env:TITLE)" >/dev/null 2>&1 || true
 fi

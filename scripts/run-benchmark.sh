@@ -70,7 +70,7 @@ esac
 mkdir -p "$OUTPUT_DIR/tasks"
 
 shopt -s nullglob
-task_files=("$REPO_ROOT"/$TASK_GLOB)
+mapfile -t task_files < <(compgen -G "$REPO_ROOT/$TASK_GLOB" || true)
 shopt -u nullglob
 configured_task_count="${#task_files[@]}"
 

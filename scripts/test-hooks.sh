@@ -10,6 +10,7 @@ TOTAL=0
 SCENARIOS=0
 
 cleanup() {
+    # shellcheck disable=SC2317
     rm -rf "$TMP_ROOT"
 }
 trap cleanup EXIT

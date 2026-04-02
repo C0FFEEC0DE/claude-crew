@@ -249,7 +249,7 @@ compare_command_lists() {
         return
     fi
 
-    mapfile -t actual < <(sed -n "/^${start}$/,/^${end}$/p" "$file" | grep -oP '^- `\/\K[^`]+(?=`)' | sort -u || true)
+    mapfile -t actual < <(sed -n "/^${start}$/,/^${end}$/p" "$file" | grep -oP "^- \`/\K[^\`]+(?=\`)" | sort -u || true)
     mapfile -t expected < <(printf '%s\n' "${EXPECTED_COMMANDS[@]}" | sort -u)
 
     if ! diff -u <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
@@ -361,7 +361,7 @@ fi
 echo ""
 
 echo "--- Checking docs consistency for notification hook ---"
-if grep -q '`Notification`' "$REPO_ROOT/README.md" && grep -q '`Notification`' "$REPO_ROOT/claudecfg/GUIDE.md"; then
+if grep -q "\`Notification\`" "$REPO_ROOT/README.md" && grep -q "\`Notification\`" "$REPO_ROOT/claudecfg/GUIDE.md"; then
     echo "OK: Notification hook documented"
 else
     report_error "Notification hook must be documented in README.md and claudecfg/GUIDE.md"
