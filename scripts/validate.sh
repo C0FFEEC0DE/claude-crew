@@ -15,6 +15,39 @@ report_error() {
     ERRORS=$((ERRORS + 1))
 }
 
+extract_frontmatter_value() {
+    local frontmatter="$1"
+    local field="$2"
+
+    awk -F': *' -v field="$field" '$1 == field {print substr($0, index($0, ":") + 1); exit}' <<<"$frontmatter" | sed 's/^ *//'
+}
+
+extract_frontmatter_list_items() {
+    local frontmatter="$1"
+    local field="$2"
+
+    awk -v field="$field" '
+        $0 ~ ("^" field ":") {
+            in_field = 1
+            value = substr($0, index($0, ":") + 1)
+            sub(/^[[:space:]]+/, "", value)
+            if (length(value) > 0) {
+                print value
+            }
+            next
+        }
+        in_field && $0 ~ /^  - / {
+            item = $0
+            sub(/^  - /, "", item)
+            print item
+            next
+        }
+        in_field {
+            exit
+        }
+    ' <<<"$frontmatter"
+}
+
 echo "=== Validation Script ==="
 echo "Repository: $REPO_ROOT"
 echo ""
@@ -80,6 +113,77 @@ else
 fi
 echo ""
 
+echo "--- Checking skill frontmatter ---"
+SKILL_DIR="$REPO_ROOT/claudecfg/skills"
+if [ -d "$SKILL_DIR" ]; then
+    for skill_file in "$SKILL_DIR"/*.md; do
+        [ -f "$skill_file" ] || continue
+
+        filename="$(basename "$skill_file")"
+        case_failed=0
+
+        if ! head -1 "$skill_file" | grep -q "^---$"; then
+            report_error "Missing frontmatter start in skill $filename"
+            continue
+        fi
+
+        frontmatter_end_line="$(awk 'NR>1 && /^---$/ {print NR; exit}' "$skill_file")"
+        if [ -z "${frontmatter_end_line:-}" ]; then
+            report_error "Missing frontmatter end in skill $filename"
+            continue
+        fi
+
+        next_line="$((frontmatter_end_line + 1))"
+        if sed -n "${next_line}p" "$skill_file" | grep -q "^---$"; then
+            report_error "Duplicate frontmatter block in skill $filename"
+            continue
+        fi
+
+        frontmatter="$(sed -n "2,$((frontmatter_end_line - 1))p" "$skill_file")"
+        skill_agent="$(extract_frontmatter_value "$frontmatter" "agent")"
+        for field in name description agent context disable-model-invocation allowed-tools paths; do
+            if ! grep -q "^${field}:" <<<"$frontmatter"; then
+                report_error "Missing '$field' in skill $filename frontmatter"
+                case_failed=1
+            fi
+        done
+
+        if ! grep -q '^disable-model-invocation:[[:space:]]*true$' <<<"$frontmatter"; then
+            report_error "Skill frontmatter must pin disable-model-invocation: true in $filename"
+            case_failed=1
+        fi
+
+        if ! grep -q '^context:[[:space:]]*fork$' <<<"$frontmatter"; then
+            report_error "Skill frontmatter must pin context: fork in $filename"
+            case_failed=1
+        fi
+
+        mapfile -t allowed_tools_items < <(extract_frontmatter_list_items "$frontmatter" "allowed-tools")
+        if [ "${#allowed_tools_items[@]}" -eq 0 ]; then
+            report_error "Skill frontmatter must declare non-empty allowed-tools in $filename"
+            case_failed=1
+        fi
+
+        mapfile -t path_items < <(extract_frontmatter_list_items "$frontmatter" "paths")
+        if [ "${#path_items[@]}" -eq 0 ]; then
+            report_error "Skill frontmatter must declare non-empty paths in $filename"
+            case_failed=1
+        fi
+
+        if [ -n "$skill_agent" ] && ! grep -Eq "^name:[[:space:]]*${skill_agent}\$|^alias:[[:space:]]*${skill_agent}\$" "$AGENT_DIR"/*.md; then
+            report_error "Skill frontmatter agent does not match a known agent name or alias in $filename"
+            case_failed=1
+        fi
+
+        if [ "$case_failed" -eq 0 ]; then
+            echo "OK: $filename"
+        fi
+    done
+else
+    report_error "Skill directory not found: $SKILL_DIR"
+fi
+echo ""
+
 echo "--- Checking slash command inventory ---"
 declare -A COMMAND_TO_ALIAS=(
     [manager]="m"
@@ -93,6 +197,7 @@ declare -A COMMAND_TO_ALIAS=(
     [docs]="doc"
 )
 EXPECTED_COMMANDS=(manager explore bug debug design test refactor review docs)
+EXPECTED_SKILLS=(design docs refactor review test)
 
 compare_command_lists() {
     local file="$1"
@@ -131,6 +236,21 @@ compare_command_file_inventory() {
 
 compare_command_file_inventory
 
+compare_skill_file_inventory() {
+    local actual expected
+
+    mapfile -t actual < <(find "$REPO_ROOT/claudecfg/skills" -maxdepth 1 -type f -name "*.md" -printf '%f\n' | sed 's/\.md$//' | sort -u)
+    mapfile -t expected < <(printf '%s\n' "${EXPECTED_SKILLS[@]}" | sort -u)
+
+    if ! diff -u <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+        report_error "claudecfg/skills file inventory does not match the bundled skill inventory"
+    else
+        echo "OK: claudecfg/skills file inventory"
+    fi
+}
+
+compare_skill_file_inventory
+
 for command in "${EXPECTED_COMMANDS[@]}"; do
     command_file="$REPO_ROOT/claudecfg/commands/$command.md"
     expected_alias="${COMMAND_TO_ALIAS[$command]}"
@@ -159,6 +279,28 @@ done
 compare_command_lists "$REPO_ROOT/README.md" "README slash-command list" "### Slash Commands" "### Workflows"
 compare_command_lists "$REPO_ROOT/claudecfg/GUIDE.md" "GUIDE slash-command list" "## Slash Commands" "## Auto-Execution"
 compare_command_lists "$REPO_ROOT/claudecfg/README.md" "claudecfg README slash-command list" "Current bundled slash commands:" "## Installation"
+echo ""
+
+echo "--- Checking settings policy invariants ---"
+if jq -e '.outputStyle == "Default"' "$REPO_ROOT/claudecfg/settings.json" >/dev/null; then
+    echo "OK: outputStyle stays Default"
+else
+    report_error "claudecfg/settings.json must keep outputStyle set to Default"
+fi
+
+if jq -e '.hooks.Notification[0].hooks[0].command == "\"$HOME\"/.claude/hooks/notification.sh"' "$REPO_ROOT/claudecfg/settings.json" >/dev/null; then
+    echo "OK: Notification hook command"
+else
+    report_error "Notification hook must point to \"$HOME\"/.claude/hooks/notification.sh"
+fi
+echo ""
+
+echo "--- Checking docs consistency for notification hook ---"
+if grep -q '`Notification`' "$REPO_ROOT/README.md" && grep -q '`Notification`' "$REPO_ROOT/claudecfg/GUIDE.md"; then
+    echo "OK: Notification hook documented"
+else
+    report_error "Notification hook must be documented in README.md and claudecfg/GUIDE.md"
+fi
 echo ""
 
 echo "--- Checking hook test manifests ---"

@@ -55,7 +55,20 @@ type: AgentType
 ## Adding a New Command
 
 1. Create `claudecfg/commands/[command].md`
-2. If it invokes an agent, also create `claudecfg/skills/[command].md`
+2. If it invokes an agent, also create `claudecfg/skills/[command].md` with YAML frontmatter:
+
+```yaml
+---
+name: command
+description: What this skill does
+agent: target-agent-name
+context: fork
+disable-model-invocation: true
+allowed-tools: Read Glob Grep
+paths:
+  - "**/*"
+---
+```
 3. Update CLAUDE.md commands list
 
 ## Code Style
@@ -70,6 +83,8 @@ type: AgentType
 Before submitting:
 - [ ] JSON files are valid
 - [ ] Agent markdown has proper frontmatter
+- [ ] Skill markdown has proper frontmatter
+- [ ] Settings invariants still hold (`outputStyle: Default`, Notification hook configured)
 - [ ] All links in documentation work
 
 ## Questions?

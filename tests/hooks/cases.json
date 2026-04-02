@@ -73,6 +73,54 @@
     "stdout_jq": ".retry == false"
   },
   {
+    "name": "notification_hook_logs_payload",
+    "script": "claudecfg/hooks/notification.sh",
+    "stdin": "tests/hooks/fixtures/notification_summary.json",
+    "expect_exit": 0,
+    "file_assertions": [
+      {
+        "path": "__CASE_HOME__/.claude/logs/notification.jsonl",
+        "regex": "\"title\":\"Task update\""
+      },
+      {
+        "path": "__CASE_HOME__/.claude/logs/notification.jsonl",
+        "regex": "\"message\":\"Verification completed\""
+      }
+    ]
+  },
+  {
+    "name": "notification_hook_handles_minimal_payload",
+    "script": "claudecfg/hooks/notification.sh",
+    "stdin": "tests/hooks/fixtures/notification_minimal.json",
+    "expect_exit": 0,
+    "file_assertions": [
+      {
+        "path": "__CASE_HOME__/.claude/logs/notification.jsonl",
+        "regex": "\"session_id\":\"case-notification-minimal\""
+      }
+    ]
+  },
+  {
+    "name": "notification_hook_handles_quoted_payload",
+    "script": "claudecfg/hooks/notification.sh",
+    "stdin": "tests/hooks/fixtures/notification_quoted.json",
+    "expect_exit": 0,
+    "file_assertions": [
+      {
+        "path": "__CASE_HOME__/.claude/logs/notification.jsonl",
+        "regex": "\"session_id\":\"case-notification-quoted\""
+      },
+      {
+        "path": "__CASE_HOME__/.claude/logs/notification.jsonl",
+        "regex": "\"title\":\"Quoted \\\\\"task\\\\\"\""
+      },
+      {
+        "path": "__CASE_HOME__/.claude/logs/notification.jsonl",
+        "regex": "\"message\":\"Line one\\\\nLine two's status\""
+      }
+    ]
+  },
+  {
     "name": "subagent_stop_blocks_without_assistant_message",
     "script": "claudecfg/hooks/subagent-stop-guard.sh",
     "stdin": "tests/hooks/fixtures/subagent_stop_no_message.json",
@@ -140,6 +188,13 @@
     "name": "user_prompt_submit_leaves_informational_model_question_as_other",
     "script": "claudecfg/hooks/user-prompt-submit.sh",
     "stdin": "tests/hooks/fixtures/user_prompt_models_info.json",
+    "expect_exit": 0,
+    "state_jq": ".task_type == \"other\" and .manager_mode == \"none\" and .required_subagents == [] and .required_subagent_any_of == []"
+  },
+  {
+    "name": "user_prompt_submit_leaves_creative_model_typo_query_as_other",
+    "script": "claudecfg/hooks/user-prompt-submit.sh",
+    "stdin": "tests/hooks/fixtures/user_prompt_models_creative_typo_info.json",
     "expect_exit": 0,
     "state_jq": ".task_type == \"other\" and .manager_mode == \"none\" and .required_subagents == [] and .required_subagent_any_of == []"
   },
@@ -700,6 +755,18 @@
       {
         "path": "__CASE_HOME__/.claude/logs/instructions-loaded.jsonl",
         "regex": "load_reason.*session_start"
+      }
+    ]
+  },
+  {
+    "name": "notification_logs_status_update",
+    "script": "claudecfg/hooks/notification.sh",
+    "stdin": "tests/hooks/fixtures/notification_summary.json",
+    "expect_exit": 0,
+    "file_assertions": [
+      {
+        "path": "__CASE_HOME__/.claude/logs/notification.jsonl",
+        "regex": "Verification completed"
       }
     ]
   },

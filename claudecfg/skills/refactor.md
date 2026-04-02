@@ -1,3 +1,24 @@
+---
+name: refactor
+description: Run the housekeeper in an isolated subagent for bounded refactors and cleanup with verification awareness.
+agent: Veles
+context: fork
+disable-model-invocation: true
+allowed-tools:
+  - Read
+  - Glob
+  - Grep
+  - Edit
+  - Write
+  - Bash(git status:*)
+  - Bash(git diff:*)
+paths:
+  - "**/*.py"
+  - "**/*.js"
+  - "**/*.ts"
+  - "**/*.sh"
+---
+
 # /refactor
 
 Run refactoring session with the Veles agent.

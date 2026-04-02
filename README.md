@@ -7,6 +7,8 @@
 
 Badges reflect the latest workflow result for the `main` branch.
 
+The profile keeps `outputStyle: "Default"` for coding sessions so Claude Code's built-in engineering instructions stay active. Explanatory behavior belongs in agent prompts and docs, not in the global output-style override.
+
 ## Quick Start
 
 ```bash
@@ -57,6 +59,8 @@ Slash commands that invoke specialized agents. The hooks still enforce the actua
 - `/review` — code review (invokes @code-reviewer)
 - `/docs` — documentation session (invokes @docwriter)
 
+The bundled slash-command skills also carry YAML frontmatter in `claudecfg/skills/` so each specialist runs in a forked context with narrower `allowed-tools`.
+
 ### Workflows
 
 - `workflows/bugfix.md` — fix a bug
@@ -89,6 +93,7 @@ The profile uses hooks as enforcement points, not markdown alone:
 - `PostToolUse` / `PostToolUseFailure` — track edits plus successful or failed test/lint/build commands
 - `SubagentStart` / `SubagentStop` — enforce the subagent handoff contract through shell hooks instead of prompt hooks
 - `TaskCompleted` / `Stop` / `TeammateIdle` — use the shared session state to block completion after missing verification, failed test/lint/build runs, or missing required subagent roles for the current workflow
+- `Notification` — log runtime notifications for later debugging and observability
 - `SessionEnd` — index transcript paths and session metadata for later dataset work
 
 `Stop` and `SubagentStop` are enforced by shell guards only. This avoids prompt-hook failures on tool-only turns while still requiring structured final summaries after code/config changes or subagent handoffs. If a repo has no detected `test`, `lint`, or `build` command, `Stop` no longer deadlocks the session, but the final summary must explicitly say that verification was not run and why. In manager-led workflows, `TeammateIdle` also blocks if no specialist handoff happened yet, so `@m` cannot linger in manager-only analysis indefinitely. When the runtime explicitly backgrounds a live manager-led workflow and no code/config changes have happened yet, `Stop` now defers the specialist-role gate for that turn instead of looping on a premature finalization attempt.
@@ -142,7 +147,8 @@ Manager may also launch multiple agents of the same role in parallel when their 
 
 ## Configuration
 
-See `claudecfg/settings.json` for permissions and settings.
+See `claudecfg/settings.json` for permissions and settings. Base permissions stay broad enough for project work, while slash-command skills narrow their own runtime surface through per-skill frontmatter.
+The default output style is `Default` to preserve Claude Code's built-in software-engineering instruction stack.
 
 ## CI and Claude Code
 
@@ -218,6 +224,7 @@ Hook logs are written under `~/.claude/logs/`. Session metadata and transcript p
 - `claudecfg/GUIDE.md` — full cheatsheet
 - `docs/agent-contracts.md` — agent contract matrix, golden regression suite, benchmark assertions, and hook-level contract
 - `claudecfg/agents/` — agent definitions
+- `claudecfg/skills/` — slash skills with YAML frontmatter (`name`, `description`, `agent`, `context`, `disable-model-invocation`, `allowed-tools`, and `paths`)
 - `claudecfg/commands/` — slash command definitions
 - `claudecfg/skills/` — reusable slash-skill prompts
 - `docs/benchmarking.md` — behavioral benchmark runner and workflow

@@ -8,6 +8,7 @@ This profile is hook-gated:
 - discover -> design -> implement -> verify -> review -> docs when behavior changes -> cleanup
 - release/deploy automation is intentionally disabled
 - session metadata is logged for later audit or dataset indexing
+- runtime notifications are logged for observability
 - final completion and subagent handoff are enforced by shell hooks using shared session state for test/lint/build results and summary requirements
 - stop-safe no-op replies are only valid when the session made no code or config changes; after code/config edits, keep reporting the actual verification, review outcome, changed files, and remaining risks instead of using a no-change shortcut
 - final implementation summaries after code/config changes must include exact stop-safe lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`
@@ -49,6 +50,7 @@ Transcript fallback also recognizes slash-skill loads and agent launch lines lik
 ## Docs
 
 See `claudecfg/GUIDE.md` for full documentation.
+Slash skills under `claudecfg/skills/` use YAML frontmatter for routing/tool constraints.
 
 ## Repository Automation
 

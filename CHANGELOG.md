@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `Notification` hook wiring plus `hooks/notification.sh` log sink for runtime notification telemetry
 - `PermissionDenied` hook support so auto-mode classifier denials can retry through the normal approval path when the command is not hard-denied by profile policy
 - Auto-execution configuration for project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`)
 - Extended Bash permissions for common dev tools (rm, mkdir, cp, mv, cargo, go, etc.)
@@ -24,6 +25,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - README status badges for repository workflows
 
 ### Changed
+- Switched profile `outputStyle` from `Explanatory` to `Default` to preserve built-in coding instructions
+- Added YAML frontmatter to all bundled skills (`/design`, `/docs`, `/refactor`, `/review`, `/test`) with explicit `agent`, `context`, `disable-model-invocation`, `allowed-tools`, and scoped `paths` where useful
+- Updated docs (`README`, `GUIDE`, `claudecfg/README`, `CONTRIBUTING`, `CLAUDE.md`) to reflect Notification hook coverage, default output style, and skill-frontmatter requirements
 - Behavior Benchmark recovery metrics now remain visible in `summary.json` and the GitHub summary without failing CI by default; strict recovery caps only apply when explicitly set through GitHub variables or `workflow_dispatch`
 - Benchmark transcript regression coverage now includes a reusable forbidden meta-chatter pattern set and limits forbidden transcript scans to assistant-like entries so user prompts do not trigger false positives
 - Golden subagent regression coverage is now explicit: every canonical agent alias must have at least one focused benchmark task with `agent_alias` plus non-empty required/forbidden transcript assertions, and the contract is documented in `docs/agent-contracts.md`
@@ -67,6 +71,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated review guidance so broad workflow, subsystem, and multi-file reviews should normally map the area with `@explorer` before `@code-reviewer`, while keeping `@cr` as the only enforced review gate
 
 ### Fixed
+- Extended validation/test coverage for the new Notification hook and skill frontmatter contract
 - New Feature workflow missing implementation and test steps
 - Missing post-implementation code review in workflows
 - `make lint` is now tracked as lint instead of build in hook session state

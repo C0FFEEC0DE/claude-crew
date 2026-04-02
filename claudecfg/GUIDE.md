@@ -2,6 +2,7 @@
 
 ## Model
 - Current default: `minimax-m2.5:cloud`
+- Output style: `Default` (keeps built-in coding instructions active)
 
 ## Navigation
 - `Read path/to/file` — read file
@@ -100,6 +101,7 @@ Main checkpoints:
 - `PostToolUse` / `PostToolUseFailure` — record edits and successful or failed test/lint/build status
 - `SubagentStart` / `SubagentStop` — enforce the subagent output contract with shell guards
 - `TaskCompleted` / `TeammateIdle` / `Stop` — share the same gate logic and block completion after missing verification, failed test/lint/build runs, or missing required subagent roles
+- `Notification` — log runtime notifications for observability
 - `SessionEnd` — log transcript path and session metadata for later indexing
 
 `Stop` is shell-enforced by `hooks/stop-guard.sh`, and `SubagentStop` is shell-enforced by `hooks/subagent-stop-guard.sh`. After code or config changes, the final assistant summary must include explicit summary lines for verification status, review outcome or pending review, changed files or `no files changed`, and remaining risks or `none`. If the repo exposes no detectable `test`, `lint`, or `build` command, the stop guard allows completion without deadlock, but the summary must explicitly say verification was not run and why. Feature, bugfix, refactor, review, and docs workflows also require role-specific specialist handoffs before completion, tracked in shared session state with alias normalization such as `@code-reviewer -> cr`. Manager-led orchestration itself is tracked separately through `manager_mode=orchestrate`, so top-level `@m` use is not treated as a required specialist handoff. For feature, bugfix, and refactor work, a recorded successful test command satisfies the tester side of that gate; otherwise `@t` is still required. `SubagentStart` normalization also accepts alias/name/subagent-type fields in both snake_case and camelCase before falling back to generic runtime types. When a runtime loads slash skills like `/review` without emitting `SubagentStart`, or records specialist launches only as transcript lines like `Code Reviewer(...)`, the hooks fall back to transcript evidence so those handoffs still satisfy review/docs/test specialist gates. When a runtime backgrounds a live manager-led workflow before any code/config changes, `Stop` defers the specialist-role gate for that turn instead of treating the background handoff as a failed final response. `TeammateIdle` additionally blocks manager-led workflows that have not yet handed off to any specialist.
@@ -236,8 +238,17 @@ Hooks в `settings.json` используют единую структуру д
 - `UserPromptSubmit`
 - `SubagentStart`, `SubagentStop`
 - `Stop`, `TeammateIdle`, `TaskCompleted`
+- `Notification`
 - `ConfigChange`
 - `PreCompact`, `PostCompact`
+
+## Skills Frontmatter
+
+`claudecfg/skills/*.md` should include YAML frontmatter to keep slash skills explicit and constrained:
+
+- required keys: `name`, `description`, `agent`, `context`, `disable-model-invocation`, `allowed-tools`, `paths`
+- pin `disable-model-invocation: true` and `context: fork` for the bundled manual slash skills
+- keep `allowed-tools` pragmatic for each skill (review/design read-heavy; docs write to docs paths; test/refactor can include Bash when verification or refactors are expected)
 
 ### Ключи hook definition
 
