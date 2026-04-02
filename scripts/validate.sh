@@ -346,6 +346,12 @@ else
     report_error "Repository Checks must use actions/setup-python@v6"
 fi
 
+if grep -q 'uses: actions/setup-go@v6' "$REPO_ROOT/.github/workflows/validate.yml"; then
+    echo "OK: Repository Checks uses setup-go@v6"
+else
+    report_error "Repository Checks must use actions/setup-go@v6"
+fi
+
 if grep -q 'uses: actions/setup-python@v6' "$REPO_ROOT/.github/workflows/python-tests.yml"; then
     echo "OK: Python Tests uses setup-python@v6"
 else

@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Expanded the benchmark matrix with a new Node fixture plus fixture-aware verification detection (`pytest`, `npm`, `cargo`, `go`) so manual/full benchmark runs can cover non-Python repos without widening the default PR suite
 - Added workflow linting with `actionlint`, shell linting with `shellcheck`, and an installer smoke/idempotency test to the Validate path
 - Renamed GitHub workflows to more neutral CI labels and split general `pytest` coverage into a dedicated `Python Tests` workflow while keeping hook-contract checks grouped with the hook harness
+- Updated `Repository Checks` to `actions/setup-go@v6` to remove the GitHub Actions Node 20 deprecation warning
 - Updated `Hook Tests` and `Validate` workflows to `actions/setup-python@v6` so CI is aligned with GitHub's Node 24 migration path
 - Restored the live `Behavior Benchmark` default timeout to `300` seconds and added optional `BEHAVIOR_BENCHMARK_MODEL` support so benchmark CI can use a dedicated model without changing the wider repository default
 - Switched profile `outputStyle` from `Explanatory` to `Default` to preserve built-in coding instructions
