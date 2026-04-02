@@ -944,13 +944,13 @@ block_checklist_summary_requirements() {
             risks_ok="PASS"
         fi
 
-        checklist_status_line "$verification_ok" "Verification status line" 'Accepted prefixes: `Verification status:`, `Verification:`, `Verification result:`, `Test status:`, `Tests:`.'
-        checklist_status_line "$review_ok" "Review outcome line" 'Accepted prefixes: `Review outcome:`, `Review status:`, `Review:`.'
-        checklist_status_line "$files_ok" "Changed files line" 'Accepted prefixes: `Changed files:`, `Key files changed:`, `Files changed:`, `Updated files:`, `Modified files:`, `No files changed:`.'
-        checklist_status_line "$risks_ok" "Remaining risks line" 'Accepted prefixes: `Remaining risks:`, `Residual risks:`, `Risks:`.'
+        checklist_status_line "$verification_ok" "Verification status line" "Accepted prefixes: \`Verification status:\`, \`Verification:\`, \`Verification result:\`, \`Test status:\`, \`Tests:\`."
+        checklist_status_line "$review_ok" "Review outcome line" "Accepted prefixes: \`Review outcome:\`, \`Review status:\`, \`Review:\`."
+        checklist_status_line "$files_ok" "Changed files line" "Accepted prefixes: \`Changed files:\`, \`Key files changed:\`, \`Files changed:\`, \`Updated files:\`, \`Modified files:\`, \`No files changed:\`."
+        checklist_status_line "$risks_ok" "Remaining risks line" "Accepted prefixes: \`Remaining risks:\`, \`Residual risks:\`, \`Risks:\`."
 
         if message_reports_no_changes "$message"; then
-            checklist_status_line "FAIL" "No-change shortcut" 'Do not use `No changes were made.` after code/config changes.'
+            checklist_status_line "FAIL" "No-change shortcut" "Do not use \`No changes were made.\` after code/config changes."
         else
             checklist_status_line "PASS" "No-change shortcut" "No forbidden no-change shortcut detected."
         fi
@@ -979,13 +979,13 @@ block_checklist_summary_requirements() {
         next_ok="PASS"
     fi
 
-    checklist_status_line "$outcome_ok" "Concrete outcome" 'Example prefixes/content: `Outcome:`, `Result:`, or a concrete action like `fixed`, `updated`, `implemented`.'
-    checklist_status_line "$files_ok" "Changed files line" 'Accepted prefixes: `Changed files:`, `Files changed:`, `Updated files:`, `Modified files:`, `No files changed:`.'
-    checklist_status_line "$verification_ok" "Verification status line" 'Accepted prefixes: `Verification status:`, `Verification:`, `Verification result:`, `Test status:`, `Tests:`.'
+    checklist_status_line "$outcome_ok" "Concrete outcome" "Example prefixes/content: \`Outcome:\`, \`Result:\`, or a concrete action like \`fixed\`, \`updated\`, \`implemented\`."
+    checklist_status_line "$files_ok" "Changed files line" "Accepted prefixes: \`Changed files:\`, \`Files changed:\`, \`Updated files:\`, \`Modified files:\`, \`No files changed:\`."
+    checklist_status_line "$verification_ok" "Verification status line" "Accepted prefixes: \`Verification status:\`, \`Verification:\`, \`Verification result:\`, \`Test status:\`, \`Tests:\`."
     if [ "$risks_ok" = "PASS" ] || [ "$next_ok" = "PASS" ]; then
-        checklist_status_line "PASS" "Closure line" 'Need either `Remaining risks:` or `Next step:`.'
+        checklist_status_line "PASS" "Closure line" "Need either \`Remaining risks:\` or \`Next step:\`."
     else
-        checklist_status_line "FAIL" "Closure line" 'Add either `Remaining risks:` or `Next step:`.'
+        checklist_status_line "FAIL" "Closure line" "Add either \`Remaining risks:\` or \`Next step:\`."
     fi
 }
 
@@ -1071,7 +1071,7 @@ build_block_checklist() {
     block_checklist_gate_requirements "$prefix"
     block_checklist_fix_template "$prefix"
     printf "\n### Your Current Response\n\n"
-    printf "```text\n%s\n```\n" "$message"
+    printf '%s\n%s\n%s\n' '```text' "$message" '```'
     printf "\n---\n"
     printf "**Decision:** block\n"
     printf "**Reason:** %s\n" "$final_reason"
@@ -1228,7 +1228,7 @@ session_manager_idle_reason() {
         return 1
     fi
 
-    specialist_count="$(effective_started_roles | grep -Ev '^(|m)$' | wc -l | tr -d ' ')"
+    specialist_count="$(effective_started_roles | grep -Ecv '^(|m)$')"
     if [ "$specialist_count" = "0" ]; then
         printf "Manager-led orchestration has not handed off to any specialist yet. Start the first required specialist handoff before going idle."
         return 0

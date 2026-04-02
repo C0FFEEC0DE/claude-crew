@@ -87,13 +87,15 @@ jobs:
             exit 1
           fi
 
-          echo "task_glob=$task_glob" >> "$GITHUB_OUTPUT"
-          echo "max_turns=$max_turns" >> "$GITHUB_OUTPUT"
-          echo "model=$model" >> "$GITHUB_OUTPUT"
-          echo "timeout_seconds=$timeout_seconds" >> "$GITHUB_OUTPUT"
-          echo "max_output_tokens=$max_output_tokens" >> "$GITHUB_OUTPUT"
-          echo "max_recovered_tasks=$max_recovered_tasks" >> "$GITHUB_OUTPUT"
-          echo "max_summary_repaired_tasks=$max_summary_repaired_tasks" >> "$GITHUB_OUTPUT"
+          {
+            echo "task_glob=$task_glob"
+            echo "max_turns=$max_turns"
+            echo "model=$model"
+            echo "timeout_seconds=$timeout_seconds"
+            echo "max_output_tokens=$max_output_tokens"
+            echo "max_recovered_tasks=$max_recovered_tasks"
+            echo "max_summary_repaired_tasks=$max_summary_repaired_tasks"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Install Claude Code CLI and pytest
         shell: bash
