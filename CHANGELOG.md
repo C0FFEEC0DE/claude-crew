@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - README status badges for repository workflows
 
 ### Changed
+- Updated `Hook Tests` and `Validate` workflows to `actions/setup-python@v6` so CI is aligned with GitHub's Node 24 migration path
+- Restored the live `Behavior Benchmark` default timeout to `300` seconds and added optional `BEHAVIOR_BENCHMARK_MODEL` support so benchmark CI can use a dedicated model without changing the wider repository default
 - Switched profile `outputStyle` from `Explanatory` to `Default` to preserve built-in coding instructions
 - Added YAML frontmatter to all bundled skills (`/design`, `/docs`, `/refactor`, `/review`, `/test`) with explicit `agent`, `context`, `disable-model-invocation`, `allowed-tools`, and scoped `paths` where useful
 - Updated docs (`README`, `GUIDE`, `claudecfg/README`, `CONTRIBUTING`, `CLAUDE.md`) to reflect Notification hook coverage, default output style, and skill-frontmatter requirements

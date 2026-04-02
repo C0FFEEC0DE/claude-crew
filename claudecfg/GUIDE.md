@@ -341,7 +341,7 @@ Repository-level checks are separate from the local Claude profile:
 - `.github/workflows/behavior-benchmark.yml` — behavioral acceptance tasks using the real Claude Code CLI inside benchmark fixtures
 - `.github/workflows/security-scan.yml` — repository secret scan on every push and PR, plus weekly schedule
 
-Behavior benchmark recovery metrics are always reported in `summary.json` and the GitHub step summary. By default they are informational only; strict recovery caps are enabled only when `BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS` or `BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS` are set explicitly, or when matching `workflow_dispatch` inputs are provided.
+Behavior benchmark recovery metrics are always reported in `summary.json` and the GitHub step summary. By default they are informational only; strict recovery caps are enabled only when `BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS` or `BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS` are set explicitly, or when matching `workflow_dispatch` inputs are provided. The live workflow defaults to a `300` second per-task timeout and can optionally use a dedicated `BEHAVIOR_BENCHMARK_MODEL` variable before falling back to the repository-wide `OLLAMA_MODEL`.
 
 Benchmark support files:
 

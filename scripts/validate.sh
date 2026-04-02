@@ -295,6 +295,27 @@ else
 fi
 echo ""
 
+echo "--- Checking workflow policy invariants ---"
+if grep -q 'uses: actions/setup-python@v6' "$REPO_ROOT/.github/workflows/hooks-test.yml"; then
+    echo "OK: Hook Tests uses setup-python@v6"
+else
+    report_error "Hook Tests must use actions/setup-python@v6"
+fi
+
+if grep -q 'uses: actions/setup-python@v6' "$REPO_ROOT/.github/workflows/validate.yml"; then
+    echo "OK: Validate uses setup-python@v6"
+else
+    report_error "Validate must use actions/setup-python@v6"
+fi
+
+if grep -q 'default: "300"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
+    && grep -q 'VAR_BENCHMARK_MODEL' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml"; then
+    echo "OK: Behavior Benchmark default timeout/model override"
+else
+    report_error "Behavior Benchmark workflow must expose the 300s default timeout and dedicated model override"
+fi
+echo ""
+
 echo "--- Checking docs consistency for notification hook ---"
 if grep -q '`Notification`' "$REPO_ROOT/README.md" && grep -q '`Notification`' "$REPO_ROOT/claudecfg/GUIDE.md"; then
     echo "OK: Notification hook documented"

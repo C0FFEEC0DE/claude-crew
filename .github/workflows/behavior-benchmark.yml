@@ -22,7 +22,7 @@ on:
       timeout_seconds:
         description: "Per-task Claude timeout in seconds"
         required: false
-        default: "240"
+        default: "300"
         type: string
       max_output_tokens:
         description: "Claude Code max output tokens per request"
@@ -67,6 +67,7 @@ jobs:
           INPUT_MAX_OUTPUT_TOKENS: ${{ inputs.max_output_tokens }}
           INPUT_MAX_RECOVERED_TASKS: ${{ inputs.max_recovered_tasks }}
           INPUT_MAX_SUMMARY_REPAIRED_TASKS: ${{ inputs.max_summary_repaired_tasks }}
+          VAR_BENCHMARK_MODEL: ${{ vars.BEHAVIOR_BENCHMARK_MODEL }}
           VAR_OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL }}
           VAR_BENCHMARK_TIMEOUT_SECONDS: ${{ vars.BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS }}
           VAR_BENCHMARK_MAX_OUTPUT_TOKENS: ${{ vars.BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS }}
@@ -75,8 +76,8 @@ jobs:
         run: |
           task_glob="${INPUT_TASK_GLOB:-bench/tasks/lite/*.json}"
           max_turns="${INPUT_MAX_TURNS:-8}"
-          model="${VAR_OLLAMA_MODEL:-}"
-          timeout_seconds="${INPUT_TIMEOUT_SECONDS:-${VAR_BENCHMARK_TIMEOUT_SECONDS:-240}}"
+          model="${VAR_BENCHMARK_MODEL:-${VAR_OLLAMA_MODEL:-}}"
+          timeout_seconds="${INPUT_TIMEOUT_SECONDS:-${VAR_BENCHMARK_TIMEOUT_SECONDS:-300}}"
           max_output_tokens="${INPUT_MAX_OUTPUT_TOKENS:-${VAR_BENCHMARK_MAX_OUTPUT_TOKENS:-1024}}"
           max_recovered_tasks="${INPUT_MAX_RECOVERED_TASKS:-${VAR_BENCHMARK_MAX_RECOVERED_TASKS:-}}"
           max_summary_repaired_tasks="${INPUT_MAX_SUMMARY_REPAIRED_TASKS:-${VAR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS:-}}"

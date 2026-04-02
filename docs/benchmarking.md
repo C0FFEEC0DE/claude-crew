@@ -39,7 +39,7 @@ Manager-led tasks are expected to continue orchestration after manager activatio
 Parallel same-role handoffs are allowed when the manager gives them distinct scopes; benchmarks should treat that as an orchestration optimization, not as extra required role coverage.
 The benchmark prompt now requires the final response to end with the exact hook-recognized summary lines for the relevant workflow. For main implementation tasks that means `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`. For subagent-oriented tasks it means `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and one closure line: `Remaining risks:` or `Next step:`. If the model omits required main-task summary lines, the runner performs up to `5` footer-only repair retries and then synthesizes a conservative footer from the known verification facts as a last resort.
 The shell stop guards now fall back to the benchmark session transcript when a runtime omits `last_assistant_message` from `Stop` or `SubagentStop` payloads, so valid summaries are still recognized in live CI runs.
-The benchmark runner now mirrors that fallback for Claude CLI results: if `.result` is empty but the session transcript contains a valid multiline summary, the task can still pass. If Claude hits the wall-clock timeout after already leaving correct workspace changes behind and the post-run checks confirm tests, docs, and required summaries, the runner records `timeout_recovered=true` and keeps the task green instead of failing on `exit_code=124` alone. GitHub CI also enables fail-fast, so the live benchmark stops after the first failed task instead of burning time on the rest of the matrix. The summary reports both `configured_tasks` and `executed_tasks`, so truncated runs are not mistaken for full-suite coverage. The live workflow currently gives each task up to `240` seconds of wall-clock runtime before the runner times it out, and `workflow_dispatch` can override that with `timeout_seconds`.
+The benchmark runner now mirrors that fallback for Claude CLI results: if `.result` is empty but the session transcript contains a valid multiline summary, the task can still pass. If Claude hits the wall-clock timeout after already leaving correct workspace changes behind and the post-run checks confirm tests, docs, and required summaries, the runner records `timeout_recovered=true` and keeps the task green instead of failing on `exit_code=124` alone. GitHub CI also enables fail-fast, so the live benchmark stops after the first failed task instead of burning time on the rest of the matrix. The summary reports both `configured_tasks` and `executed_tasks`, so truncated runs are not mistaken for full-suite coverage. The live workflow currently gives each task up to `300` seconds of wall-clock runtime before the runner times it out, and `workflow_dispatch` can override that with `timeout_seconds`.
 The live workflow also caps Claude Code with `CLAUDE_CODE_MAX_OUTPUT_TOKENS=1024` by default, which keeps Ollama Cloud requests smaller and faster for benchmark runs; override it with `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS` or the `workflow_dispatch` input when you need a larger response budget. If Ollama Cloud still rejects a request with a `402` affordability error, the Claude benchmark runner automatically retries with a lower output-token budget derived from the provider error before failing the task. The runner also retries short-lived upstream provider errors such as broken tool-call envelopes before giving up on the task.
 Recovery metrics such as `recovered_tasks`, `timeout_recovered`, `max_turns_recovered`, and `summary_repaired` are always written into `summary.json` and surfaced in the GitHub step summary. By default they are report-only signals so the pipeline stays focused on profile behavior rather than model variance. They become hard gates only when strict caps are provided explicitly through repository variables or `workflow_dispatch` inputs.
 The benchmark harness also now exercises the same project-local Claude settings as the repository by copying `.claude/` into each fixture workdir. Root-level read-only tool calls such as `Read(.)`, `Glob(.)`, and `Grep(.)` are allowed so models do not waste turns on harmless repository scans.
@@ -84,11 +84,12 @@ Repository settings:
 1. `Settings -> Secrets and variables -> Actions -> New repository secret`
 2. Add `OLLAMA_API_KEY`
 3. `Settings -> Secrets and variables -> Actions -> Variables`
-4. Add `OLLAMA_MODEL`
-5. Optionally add `BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS` to override the benchmark per-task timeout
-6. Optionally add `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS` to override the Claude Code output-token cap
-7. Optionally add `BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS` to enable strict gating on recovered tasks
-8. Optionally add `BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS` to enable strict gating on summary-repaired tasks
+4. Add `OLLAMA_MODEL` as the general fallback provider model
+5. Optionally add `BEHAVIOR_BENCHMARK_MODEL` to pin a separate model for benchmark CI without changing the wider repository default
+6. Optionally add `BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS` to override the benchmark per-task timeout
+7. Optionally add `BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS` to override the Claude Code output-token cap
+8. Optionally add `BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS` to enable strict gating on recovered tasks
+9. Optionally add `BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS` to enable strict gating on summary-repaired tasks
 
 Required benchmark model:
 
@@ -99,7 +100,7 @@ qwen3.5:cloud
 Recommended benchmark timeout:
 
 ```text
-240
+300
 ```
 
 Recommended benchmark max output tokens:
