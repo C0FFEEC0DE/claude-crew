@@ -364,6 +364,7 @@ echo ""
 
 echo "--- Checking hook test manifests ---"
 HOOK_CASES_FILE="$REPO_ROOT/tests/hooks/cases.json"
+HOOK_SCENARIOS_FILE="$REPO_ROOT/tests/hooks/scenarios.json"
 if [ -f "$HOOK_CASES_FILE" ]; then
     if ! jq -e 'type == "array"' "$HOOK_CASES_FILE" >/dev/null; then
         report_error "Hook cases manifest must be a JSON array"
@@ -382,7 +383,46 @@ if [ -f "$HOOK_CASES_FILE" ]; then
         echo "OK: $HOOK_CASES_FILE"
     fi
 else
-    echo "No hook test manifest found"
+    echo "No hook case manifest found"
+fi
+
+if [ -f "$HOOK_SCENARIOS_FILE" ]; then
+    if ! jq -e 'type == "array"' "$HOOK_SCENARIOS_FILE" >/dev/null; then
+        report_error "Hook scenarios manifest must be a JSON array"
+    else
+        while IFS= read -r scenario_json; do
+            scenario_name="$(jq -r '.name' <<<"$scenario_json")"
+            if [ -n "$(jq -r '.seed_state // empty' <<<"$scenario_json")" ] \
+                && [ ! -f "$REPO_ROOT/$(jq -r '.seed_state' <<<"$scenario_json")" ]; then
+                report_error "Hook scenario '$scenario_name' references missing seed_state: $(jq -r '.seed_state' <<<"$scenario_json")"
+            fi
+
+            while IFS= read -r step_json; do
+                [ -z "$step_json" ] && continue
+                step_name="$(jq -r '.name' <<<"$step_json")"
+                script_path="$(jq -r '.script' <<<"$step_json")"
+                stdin_fixture="$(jq -r '.stdin' <<<"$step_json")"
+                cwd_path="$(jq -r '.cwd // empty' <<<"$step_json")"
+                seed_state="$(jq -r '.seed_state // empty' <<<"$step_json")"
+
+                if [ ! -f "$REPO_ROOT/$script_path" ]; then
+                    report_error "Hook scenario '$scenario_name::$step_name' references missing script: $script_path"
+                fi
+                if [ ! -f "$REPO_ROOT/$stdin_fixture" ]; then
+                    report_error "Hook scenario '$scenario_name::$step_name' references missing fixture: $stdin_fixture"
+                fi
+                if [ -n "$cwd_path" ] && [ ! -d "$REPO_ROOT/$cwd_path" ]; then
+                    report_error "Hook scenario '$scenario_name::$step_name' references missing cwd: $cwd_path"
+                fi
+                if [ -n "$seed_state" ] && [ ! -f "$REPO_ROOT/$seed_state" ]; then
+                    report_error "Hook scenario '$scenario_name::$step_name' references missing seed_state: $seed_state"
+                fi
+            done < <(jq -c '.steps[]' <<<"$scenario_json")
+        done < <(jq -c '.[]' "$HOOK_SCENARIOS_FILE")
+        echo "OK: $HOOK_SCENARIOS_FILE"
+    fi
+else
+    echo "No hook scenario manifest found"
 fi
 echo ""
 
