@@ -283,16 +283,13 @@ emit_loop_aware_block() {
     local prefix="$1"
     local reason="$2"
     local message="$3"
-    local count final_reason error_message checklist_output
+    local count final_reason checklist_output
 
     record_loop_block "$prefix" "$reason" "$message"
     count="$(loop_block_count "$prefix")"
     final_reason="$reason"
-    error_message="$reason"
-
     if [ "$count" -ge 3 ]; then
         final_reason="Repeated stop-block loop detected (${count}x): ${reason} Do not retry the same final response again; change the summary or perform the required action first."
-        error_message="Repeated stop-block loop detected (${count}x)"
     fi
 
     checklist_output="$(build_block_checklist "$prefix" "$final_reason" "$message")"
@@ -780,6 +777,7 @@ detect_build_cmd() {
 command_class() {
     local command="$1"
 
+    # shellcheck disable=SC2221,SC2222
     case "$command" in
         *"pytest"*|*"npm test"*|*"npm run test"*|*"pnpm test"*|*"yarn test"*|*"cargo test"*|*"go test"*|*"ctest"*|*"make test"*)
             printf "test"
@@ -1242,6 +1240,7 @@ session_manager_idle_reason() {
 is_docs_path() {
     local file_path="$1"
 
+    # shellcheck disable=SC2221,SC2222
     case "$file_path" in
         *.md|*.mdx|*.txt|*.rst|*.adoc|*.markdown|*/docs/*|README*|CHANGELOG*|CLAUDE.md)
             return 0
