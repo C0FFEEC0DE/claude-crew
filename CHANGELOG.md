@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Shared-state hook scenarios via `tests/hooks/scenarios.json` plus scenario-aware `scripts/test-hooks.sh` coverage for multi-hook flows
 - `Python Tests` GitHub Actions workflow for non-hook pytest coverage
+- `Benchmark Nightly` workflow that runs broader live benchmark suites on schedule when `main` changed in the last 24 hours
 - `Notification` hook wiring plus `hooks/notification.sh` log sink for runtime notification telemetry
 - `PermissionDenied` hook support so auto-mode classifier denials can retry through the normal approval path when the command is not hard-denied by profile policy
 - Auto-execution configuration for project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`)
@@ -31,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added workflow linting with `actionlint`, shell linting with `shellcheck`, and an installer smoke/idempotency test to the Validate path
 - Renamed GitHub workflows to more neutral CI labels and split general `pytest` coverage into a dedicated `Python Tests` workflow while keeping hook-contract checks grouped with the hook harness
 - Updated `Repository Checks` to `actions/setup-go@v6` to remove the GitHub Actions Node 20 deprecation warning
+- Limited `Benchmark Smoke` to PRs with benchmark-relevant changes and moved the broader live suites into the nightly benchmark workflow so daytime CI stays faster
 - Updated `Hook Tests` and `Validate` workflows to `actions/setup-python@v6` so CI is aligned with GitHub's Node 24 migration path
 - Restored the live `Behavior Benchmark` default timeout to `300` seconds and added optional `BEHAVIOR_BENCHMARK_MODEL` support so benchmark CI can use a dedicated model without changing the wider repository default
 - Switched profile `outputStyle` from `Explanatory` to `Default` to preserve built-in coding instructions

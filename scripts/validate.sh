@@ -364,6 +364,13 @@ if grep -q 'default: "300"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml
 else
     report_error "Benchmark Smoke workflow must expose the 300s default timeout and dedicated model override"
 fi
+
+if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && grep -q "git rev-list --count --since='24 hours ago' origin/main" "$REPO_ROOT/.github/workflows/benchmark-nightly.yml"; then
+    echo "OK: Benchmark Nightly schedule and commit precheck"
+else
+    report_error "Benchmark Nightly workflow must run nightly and gate on commits from the last 24 hours"
+fi
 echo ""
 
 echo "--- Checking docs consistency for notification hook ---"

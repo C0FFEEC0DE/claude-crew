@@ -1,0 +1,195 @@
+name: Benchmark Nightly
+
+on:
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+    inputs:
+      force_run:
+        description: "Run the nightly suites even if main had no commits in the last 24 hours"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  precheck:
+    name: Benchmark Nightly Precheck
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.precheck.outputs.should_run }}
+      commit_count: ${{ steps.precheck.outputs.commit_count }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Determine whether nightly benchmark should run
+        id: precheck
+        shell: bash
+        env:
+          FORCE_RUN: ${{ inputs.force_run }}
+        run: |
+          git fetch --no-tags --prune --depth=1 origin main
+          commit_count="$(git rev-list --count --since='24 hours ago' origin/main)"
+
+          should_run="false"
+          if [ "${FORCE_RUN:-false}" = "true" ] || [ "$commit_count" -gt 0 ]; then
+            should_run="true"
+          fi
+
+          {
+            echo "should_run=$should_run"
+            echo "commit_count=$commit_count"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "## Benchmark Nightly Precheck"
+            echo ""
+            echo "- Commits on \`main\` in last 24h: \`$commit_count\`"
+            echo "- Forced run: \`${FORCE_RUN:-false}\`"
+            echo "- Will run nightly suites: \`$should_run\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  nightly-benchmark:
+    name: ${{ matrix.name }}
+    needs: precheck
+    if: needs.precheck.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: benchmark-nightly-${{ matrix.id }}-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: full
+            name: Benchmark Full
+            task_glob: bench/tasks/*.json
+            max_turns: "10"
+          - id: subagents
+            name: Benchmark Subagents
+            task_glob: bench/tasks/subagents/*.json
+            max_turns: "8"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve benchmark config
+        id: cfg
+        shell: bash
+        env:
+          VAR_BENCHMARK_MODEL: ${{ vars.BEHAVIOR_BENCHMARK_MODEL }}
+          VAR_OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL }}
+          VAR_BENCHMARK_TIMEOUT_SECONDS: ${{ vars.BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS }}
+          VAR_BENCHMARK_MAX_OUTPUT_TOKENS: ${{ vars.BEHAVIOR_BENCHMARK_MAX_OUTPUT_TOKENS }}
+        run: |
+          model="${VAR_BENCHMARK_MODEL:-${VAR_OLLAMA_MODEL:-}}"
+          timeout_seconds="${VAR_BENCHMARK_TIMEOUT_SECONDS:-300}"
+          max_output_tokens="${VAR_BENCHMARK_MAX_OUTPUT_TOKENS:-1024}"
+
+          if [ -z "$model" ]; then
+            echo "OLLAMA_MODEL GitHub Actions variable is required" >&2
+            exit 1
+          fi
+
+          {
+            echo "model=$model"
+            echo "timeout_seconds=$timeout_seconds"
+            echo "max_output_tokens=$max_output_tokens"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install Claude Code CLI and pytest
+        shell: bash
+        run: |
+          node --version
+          npm --version
+          python3 --version
+          npm install -g @anthropic-ai/claude-code
+          python3 -m pip install --upgrade pip pytest
+          claude --version
+
+      - name: Install Claude configuration
+        shell: bash
+        run: |
+          bash ./install.sh
+
+      - name: Run nightly benchmark suite
+        shell: bash
+        env:
+          BENCH_RUNNER_CMD: python3 "$GITHUB_WORKSPACE/scripts/bench_runner_claude_code.py"
+          BENCH_SOURCE_REF: ${{ github.ref }}
+          TASK_GLOB: ${{ matrix.task_glob }}
+          MAX_TURNS: ${{ matrix.max_turns }}
+          BENCH_FAIL_FAST: "1"
+          CLAUDE_TIMEOUT_SECONDS: ${{ steps.cfg.outputs.timeout_seconds }}
+          CLAUDE_CODE_MAX_OUTPUT_TOKENS: ${{ steps.cfg.outputs.max_output_tokens }}
+          OLLAMA_MODEL: ${{ steps.cfg.outputs.model }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
+          ANTHROPIC_BASE_URL: https://ollama.com
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.OLLAMA_API_KEY }}
+          ANTHROPIC_API_KEY: ""
+        run: |
+          if [ -z "${OLLAMA_API_KEY:-}" ]; then
+            echo "OLLAMA_API_KEY secret is required" >&2
+            exit 1
+          fi
+          bash scripts/run-benchmark.sh \
+            --output-dir bench-output \
+            --mode command \
+            --task-glob "$TASK_GLOB" \
+            --ref "${GITHUB_REF}"
+
+      - name: Render nightly benchmark summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f bench-output/summary.json ]; then
+            {
+              echo "## ${{ matrix.name }}"
+              echo ""
+              echo "- Commits on main in last 24h: \`${{ needs.precheck.outputs.commit_count }}\`"
+              echo "- Model: \`${{ steps.cfg.outputs.model }}\`"
+              echo "- Task glob: \`${{ matrix.task_glob }}\`"
+              echo "- Max turns: \`${{ matrix.max_turns }}\`"
+              jq -r '
+                def pct($value): (($value * 1000 | round) / 10 | tostring) + "%";
+                "- Configured tasks: `\(.totals.configured_tasks)`",
+                "- Executed tasks: `\(.totals.executed_tasks)`",
+                "- Pass rate: \(pct(.rates.task_pass_rate))",
+                "- Clean pass rate: \(pct(.rates.clean_pass_rate))",
+                "- Recovered tasks: `\(.totals.recovered_tasks)`",
+                "- Summary repaired tasks: `\(.totals.summary_repaired)`"
+              ' bench-output/summary.json
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Enforce nightly benchmark gate
+        shell: bash
+        run: |
+          bash scripts/assert-benchmark-summary.sh bench-output/summary.json
+
+      - name: Upload nightly benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: benchmark-nightly-${{ matrix.id }}-${{ github.run_id }}
+          path: |
+            bench-output/summary.json
+            bench-output/tasks/**/result.json
+            bench-output/tasks/**/claude-result.json
+            bench-output/tasks/**/claude-result.txt
+            bench-output/tasks/**/claude-debug.log
+            bench-output/tasks/**/claude-stderr.log
+            bench-output/tasks/**/claude-stderr-tail.txt
+            bench-output/tasks/**/workspace.patch
+            bench-output/tasks/**/changed-files.json
+            bench-output/tasks/**/task-prompt.txt
+            bench-output/tasks/**/task-summary.txt
+            bench-output/tasks/**/runner-error.txt

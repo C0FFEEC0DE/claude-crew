@@ -153,15 +153,16 @@ The default output style is `Default` to preserve Claude Code's built-in softwar
 
 ## CI and Claude Code
 
-GitHub Actions now covers five layers:
+GitHub Actions now covers six layers:
 
 - `Repository Checks` — fast structural and lint checks on every push and PR
 - `Hook Contracts` — behavior tests for the SDLC hook scripts
 - `Python Tests` — focused pytest coverage for the benchmark runner and profile metadata
-- `Benchmark Smoke` — real Claude Code acceptance tasks executed inside isolated fixture repositories
+- `Benchmark Smoke` — fast live Claude Code smoke coverage on PRs when benchmark-relevant files change
+- `Benchmark Nightly` — larger live Claude Code suites executed at night when `main` changed in the last 24 hours
 - `Security Checks` — repository secret and sensitive-file scan
 
-All five workflows run automatically on every push.
+The fast checks run automatically on every push and PR. `Benchmark Smoke` only runs on PRs that touch benchmark-relevant files, and `Benchmark Nightly` runs on schedule only when `main` changed in the last 24 hours.
 
 ### Fast CI
 
@@ -199,6 +200,7 @@ That workflow:
 - copies each benchmark fixture into an isolated task workdir
 - runs the real `claude -p` inside that workdir
 - uses the default cheap CI suite under `bench/tasks/lite/` so the gate stays fast enough for small models
+- only runs on PRs when benchmark-relevant files changed, so normal feature pushes do not keep re-running the live smoke suite unnecessarily
 - checks that required tasks actually changed files, kept docs/code scope rules, and still pass verification
 - requires the final Claude response to include exact stop-safe summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`
 - reports both configured and executed task counts so fail-fast runs are not mistaken for full-suite coverage
@@ -218,6 +220,18 @@ The default CI suite covers three small agent workflows:
 The fuller suite in `bench/tasks/*.json` remains available for manual or slower evaluation runs when you want broader workflow coverage.
 
 The per-agent golden regression suite lives under `bench/tasks/subagents/*.json`. Each canonical agent alias must have at least one focused task with non-empty required and forbidden transcript assertions so agent-level prompt regressions are caught automatically instead of through manual spot checks.
+
+### Benchmark Nightly
+
+`.github/workflows/benchmark-nightly.yml` runs the broader live suites on a nightly schedule at `01:30 UTC`.
+
+That workflow:
+
+- checks whether `main` had any commits in the last `24` hours
+- skips the expensive nightly run when nothing changed
+- runs `bench/tasks/*.json` as the broader workflow suite
+- runs `bench/tasks/subagents/*.json` as the golden per-agent suite
+- still supports manual `workflow_dispatch`, with an optional force-run override
 
 Required benchmark model variable:
 

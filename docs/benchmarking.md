@@ -22,7 +22,7 @@ Current task assertions include:
 
 This makes the benchmark a behavioral acceptance gate, not just a process smoke test.
 
-The live GitHub workflow now defaults to the cheaper suite in `bench/tasks/lite/*.json` so it can run on smaller models without turning every push into a long provider soak:
+The live GitHub smoke workflow now defaults to the cheaper suite in `bench/tasks/lite/*.json` so it can run on smaller models without turning every PR into a long provider soak:
 
 - implement a small bugfix end to end
 - keep a docs-only task out of runtime code
@@ -34,7 +34,7 @@ The fuller suite in `bench/tasks/*.json` remains available for manual or slower 
 That fuller matrix now includes mixed-language fixtures such as `bench/fixtures/node-app`, so the benchmark can cover non-Python verification without forcing the default PR path to grow.
 
 The runner invokes Claude Code with `--permission-mode acceptEdits` so isolated fixture repositories can be modified non-interactively during CI. The bundled profile allows the relevant fixture-local test commands directly, including `pytest`, `npm`, `cargo`, and `go`, so harmless verification runs do not inflate `permission_denials_count`. If a task still fails, inspect `claude_subtype`, `claude_stop_reason`, `permission_denials_count`, and `first_permission_denial` in the task summary and `result.json`.
-The GitHub workflow default is `8` turns per task so CI stays bounded for small models; raise it manually in `workflow_dispatch` when you want a slower debug run.
+The GitHub smoke workflow default is `8` turns per task so CI stays bounded for small models; raise it manually in `workflow_dispatch` when you want a slower debug run.
 The runner also injects an explicit workflow override into the prompt so bugfix, feature, refactor, and docs tasks are not misclassified as review-only work just because the final summary must mention review outcome.
 Manager-led tasks are expected to continue orchestration after manager activation unless the prompt explicitly asks for plan-only behavior. The benchmark contract now expects an early specialist handoff rather than prolonged manager-only analysis.
 Parallel same-role handoffs are allowed when the manager gives them distinct scopes; benchmarks should treat that as an orchestration optimization, not as extra required role coverage.
@@ -73,11 +73,12 @@ Use cases for edge payloads, null/empty field handling, and single-hook contract
 
 ## GitHub Workflow
 
-The behavioral benchmark workflow is:
+The behavioral benchmark workflows are:
 
 - `.github/workflows/behavior-benchmark.yml`
+- `.github/workflows/benchmark-nightly.yml`
 
-It:
+`behavior-benchmark.yml`:
 
 1. installs the Claude Code CLI
 2. runs `./install.sh` so CI uses the same repo installer as local setup
@@ -86,6 +87,17 @@ It:
 5. uses `scripts/bench_runner_claude_code.py` as the per-task runner
 6. uploads per-task Claude artifacts plus `summary.json`
 7. fails the workflow unless every benchmark task passes
+
+It only runs on PRs when benchmark-relevant files changed, which keeps the live smoke path from re-running on unrelated pushes.
+
+`benchmark-nightly.yml`:
+
+1. runs every night at `01:30 UTC`
+2. checks whether `main` had any commits in the last `24` hours
+3. skips the expensive run when there were no recent commits
+4. runs `bench/tasks/*.json` as the broader workflow suite
+5. runs `bench/tasks/subagents/*.json` as the golden per-agent suite
+6. supports `workflow_dispatch` with an optional force-run override
 
 ## Required GitHub Setup
 
