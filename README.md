@@ -1,9 +1,10 @@
 # Claude Code Configuration
 
-[![Validate](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml)
-[![Hook Tests](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml)
-[![Behavior Benchmark](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml)
-[![Security Scan](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml)
+[![Repository Checks](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml)
+[![Hook Contracts](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml)
+[![Python Tests](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/python-tests.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/python-tests.yml)
+[![Benchmark Smoke](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml)
+[![Security Checks](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml)
 
 Badges reflect the latest workflow result for the `main` branch.
 
@@ -152,35 +153,42 @@ The default output style is `Default` to preserve Claude Code's built-in softwar
 
 ## CI and Claude Code
 
-GitHub Actions now covers four layers:
+GitHub Actions now covers five layers:
 
-- `Validate` — fast structural checks on every push and PR
-- `Hook Tests` — behavior tests for the SDLC hook scripts
-- `Behavior Benchmark` — real Claude Code acceptance tasks executed inside isolated fixture repositories
-- `Security Scan` — repository secret and sensitive-file scan
+- `Repository Checks` — fast structural and lint checks on every push and PR
+- `Hook Contracts` — behavior tests for the SDLC hook scripts
+- `Python Tests` — focused pytest coverage for the benchmark runner and profile metadata
+- `Benchmark Smoke` — real Claude Code acceptance tasks executed inside isolated fixture repositories
+- `Security Checks` — repository secret and sensitive-file scan
 
-All four workflows run automatically on every push.
+All five workflows run automatically on every push.
 
 ### Fast CI
 
-`Validate` runs:
+`Repository Checks` runs:
 
 - `bash scripts/validate.sh`
 - shell syntax checks for `claudecfg/hooks/*.sh` and `scripts/*.sh`
 - workflow lint with `actionlint`
 - shell lint with `shellcheck`
 - installer smoke/idempotency check via `tests/install/install-smoke.sh`
-- JSON checks for settings, hook cases, and benchmark metadata
+- JSON checks for settings, hook cases, hook scenarios, and benchmark metadata
 - slash-command inventory checks across `claudecfg/commands/`, `README.md`, `claudecfg/GUIDE.md`, and `claudecfg/README.md`
 - `git diff --check`
 
-`Hook Tests` runs:
+`Hook Contracts` runs:
 
 - `bash scripts/test-hooks.sh`
+- `bash scripts/test-hooks.sh tests/hooks/scenarios.json`
+
+`Python Tests` runs:
+
+- `python -m pytest tests/bench/test_bench_runner.py tests/test_skills_frontmatter.py -v`
+- `python -m pytest tests/test_settings_hooks.py tests/test_hook_scenarios.py -v` remains grouped with `Hook Contracts`, because those tests validate the hook manifests and hook configuration contract directly
 
 This harness verifies that key hooks block dangerous commands, classify prompts correctly, record verification state, reject incomplete stop summaries, and refuse completion after missing or failed verification when code changed.
 
-### Behavior Benchmark
+### Benchmark Smoke
 
 `.github/workflows/behavior-benchmark.yml` is the behavioral acceptance gate for the profile.
 

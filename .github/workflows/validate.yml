@@ -1,4 +1,4 @@
-name: Validate
+name: Repository Checks
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  validate:
-    name: Validate Repository
+  repository-checks:
+    name: Repository Checks
     runs-on: ubuntu-latest
 
     steps:
@@ -26,9 +26,6 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.23'
-
-      - name: Install test dependencies
-        run: pip install pytest
 
       - name: Install workflow lint tools
         shell: bash
@@ -51,9 +48,6 @@ jobs:
           jq empty tests/hooks/scenarios.json
           jq empty bench/tasks/*.json
           jq empty bench/schema/*.json
-
-      - name: Run all pytest tests
-        run: python -m pytest tests/ -v
 
       - name: Check whitespace errors
         run: git diff --check

@@ -1,4 +1,4 @@
-name: Behavior Benchmark
+name: Benchmark Smoke
 
 on:
   push:
@@ -41,8 +41,8 @@ on:
         type: string
 
 jobs:
-  benchmark:
-    name: Behavioral Claude Code Benchmark
+  benchmark-smoke:
+    name: Benchmark Smoke
     runs-on: ubuntu-latest
     timeout-minutes: 45
     concurrency:
@@ -147,7 +147,7 @@ jobs:
             max_recovered_display="${MAX_RECOVERED_TASKS:-report-only}"
             max_summary_repaired_display="${MAX_SUMMARY_REPAIRED_TASKS:-report-only}"
             {
-              echo "## Behavior Benchmark"
+              echo "## Benchmark Smoke"
               echo ""
               echo "- Model: \`${{ steps.cfg.outputs.model }}\`"
               echo "- Max turns: \`${{ steps.cfg.outputs.max_turns }}\`"
