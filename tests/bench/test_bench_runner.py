@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 
@@ -498,3 +499,83 @@ def test_try_budget_retry_returns_effective_retry_debug_log_path(tmp_path, monke
     assert len(retry_summaries) == 1
     assert effective_debug_log_path.name == "claude-debug-budget-retry-1.log"
     assert effective_stderr_log_path.name == "claude-stderr-budget-retry-1.log"
+
+
+def test_render_benchmark_summary_outputs_task_status_table(tmp_path):
+    repo_root = Path(__file__).resolve().parents[2]
+    script_path = repo_root / "scripts" / "render-benchmark-summary.sh"
+    summary_path = tmp_path / "summary.json"
+    summary_path.write_text(
+        json.dumps(
+            {
+                "totals": {
+                    "configured_tasks": 3,
+                    "executed_tasks": 2,
+                    "recovered_tasks": 1,
+                    "summary_repaired": 0,
+                },
+                "rates": {
+                    "execution_coverage_rate": 2 / 3,
+                    "task_pass_rate": 0.5,
+                    "clean_pass_rate": 0.5,
+                },
+                "median_runtime_seconds": 12.34,
+                "tasks": [
+                    {
+                        "task_id": "bugfix-zero-division-lite",
+                        "status": "passed",
+                        "runtime_seconds": 10.5,
+                        "verification_required": True,
+                        "tests_run": True,
+                        "tests_passed": True,
+                        "review_required": True,
+                        "review_present": True,
+                        "docs_required": True,
+                        "docs_updated": True,
+                        "changed_files": ["calculator.py", "README.md"],
+                        "recovered_nonzero_exit": False,
+                        "timeout_recovered": False,
+                        "max_turns_recovered": False,
+                        "summary_repaired_by": "none",
+                        "failures": [],
+                    },
+                    {
+                        "task_id": "feature-manager-no-agent-choice",
+                        "status": "failed",
+                        "runtime_seconds": 14.18,
+                        "verification_required": True,
+                        "tests_run": True,
+                        "tests_passed": False,
+                        "review_required": True,
+                        "review_present": True,
+                        "docs_required": True,
+                        "docs_updated": True,
+                        "changed_files": ["calculator.py", "test_calculator.py", "README.md"],
+                        "recovered_nonzero_exit": True,
+                        "timeout_recovered": True,
+                        "max_turns_recovered": False,
+                        "summary_repaired_by": "retry",
+                        "failures": ["verification_failed", "required_used_agents_missing"],
+                    },
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        ["bash", str(script_path), str(summary_path)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    output = completed.stdout
+    assert "### Overview" in output
+    assert "| Metric | Value |" in output
+    assert "### Executed Tasks" in output
+    assert "| Task | Status | Runtime (s) | Verification | Review | Docs | Changed Files | Recovery | Summary Repair | Failures |" in output
+    assert "| `bugfix-zero-division-lite` | `passed` | 10.5 | `passed` | `done` | `updated` | calculator.py, README.md | `none` | `none` | — |" in output
+    assert "| `feature-manager-no-agent-choice` | `failed` | 14.18 | `failed` | `done` | `updated` | calculator.py, test_calculator.py, README.md | `timeout` | `retry` | verification_failed, required_used_agents_missing |" in output
+    assert "> Note: only 2 of 3 selected tasks executed." in output

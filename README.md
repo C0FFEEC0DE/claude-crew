@@ -211,6 +211,7 @@ That workflow:
 - checks that required tasks actually changed files, kept docs/code scope rules, and still pass verification
 - requires the final Claude response to include exact stop-safe summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`
 - can require actual subagent usage through `required_used_agents` and `required_used_agent_groups`, so workflow-combination tests assert real role handoffs instead of brittle markdown headings
+- writes a markdown benchmark report with overview and per-task status tables, so the Actions summary shows exactly which tasks ran and why they passed or failed
 - reports both configured and executed task counts so fail-fast runs are not mistaken for full-suite coverage
 - uploads per-task Claude logs, results, and workspace patches as artifacts
 - fails unless every benchmark task passes
@@ -228,6 +229,7 @@ The default CI suite covers three small agent workflows:
 The broader workflow-combination suite now lives under `bench/tasks/full/` and is selected dynamically in the dedicated `Behavior Benchmark Full` workflow when manager/agent/workflow changes require it.
 
 The per-agent suites are split between `bench/tasks/subagents/smoke/` and `bench/tasks/subagents/golden/`. Smoke keeps one short canary task per role for PR coverage. Golden keeps one stricter regression task per role for scheduled or manual runs. Tasks that care about exact handoff shape still use transcript regexes; tasks that mainly care about real role activation now assert the actual `SubagentStart`/recorded handoff aliases captured in the debug log.
+Each benchmark run also writes `bench-output/benchmark-report.md` inside the artifact bundle, with a markdown table for every executed task.
 
 ### Behavior Benchmark Subagents Smoke
 

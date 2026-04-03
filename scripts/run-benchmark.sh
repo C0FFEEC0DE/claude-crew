@@ -275,6 +275,10 @@ jq -s \
     ' "${result_files[@]}" > "$OUTPUT_DIR/summary.json"
 
 echo "Benchmark summary written to $OUTPUT_DIR/summary.json"
+benchmark_report_path="$OUTPUT_DIR/benchmark-report.md"
+bash "$REPO_ROOT/scripts/render-benchmark-summary.sh" "$OUTPUT_DIR/summary.json" > "$benchmark_report_path"
+echo "Benchmark markdown report written to $benchmark_report_path"
+cat "$benchmark_report_path"
 jq -r '
     "Benchmark totals:",
     "- configured tasks: \(.totals.configured_tasks)",

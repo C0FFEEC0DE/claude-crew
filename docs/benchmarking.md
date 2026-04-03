@@ -210,6 +210,7 @@ Each task directory contains:
 The benchmark root contains:
 
 - `summary.json`
+- `benchmark-report.md`
 
-Use `summary.json` as the machine-readable gate and the per-task artifacts for debugging failures.
-The workflow log now prints task metadata, model, workdir, prompt excerpt, raw Claude JSON excerpt, parsed failure reasons, debug log excerpt, verification output, patch excerpt, and full `result.json` for each task.
+Use `summary.json` as the machine-readable gate and `benchmark-report.md` as the human-readable markdown report with overview and per-task status tables. The per-task artifacts remain the debugging source for failures.
+The workflow log now prints task metadata, model, workdir, prompt excerpt, raw Claude JSON excerpt, parsed failure reasons, debug log excerpt, verification output, patch excerpt, full `result.json` for each task, and the rendered markdown report table.

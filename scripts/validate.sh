@@ -366,43 +366,51 @@ fi
 
 if grep -q 'default: "300"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q 'scripts/select-benchmark-tasks.py' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
+    && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
+    && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && ! grep -q "if: github.event_name != 'workflow_dispatch'" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml"; then
     echo "OK: Behavior Benchmark Smoke smart selection"
 else
-    report_error "Behavior Benchmark Smoke workflow must expose the 300s default timeout, smart selection precheck, and working manual changed-file collection"
+    report_error "Behavior Benchmark Smoke workflow must expose the 300s default timeout, smart selection precheck, working manual changed-file collection, and markdown benchmark tables"
 fi
 
 if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q -- '--suite full' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q -- '--exclude-overlap-with-suite smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && ! grep -Fq -- "[ \"\${{ github.event_name }}\" = \"schedule\" ]" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml"; then
     echo "OK: Behavior Benchmark Full schedule and selector"
 else
-    report_error "Behavior Benchmark Full workflow must run nightly, stay change-gated by default, keep manual all-task selection, and exclude smoke-covered overlap on PRs"
+    report_error "Behavior Benchmark Full workflow must run nightly, stay change-gated by default, keep manual all-task selection, exclude smoke-covered overlap on PRs, and publish markdown benchmark tables"
 fi
 
 if grep -q -- '--suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'pull_request:' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
+    && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
+    && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && ! grep -q "if: github.event_name != 'workflow_dispatch'" "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml"; then
     echo "OK: Behavior Benchmark Subagents Smoke PR selector"
 else
-    report_error "Behavior Benchmark Subagents Smoke workflow must select the subagent smoke suite on PRs and support manual changed-file collection"
+    report_error "Behavior Benchmark Subagents Smoke workflow must select the subagent smoke suite on PRs, support manual changed-file collection, and publish markdown benchmark tables"
 fi
 
 if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q -- '--suite subagents_golden' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && ! grep -Fq -- "[ \"\${{ github.event_name }}\" = \"schedule\" ]" "$REPO_ROOT/.github/workflows/benchmark-nightly.yml"; then
     echo "OK: Behavior Benchmark Subagents Golden schedule and selector"
 else
-    report_error "Behavior Benchmark Subagents Golden workflow must run nightly, stay change-gated by default, and keep manual all-task selection"
+    report_error "Behavior Benchmark Subagents Golden workflow must run nightly, stay change-gated by default, keep manual all-task selection, and publish markdown benchmark tables"
 fi
 echo ""
 

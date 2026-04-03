@@ -205,15 +205,8 @@ jobs:
               echo "- Max turns: \`${{ steps.cfg.outputs.max_turns }}\`"
               echo "- Timeout seconds: \`${{ steps.cfg.outputs.timeout_seconds }}\`"
               echo "- Max output tokens: \`${{ steps.cfg.outputs.max_output_tokens }}\`"
-              jq -r '
-                def pct($value): (($value * 1000 | round) / 10 | tostring) + "%";
-                "- Configured tasks: `\(.totals.configured_tasks)`",
-                "- Executed tasks: `\(.totals.executed_tasks)`",
-                "- Pass rate: \(pct(.rates.task_pass_rate))",
-                "- Clean pass rate: \(pct(.rates.clean_pass_rate))",
-                "- Recovered tasks: `\(.totals.recovered_tasks)`",
-                "- Summary repaired tasks: `\(.totals.summary_repaired)`"
-              ' bench-output/summary.json
+              echo ""
+              bash scripts/render-benchmark-summary.sh bench-output/summary.json
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
@@ -230,6 +223,7 @@ jobs:
           path: |
             .bench-selected-tasks.txt
             bench-output/summary.json
+            bench-output/benchmark-report.md
             bench-output/tasks/**/result.json
             bench-output/tasks/**/claude-result.json
             bench-output/tasks/**/claude-result.txt
