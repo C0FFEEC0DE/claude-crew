@@ -24,6 +24,7 @@ GLOBAL_BEHAVIOR_PREFIXES = (
     "scripts/assert-benchmark-summary.sh",
     "scripts/bench_runner_claude_code.py",
     "scripts/collect-benchmark-changes.sh",
+    "scripts/render-benchmark-summary.sh",
     "scripts/run-benchmark.sh",
     "scripts/select-benchmark-tasks.py",
 )

@@ -62,7 +62,6 @@ if [ -z "$PROJECT_CLAUDE_DIR" ]; then
 fi
 
 mkdir -p "$HOME/.claude" "$HOME/.claude/state" "$HOME/.claude/logs"
-touch "$HOME/.claude.json"
 
 if [ -n "$TASK_LIST_FILE" ] && [ -n "$TASK_GLOB" ] && [ "$TASK_GLOB" != "bench/tasks/smoke/*.json" ]; then
     usage

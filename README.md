@@ -210,7 +210,7 @@ That workflow:
 - only runs on PRs when benchmark-relevant files changed, so normal feature pushes do not keep re-running the live smoke suite unnecessarily
 - checks that required tasks actually changed files, kept docs/code scope rules, and still pass verification
 - requires the final Claude response to include exact stop-safe summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`
-- now bootstraps `~/.claude`, `~/.claude/state`, `~/.claude/logs`, and `~/.claude.json` before live runs so CI does not waste turns recreating missing Claude home-state files
+- now bootstraps `~/.claude`, `~/.claude/state`, and `~/.claude/logs` before live runs so CI does not waste turns recreating missing Claude home-state directories
 - can require actual subagent usage through `required_used_agents` and `required_used_agent_groups`, so workflow-combination tests assert real role handoffs instead of brittle markdown headings
 - writes a markdown benchmark report with overview and per-task status tables, so the Actions summary shows exactly which tasks ran and why they passed or failed
 - reports both configured and executed task counts so fail-fast runs are not mistaken for full-suite coverage

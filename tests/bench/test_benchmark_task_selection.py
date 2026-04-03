@@ -41,6 +41,22 @@ def test_global_workflow_change_selects_entire_smoke_suite():
     }
 
 
+def test_summary_renderer_change_selects_entire_smoke_suite():
+    selector = load_selector_module()
+    selected_ids, reasons = select_ids(
+        selector,
+        "smoke",
+        ["scripts/render-benchmark-summary.sh"],
+    )
+
+    assert reasons == ["global_behavior_change"]
+    assert selected_ids == {
+        "bugfix-zero-division-lite",
+        "docs-quickstart-clarity-lite",
+        "refactor-report-formatting-lite",
+    }
+
+
 def test_unrelated_workflow_change_does_not_select_full_suite():
     selector = load_selector_module()
     selected_ids, reasons = select_ids(
