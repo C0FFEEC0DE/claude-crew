@@ -128,7 +128,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     concurrency:
-      group: behavior-benchmark-smoke-${{ github.ref }}
+      group: behavior-benchmark-smoke-${{ github.ref }}-shard-${{ matrix.shard_index }}
       cancel-in-progress: true
     strategy:
       fail-fast: false
