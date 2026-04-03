@@ -73,3 +73,11 @@ case "$EVENT_NAME" in
 esac
 
 printf 'Collected %s changed files for %s\n' "$(wc -l < "$OUTPUT_FILE" | tr -d ' ')" "$EVENT_NAME"
+
+# Debug: output file contents if not empty
+if [ -s "$OUTPUT_FILE" ]; then
+    echo "Changed files:"
+    cat "$OUTPUT_FILE" >&2
+else
+    echo "WARNING: No changed files collected for $EVENT_NAME" >&2
+fi

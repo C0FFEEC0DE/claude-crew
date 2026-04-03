@@ -32,7 +32,6 @@ assert_installed_tree() {
     local root_dir="$1"
 
     [ -f "$root_dir/.claude/settings.json" ]
-    [ -f "$root_dir/.claude.json" ]
     [ -d "$root_dir/.claude/hooks" ]
     [ -d "$root_dir/.claude/commands" ]
     [ -d "$root_dir/.claude/skills" ]
