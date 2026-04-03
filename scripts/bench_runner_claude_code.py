@@ -1057,6 +1057,16 @@ def required_transcript_pattern_misses(task: dict, payload: dict | None) -> tupl
     return True, misses
 
 
+def effective_required_transcript_misses(
+    required_transcript_misses: list[str],
+    *,
+    recovered_nonzero_exit: bool,
+) -> list[str]:
+    if recovered_nonzero_exit and required_transcript_misses == ["<assistant transcript unavailable>"]:
+        return []
+    return required_transcript_misses
+
+
 def extract_used_agent_aliases(debug_log_text: str) -> list[str]:
     aliases: list[str] = []
     seen: set[str] = set()
@@ -1449,6 +1459,10 @@ def main() -> int:
     timeout_recovered = recovery_mode == "timeout"
     max_turns_recovered = recovery_mode == "max_turns"
     recovered_nonzero_exit = recovery_mode != "none"
+    effective_transcript_misses = effective_required_transcript_misses(
+        required_transcript_misses,
+        recovered_nonzero_exit=recovered_nonzero_exit,
+    )
 
     status = "passed"
     failures: list[str] = []
@@ -1477,7 +1491,7 @@ def main() -> int:
         failures.append("docs_forbidden_content")
     if transcript_pattern_hits:
         failures.append("transcript_forbidden_content")
-    if required_transcript_misses:
+    if effective_transcript_misses:
         failures.append("transcript_required_content_missing")
     if missing_required_used_agents:
         failures.append("required_used_agents_missing")

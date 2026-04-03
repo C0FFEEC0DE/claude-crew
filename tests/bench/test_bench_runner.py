@@ -260,6 +260,28 @@ def test_required_transcript_patterns_report_unavailable_transcript(tmp_path, mo
     assert misses == ["<assistant transcript unavailable>"]
 
 
+def test_effective_required_transcript_misses_ignores_unavailable_transcript_after_recovery(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+
+    misses = runner.effective_required_transcript_misses(
+        ["<assistant transcript unavailable>"],
+        recovered_nonzero_exit=True,
+    )
+
+    assert misses == []
+
+
+def test_effective_required_transcript_misses_keeps_real_pattern_misses_after_recovery(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+
+    misses = runner.effective_required_transcript_misses(
+        [r"Findings:", r"Outcome:"],
+        recovered_nonzero_exit=True,
+    )
+
+    assert misses == [r"Findings:", r"Outcome:"]
+
+
 def test_forbidden_transcript_patterns_catch_footer_repair_meta_chatter(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
     transcript_path = tmp_path / "session.jsonl"

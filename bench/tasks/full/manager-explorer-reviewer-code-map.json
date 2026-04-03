@@ -7,15 +7,17 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @m to coordinate this tiny review workflow without waiting for more user input. Use @e to map reporter.py and README.md first, then use @cr to review them. Add a concise REVIEW.md note that records the most important finding or explicitly says there are no material findings. Keep runtime code unchanged and finish with the required footer.",
+  "prompt": "Start by using @m to coordinate this tiny review workflow without waiting for more user input. The first delegated handoff must be to @e so explorer maps reporter.py and README.md before any review starts. Only after the @e map is complete should @m hand off to @cr for the review. Add a concise REVIEW.md note that records the most important finding or explicitly says there are no material findings. Keep runtime code unchanged and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, explorer, and reviewer roles",
+    "Explorer runs before reviewer and maps reporter.py and README.md first",
     "A REVIEW.md file is added with a concise review note",
     "Runtime code stays unchanged",
     "The final response includes review status in the required footer"
   ],
   "must_not": [
     "Modify reporter.py",
+    "Skip the @e mapping phase or send @cr before @e completes",
     "Ask the user which subagent to use",
     "Invent review findings",
     "Perform release or deploy work"
