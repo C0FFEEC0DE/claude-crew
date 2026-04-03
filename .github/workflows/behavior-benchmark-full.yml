@@ -10,7 +10,9 @@ on:
       - 'claudecfg/**'
       - 'scripts/assert-benchmark-summary.sh'
       - 'scripts/bench_runner_claude_code.py'
+      - 'scripts/build-benchmark-matrix.py'
       - 'scripts/collect-benchmark-changes.sh'
+      - 'scripts/merge-benchmark-summaries.py'
       - 'scripts/render-benchmark-summary.sh'
       - 'scripts/run-benchmark.sh'
       - 'scripts/select-benchmark-tasks.py'
@@ -61,6 +63,7 @@ jobs:
       task_label: ${{ steps.select.outputs.task_label }}
       task_ids: ${{ steps.select.outputs.task_ids }}
       selection_reason: ${{ steps.select.outputs.selection_reason }}
+      matrix_json: ${{ steps.matrix.outputs.matrix_json }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -112,8 +115,18 @@ jobs:
             echo "- Will run full suite: \`${{ steps.select.outputs.should_run }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  benchmark-full:
-    name: Behavior Benchmark Full
+      - name: Build full-suite shard matrix
+        id: matrix
+        shell: bash
+        run: |
+          cat > .bench-selected-tasks.txt <<'EOF'
+          ${{ steps.select.outputs.task_files }}
+          EOF
+          matrix_json="$(python3 scripts/build-benchmark-matrix.py --task-list-file .bench-selected-tasks.txt --max-shards 2)"
+          echo "matrix_json=$matrix_json" >> "$GITHUB_OUTPUT"
+
+  benchmark-full-shards:
+    name: Behavior Benchmark Full Shard
     needs: precheck
     if: needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
@@ -121,6 +134,11 @@ jobs:
     concurrency:
       group: behavior-benchmark-full-${{ github.ref }}
       cancel-in-progress: true
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include: ${{ fromJson(needs.precheck.outputs.matrix_json) }}
     permissions:
       contents: read
 
@@ -134,7 +152,7 @@ jobs:
         shell: bash
         run: |
           cat > .bench-selected-tasks.txt <<'EOF'
-          ${{ needs.precheck.outputs.task_files }}
+          ${{ matrix.task_files }}
           EOF
 
       - name: Resolve benchmark config
@@ -215,7 +233,7 @@ jobs:
             --task-label "${{ needs.precheck.outputs.task_label }}" \
             --ref "${GITHUB_REF}"
 
-      - name: Render full benchmark summary
+      - name: Render full shard summary
         if: always()
         shell: bash
         env:
@@ -230,7 +248,8 @@ jobs:
               echo ""
               echo "- Event: \`${{ github.event_name }}\`"
               echo "- Selection reason: \`${{ needs.precheck.outputs.selection_reason }}\`"
-              echo "- Task ids: \`${{ needs.precheck.outputs.task_ids }}\`"
+              echo "- Shard index: \`${{ matrix.shard_index }}\`"
+              echo "- Task count: \`${{ matrix.task_count }}\`"
               echo "- Model: \`${{ steps.cfg.outputs.model }}\`"
               echo "- Max turns: \`${{ steps.cfg.outputs.max_turns }}\`"
               echo "- Timeout seconds: \`${{ steps.cfg.outputs.timeout_seconds }}\`"
@@ -243,19 +262,11 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Enforce full benchmark gate
-        shell: bash
-        env:
-          BENCH_MAX_RECOVERED_TASKS: ${{ steps.cfg.outputs.max_recovered_tasks }}
-          BENCH_MAX_SUMMARY_REPAIRED_TASKS: ${{ steps.cfg.outputs.max_summary_repaired_tasks }}
-        run: |
-          bash scripts/assert-benchmark-summary.sh bench-output/summary.json
-
-      - name: Upload full benchmark artifacts
+      - name: Upload full shard artifacts
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: behavior-benchmark-full-${{ github.run_id }}
+          name: behavior-benchmark-full-shard-${{ matrix.shard_index }}-${{ github.run_id }}
           path: |
             .bench-selected-tasks.txt
             bench-output/summary.json
@@ -271,3 +282,71 @@ jobs:
             bench-output/tasks/**/task-prompt.txt
             bench-output/tasks/**/task-summary.txt
             bench-output/tasks/**/runner-error.txt
+
+  benchmark-full:
+    name: Behavior Benchmark Full
+    needs:
+      - precheck
+      - benchmark-full-shards
+    if: always() && needs.precheck.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Download full shard artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: shard-artifacts
+          pattern: behavior-benchmark-full-shard-*-${{ github.run_id }}
+
+      - name: Merge shard summaries
+        shell: bash
+        run: |
+          mkdir -p bench-output
+          mapfile -t summary_files < <(find shard-artifacts -type f -name summary.json | sort)
+          if [ "${#summary_files[@]}" -eq 0 ]; then
+            echo "No shard summary.json files were downloaded" >&2
+            exit 1
+          fi
+          python3 scripts/merge-benchmark-summaries.py \
+            --output bench-output/summary.json \
+            "${summary_files[@]}"
+          bash scripts/render-benchmark-summary.sh bench-output/summary.json > bench-output/benchmark-report.md
+
+      - name: Render full benchmark summary
+        shell: bash
+        run: |
+          max_recovered_display="${{ inputs.max_recovered_tasks || vars.BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS || 'report-only' }}"
+          max_summary_repaired_display="${{ inputs.max_summary_repaired_tasks || vars.BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS || 'report-only' }}"
+          {
+            echo "## Behavior Benchmark Full"
+            echo ""
+            echo "- Event: \`${{ github.event_name }}\`"
+            echo "- Selection reason: \`${{ needs.precheck.outputs.selection_reason }}\`"
+            echo "- Task ids: \`${{ needs.precheck.outputs.task_ids }}\`"
+            echo "- Max recovered tasks allowed: \`${max_recovered_display}\`"
+            echo "- Max summary-repaired tasks allowed: \`${max_summary_repaired_display}\`"
+            echo "- Task selection: \`${{ needs.precheck.outputs.task_label }}\`"
+            echo ""
+            cat bench-output/benchmark-report.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enforce full benchmark gate
+        shell: bash
+        env:
+          BENCH_MAX_RECOVERED_TASKS: ${{ inputs.max_recovered_tasks || vars.BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS }}
+          BENCH_MAX_SUMMARY_REPAIRED_TASKS: ${{ inputs.max_summary_repaired_tasks || vars.BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS }}
+        run: |
+          bash scripts/assert-benchmark-summary.sh bench-output/summary.json
+
+      - name: Upload full benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: behavior-benchmark-full-${{ github.run_id }}
+          path: |
+            bench-output/summary.json
+            bench-output/benchmark-report.md
