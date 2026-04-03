@@ -360,7 +360,7 @@ fi
 
 if grep -q 'default: "300"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q 'scripts/select-benchmark-tasks.py' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -q -- '--ref-name "${REF_NAME:-}"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
+    && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && ! grep -q "if: github.event_name != 'workflow_dispatch'" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml"; then
     echo "OK: Behavior Benchmark Smoke smart selection"
 else
@@ -371,8 +371,8 @@ if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/behavior-
     && grep -q -- '--suite full' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q -- '--ref-name "${REF_NAME:-}"' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && ! grep -q '\[ "${{ github.event_name }}" = "schedule" \]' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml"; then
+    && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && ! grep -Fq -- "[ \"\${{ github.event_name }}\" = \"schedule\" ]" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml"; then
     echo "OK: Behavior Benchmark Full schedule and selector"
 else
     report_error "Behavior Benchmark Full workflow must run nightly, stay change-gated by default, and keep manual all-task selection"
@@ -380,7 +380,7 @@ fi
 
 if grep -q -- '--suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'pull_request:' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
-    && grep -q -- '--ref-name "${REF_NAME:-}"' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
+    && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && ! grep -q "if: github.event_name != 'workflow_dispatch'" "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml"; then
     echo "OK: Behavior Benchmark Subagents Smoke PR selector"
 else
@@ -391,8 +391,8 @@ if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/benchmark
     && grep -q -- '--suite subagents_golden' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -q -- '--ref-name "${REF_NAME:-}"' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && ! grep -q '\[ "${{ github.event_name }}" = "schedule" \]' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml"; then
+    && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && ! grep -Fq -- "[ \"\${{ github.event_name }}\" = \"schedule\" ]" "$REPO_ROOT/.github/workflows/benchmark-nightly.yml"; then
     echo "OK: Behavior Benchmark Subagents Golden schedule and selector"
 else
     report_error "Behavior Benchmark Subagents Golden workflow must run nightly, stay change-gated by default, and keep manual all-task selection"

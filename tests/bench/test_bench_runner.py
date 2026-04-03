@@ -179,6 +179,74 @@ def test_required_transcript_patterns_match_assistant_entries(tmp_path, monkeypa
     assert misses == []
 
 
+def test_required_transcript_patterns_accept_markdown_role_heading_for_combo_workflows(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    transcript_path = tmp_path / "session.jsonl"
+    write_transcript(
+        transcript_path,
+        [
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "## Code Review — subtract helper\nReview outcome: done - reviewed the change.",
+                        }
+                    ],
+                },
+            }
+        ],
+    )
+
+    scanned, misses = runner.required_transcript_pattern_misses(
+        {
+            "required_transcript_patterns": [
+                r"Task:\s*(Explore|Design|Code Review|Testing)|(^|\n)##\s*(Explore|Design|Code Review|Testing)\b"
+            ]
+        },
+        {"transcript_path": str(transcript_path)},
+    )
+
+    assert scanned is True
+    assert misses == []
+
+
+def test_required_transcript_patterns_still_reject_plain_summary_without_role_heading(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    transcript_path = tmp_path / "session.jsonl"
+    write_transcript(
+        transcript_path,
+        [
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Feature workflow complete. Review outcome: done - all required roles were used.",
+                        }
+                    ],
+                },
+            }
+        ],
+    )
+
+    scanned, misses = runner.required_transcript_pattern_misses(
+        {
+            "required_transcript_patterns": [
+                r"Task:\s*(Explore|Design|Code Review|Testing)|(^|\n)##\s*(Explore|Design|Code Review|Testing)\b"
+            ]
+        },
+        {"transcript_path": str(transcript_path)},
+    )
+
+    assert scanned is True
+    assert misses == [r"Task:\s*(Explore|Design|Code Review|Testing)|(^|\n)##\s*(Explore|Design|Code Review|Testing)\b"]
+
+
 def test_required_transcript_patterns_report_unavailable_transcript(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
 

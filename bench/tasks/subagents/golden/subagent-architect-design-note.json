@@ -8,11 +8,11 @@
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @a for this design-only task. Update README.md with a short rollout note that explains how a shared normalization helper could reduce duplication between render_title() and render_subtitle(), what risks to watch for, and why the refactor should stay bounded. Keep it docs-only and finish with the required footer.",
+  "prompt": "Start by using @a for this design-only task. Update README.md with a short rollout note that explains how a shared normalization helper could reduce duplication between render_title() and render_subtitle(), what risks to watch for, and why the refactor should stay bounded. Keep it docs-only. The architect handoff itself must visibly use the standard output headings `Task: Design`, `Solution:`, `Outcome:`, and `Changed files:` or `No files changed:` in the transcript, then finish with the required footer.",
   "success_criteria": [
     "README.md gains a concise design note with tradeoffs or rollout risks",
     "The run stays docs-only",
-    "The transcript shows architect-style solution output",
+    "The transcript shows architect-style solution output with exact `Task: Design` and `Solution:` headings",
     "The final response includes the required footer"
   ],
   "must_not": [

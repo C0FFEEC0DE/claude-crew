@@ -7,12 +7,13 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @m to coordinate this tiny feature workflow, then complete it end to end without waiting for more user input. Add a subtract helper to the calculator fixture, cover it with tests, update the fixture README with a short subtract example, and finish with verification plus review status. Choose the minimum required subagent set yourself; do not ask me which required agent to use.",
+  "prompt": "Start by using @m to coordinate this tiny feature workflow, then complete it end to end without waiting for more user input. Add a subtract helper to the calculator fixture, cover it with tests, update the fixture README with a short subtract example, and finish with verification plus review status. Choose the minimum required subagent set yourself; do not ask me which required agent to use. Keep at least one specialist handoff visibly structured in the transcript using that agent's standard role heading, for example `Task: Design`, `Task: Explore`, `Task: Code Review`, `Task: Testing`, or a matching `## Code Review` style heading.",
   "success_criteria": [
     "A new subtract helper is implemented in the calculator fixture",
     "Tests were added or updated and executed successfully",
     "The fixture README was updated with a subtract example",
     "The workflow completes without asking the user to choose mandatory agents",
+    "At least one specialist handoff stays visibly structured in the transcript",
     "The final response includes verification and review status"
   ],
   "must_not": [
@@ -26,6 +27,6 @@
     "which required agent"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*(Explore|Design|Code Review|Testing)"
+    "Task:\\s*(Explore|Design|Code Review|Testing)|(^|\\n)##\\s*(Explore|Design|Code Review|Testing)\\b"
   ]
 }
