@@ -46,7 +46,7 @@ jobs:
           jq empty claudecfg/settings.json
           jq empty tests/hooks/cases.json
           jq empty tests/hooks/scenarios.json
-          jq empty bench/tasks/*.json
+          find bench/tasks -type f -name '*.json' -exec jq empty {} +
           jq empty bench/schema/*.json
 
       - name: Check whitespace errors
