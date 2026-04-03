@@ -364,7 +364,7 @@ else
     report_error "Python Tests must use actions/setup-python@v6"
 fi
 
-if grep -q 'default: "300"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
+if grep -q 'default: "180"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q 'scripts/select-benchmark-tasks.py' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
@@ -378,6 +378,8 @@ fi
 if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q -- '--suite full' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q -- '--exclude-overlap-with-suite smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q -- '--exclude-overlap-with-suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q -- '--priority-profile pr_full --max-tasks 6' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \

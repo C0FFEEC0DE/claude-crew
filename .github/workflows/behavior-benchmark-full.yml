@@ -30,17 +30,17 @@ on:
       max_turns:
         description: "Maximum Claude Code turns per task"
         required: false
-        default: "10"
+        default: "8"
         type: string
       timeout_seconds:
         description: "Per-task Claude timeout in seconds"
         required: false
-        default: "300"
+        default: "240"
         type: string
       max_output_tokens:
         description: "Claude Code max output tokens per request"
         required: false
-        default: "1024"
+        default: "896"
         type: string
       max_recovered_tasks:
         description: "Optional strict-mode cap for recovered tasks; leave empty to report only"
@@ -96,6 +96,8 @@ jobs:
           fi
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             extra_args+=(--exclude-overlap-with-suite smoke)
+            extra_args+=(--exclude-overlap-with-suite subagents_smoke)
+            extra_args+=(--priority-profile pr_full --max-tasks 6)
           fi
           python3 scripts/select-benchmark-tasks.py \
             --suite full \
@@ -174,10 +176,10 @@ jobs:
           VAR_BENCHMARK_MAX_RECOVERED_TASKS: ${{ vars.BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS }}
           VAR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS: ${{ vars.BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS }}
         run: |
-          max_turns="${INPUT_MAX_TURNS:-10}"
+          max_turns="${INPUT_MAX_TURNS:-8}"
           model="${VAR_BENCHMARK_MODEL:-${VAR_OLLAMA_MODEL:-}}"
-          timeout_seconds="${INPUT_TIMEOUT_SECONDS:-${VAR_BENCHMARK_TIMEOUT_SECONDS:-300}}"
-          max_output_tokens="${INPUT_MAX_OUTPUT_TOKENS:-${VAR_BENCHMARK_MAX_OUTPUT_TOKENS:-1024}}"
+          timeout_seconds="${INPUT_TIMEOUT_SECONDS:-${VAR_BENCHMARK_TIMEOUT_SECONDS:-240}}"
+          max_output_tokens="${INPUT_MAX_OUTPUT_TOKENS:-${VAR_BENCHMARK_MAX_OUTPUT_TOKENS:-896}}"
           max_recovered_tasks="${INPUT_MAX_RECOVERED_TASKS:-${VAR_BENCHMARK_MAX_RECOVERED_TASKS:-}}"
           max_summary_repaired_tasks="${INPUT_MAX_SUMMARY_REPAIRED_TASKS:-${VAR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS:-}}"
 
@@ -195,14 +197,19 @@ jobs:
             echo "max_summary_repaired_tasks=$max_summary_repaired_tasks"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Restore dependency caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/pip
+          key: ${{ runner.os }}-behavior-benchmark-deps-v2
+
       - name: Install Claude Code CLI and pytest
         shell: bash
         run: |
-          node --version
-          npm --version
-          python3 --version
-          npm install -g @anthropic-ai/claude-code
-          python3 -m pip install --upgrade pip pytest
+          PIP_DISABLE_PIP_VERSION_CHECK=1 npm install -g @anthropic-ai/claude-code --prefer-offline --no-audit
+          PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install pytest --cache-dir ~/.cache/pip
           claude --version
 
       - name: Install Claude configuration
@@ -265,7 +272,7 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Upload full shard artifacts
+      - name: Upload full shard summary artifacts
         if: always()
         uses: actions/upload-artifact@v6
         with:
@@ -274,14 +281,21 @@ jobs:
             .bench-selected-tasks.txt
             bench-output/summary.json
             bench-output/benchmark-report.md
+            bench-output/tasks/**/workspace.patch
+            bench-output/tasks/**/changed-files.json
+
+      - name: Upload full shard debug artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: behavior-benchmark-full-shard-debug-${{ matrix.shard_index }}-${{ github.run_id }}
+          path: |
             bench-output/tasks/**/result.json
             bench-output/tasks/**/claude-result.json
             bench-output/tasks/**/claude-result.txt
             bench-output/tasks/**/claude-debug.log
             bench-output/tasks/**/claude-stderr.log
             bench-output/tasks/**/claude-stderr-tail.txt
-            bench-output/tasks/**/workspace.patch
-            bench-output/tasks/**/changed-files.json
             bench-output/tasks/**/task-prompt.txt
             bench-output/tasks/**/task-summary.txt
             bench-output/tasks/**/runner-error.txt
@@ -378,3 +392,15 @@ jobs:
           path: |
             bench-output/summary.json
             bench-output/benchmark-report.md
+
+      - name: Upload full benchmark debug artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: behavior-benchmark-full-debug-${{ github.run_id }}
+          path: |
+            bench-output/tasks/**/workspace.patch
+            bench-output/tasks/**/changed-files.json
+            bench-output/tasks/**/claude-debug.log
+            bench-output/tasks/**/claude-stderr.log
+            bench-output/tasks/**/claude-stderr-tail.txt

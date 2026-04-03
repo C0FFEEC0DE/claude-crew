@@ -8,7 +8,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @dbg for this small debugging task. The debugger output must explicitly include the headings `Task: Debug`, `Reproduction:`, `Root cause:`, and `Outcome:` before the final footer. Reproduce the current zero-division behavior in the calculator fixture, explain the root cause under that heading, then fix divide() so it raises ValueError(\"division by zero\"), update the tests, document the behavior in README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "Start with @dbg for this small debugging task. The debugger output must include the headings `Task: Debug`, `Reproduction:`, `Root cause:`, and `Outcome:` before the final footer. Reproduce the current zero-division behavior, explain the root cause under that heading, fix divide() so it raises ValueError(\"division by zero\"), update the tests, document the behavior in README.md, run pytest -q, and finish with the required footer.",
   "success_criteria": [
     "The zero-division bug is reproduced and fixed",
     "Tests are updated and pass",

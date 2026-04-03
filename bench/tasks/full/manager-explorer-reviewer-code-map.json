@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @m to coordinate this tiny review workflow without waiting for more user input. The first delegated handoff must be to @e so explorer maps reporter.py and README.md before any review starts. Only after the @e map is complete should @m hand off to @cr for the review. Add a concise REVIEW.md note that records the most important finding or explicitly says there are no material findings. Keep runtime code unchanged and finish with the required footer.",
+  "prompt": "Start with @m for this tiny review workflow without waiting. The first delegated handoff must be to @e to map reporter.py and README.md before any review starts. Only after that map is complete should @m hand off to @cr for review. Add a concise REVIEW.md note with the main finding or explicitly say there are no material findings, keep runtime code unchanged, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, explorer, and reviewer roles",
     "Explorer runs before reviewer and maps reporter.py and README.md first",

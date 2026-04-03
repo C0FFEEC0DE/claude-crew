@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @m to coordinate this tiny bugfix workflow without waiting for more user input. The workflow must explicitly hand off to @bug for the fix, then @t for verification, then @cr for a review pass before the final answer. Do not finish until @cr has reviewed the changes and reported findings. Fix the zero-division handling so divide() raises ValueError(\"division by zero\"), update README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "Start with @m and coordinate this tiny bugfix workflow without waiting. The workflow must explicitly hand off to @bug for the fix, then @t for verification, then @cr for review before the final answer. Do not finish until @cr reports findings. Fix zero division so divide() raises ValueError(\"division by zero\"), update README.md, run pytest -q, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, bugbuster, tester, and reviewer roles",
     "divide() raises ValueError on zero division",

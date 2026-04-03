@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @m to coordinate this tiny feature workflow, then complete it end to end without waiting for more user input. Add a subtract helper to the calculator fixture, cover it with tests, update the fixture README with a short subtract example, and finish with verification plus review status. Choose the minimum required subagent set yourself; do not ask me which required agent to use. The workflow must include a real review handoff and at least one actual specialist handoff such as @e, @a, or @t before you finish.",
+  "prompt": "Start with @m and complete this tiny feature workflow end to end without waiting. Add a subtract helper, cover it with tests, update the fixture README with a short subtract example, and finish with verification plus review status. Choose the minimum required subagent set yourself, do not ask which agent to use, and include both a real review handoff and at least one specialist handoff such as @e, @a, or @t.",
   "success_criteria": [
     "A new subtract helper is implemented in the calculator fixture",
     "Tests were added or updated and executed successfully",

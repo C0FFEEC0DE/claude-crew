@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @m to coordinate this tiny feature workflow without waiting for more user input. Use @a to sketch the implementation approach first, then implement a weighted-average helper in calculator.py using the standard formula sum(value * weight) / sum(weights), add or update tests, delegate verification planning and pytest coverage to @t instead of doing that role inline yourself, use @cr for a review pass, update README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "Start with @m and coordinate this tiny feature workflow without waiting. Use @a for the implementation sketch, add a weighted-average helper in calculator.py using sum(value * weight) / sum(weights), use @t for verification planning and pytest coverage, use @cr for review, update README.md, run pytest -q, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, architect, tester, and reviewer roles",
     "The weighted-average helper is implemented with tests",

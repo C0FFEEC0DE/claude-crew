@@ -13,15 +13,25 @@ def load_selector_module():
     return module
 
 
-def select_ids(module, suite, changed_files, selection_mode="changed", exclude_overlap_with_suite=None):
+def select_ids(
+    module,
+    suite,
+    changed_files,
+    selection_mode="changed",
+    exclude_overlap_with_suite=None,
+    priority_profile=None,
+    max_tasks=None,
+):
     tasks = module.iter_tasks()
     selected, reasons = module.select_tasks(
         tasks,
         suite,
         changed_files,
         selection_mode,
-        exclude_overlap_with_suite=exclude_overlap_with_suite,
+        exclude_overlap_with_suites=[exclude_overlap_with_suite] if exclude_overlap_with_suite else [],
     )
+    selected = module.apply_priority_profile(selected, priority_profile)
+    selected = module.limit_tasks(selected, max_tasks, reasons)
     return {task["id"] for task in selected}, reasons
 
 
@@ -218,7 +228,30 @@ def test_manual_all_returns_entire_golden_suite():
     )
 
     assert reasons == ["manual_all"]
-    assert len(selected_ids) == 9
+
+
+def test_full_pr_priority_profile_limits_global_change_to_six_tasks():
+    selector = load_selector_module()
+    selected_ids, reasons = select_ids(
+        selector,
+        "full",
+        [".github/workflows/behavior-benchmark-full.yml"],
+        exclude_overlap_with_suite="smoke",
+        priority_profile="pr_full",
+        max_tasks=6,
+    )
+
+    assert "global_behavior_change" in reasons
+    assert "task_limit:6" in reasons
+    assert selected_ids == {
+        "docs-node-app-quickstart",
+        "feature-weighted-average",
+        "feature-report-summary-line",
+        "manager-bugbuster-tester-reviewer-zero-division",
+        "manager-explorer-reviewer-code-map",
+        "manager-docwriter-node-quickstart",
+    }
+    assert len(selected_ids) == 6
 
 
 def test_manager_led_full_tasks_require_role_usage_assertions():

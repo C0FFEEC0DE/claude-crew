@@ -18,6 +18,17 @@ SUITE_DEFAULTS = {
     "subagents_golden": "bench/tasks/subagents/golden/*.json",
 }
 
+PRIORITY_PROFILES = {
+    "pr_full": (
+        "docs-node-app-quickstart",
+        "feature-weighted-average",
+        "feature-report-summary-line",
+        "manager-bugbuster-tester-reviewer-zero-division",
+        "manager-explorer-reviewer-code-map",
+        "manager-docwriter-node-quickstart",
+    ),
+}
+
 GLOBAL_BEHAVIOR_PREFIXES = (
     "claudecfg/hooks/",
     "claudecfg/settings.json",
@@ -94,7 +105,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--suite", required=True, choices=sorted(SUITE_DEFAULTS))
     parser.add_argument("--changed-files-file")
     parser.add_argument("--selection-mode", choices=("all", "changed"), default="changed")
-    parser.add_argument("--exclude-overlap-with-suite", choices=sorted(SUITE_DEFAULTS))
+    parser.add_argument("--exclude-overlap-with-suite", action="append", choices=sorted(SUITE_DEFAULTS))
+    parser.add_argument("--priority-profile", choices=sorted(PRIORITY_PROFILES))
+    parser.add_argument("--max-tasks", type=int)
     return parser.parse_args()
 
 
@@ -176,7 +189,7 @@ def select_tasks(
     changed_files: list[str],
     selection_mode: str,
     *,
-    exclude_overlap_with_suite: str | None = None,
+    exclude_overlap_with_suites: list[str] | None = None,
 ) -> tuple[list[dict], list[str]]:
     suite_tasks = [task for task in tasks if task.get("suite") == suite]
     reasons: list[str] = []
@@ -220,25 +233,50 @@ def select_tasks(
 
     selected = dedupe_tasks(selected)
 
-    if exclude_overlap_with_suite and exclude_overlap_with_suite != suite and selected:
+    for excluded_suite in exclude_overlap_with_suites or []:
+        if excluded_suite == suite or not selected:
+            continue
         overlapping_tasks, _ = select_tasks(
             tasks,
-            exclude_overlap_with_suite,
+            excluded_suite,
             changed_files,
             selection_mode,
+            exclude_overlap_with_suites=[],
         )
         overlap_keys = {
             key
             for key in (task_overlap_key(task) for task in overlapping_tasks)
             if key
         }
-        if overlap_keys:
-            filtered = [task for task in selected if task_overlap_key(task) not in overlap_keys]
-            if len(filtered) != len(selected):
-                selected = filtered
-                reasons.append(f"overlap_excluded:{exclude_overlap_with_suite}")
+        if not overlap_keys:
+            continue
+        filtered = [task for task in selected if task_overlap_key(task) not in overlap_keys]
+        if len(filtered) != len(selected):
+            selected = filtered
+            reasons.append(f"overlap_excluded:{excluded_suite}")
 
     return selected, reasons
+
+
+def apply_priority_profile(selected: list[dict], profile: str | None) -> list[dict]:
+    if not profile:
+        return selected
+    priority_order = PRIORITY_PROFILES[profile]
+    priority_index = {task_id: index for index, task_id in enumerate(priority_order)}
+    return sorted(
+        selected,
+        key=lambda task: (
+            priority_index.get(str(task["id"]), len(priority_index)),
+            str(task["id"]),
+        ),
+    )
+
+
+def limit_tasks(selected: list[dict], max_tasks: int | None, reasons: list[str]) -> list[dict]:
+    if max_tasks is None or max_tasks <= 0 or len(selected) <= max_tasks:
+        return selected
+    reasons.append(f"task_limit:{max_tasks}")
+    return selected[:max_tasks]
 
 
 def format_label(selected: list[dict], suite: str) -> str:
@@ -291,8 +329,10 @@ def main() -> None:
         args.suite,
         changed_files,
         args.selection_mode,
-        exclude_overlap_with_suite=args.exclude_overlap_with_suite,
+        exclude_overlap_with_suites=args.exclude_overlap_with_suite or [],
     )
+    selected = apply_priority_profile(selected, args.priority_profile)
+    selected = limit_tasks(selected, args.max_tasks, reasons)
     write_github_output(selected, reasons, args.suite)
 
 
