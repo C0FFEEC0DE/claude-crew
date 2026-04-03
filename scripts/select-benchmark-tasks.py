@@ -29,6 +29,7 @@ GLOBAL_BEHAVIOR_PREFIXES = (
     "scripts/render-benchmark-summary.sh",
     "scripts/run-benchmark.sh",
     "scripts/select-benchmark-tasks.py",
+    "scripts/wait-for-benchmark-slot.py",
 )
 
 GLOBAL_BEHAVIOR_FILES = {

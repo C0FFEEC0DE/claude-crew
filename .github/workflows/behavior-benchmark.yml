@@ -19,6 +19,7 @@ on:
       - 'scripts/render-benchmark-summary.sh'
       - 'scripts/run-benchmark.sh'
       - 'scripts/select-benchmark-tasks.py'
+      - 'scripts/wait-for-benchmark-slot.py'
       - 'CLAUDE.md'
   workflow_dispatch:
     inputs:
@@ -123,7 +124,9 @@ jobs:
 
   benchmark-smoke-shards:
     name: Behavior Benchmark Smoke Shard
-    needs: precheck
+    needs:
+      - precheck
+      - wait-for-slot
     if: needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -277,6 +280,31 @@ jobs:
             bench-output/tasks/**/task-prompt.txt
             bench-output/tasks/**/task-summary.txt
             bench-output/tasks/**/runner-error.txt
+
+  wait-for-slot:
+    name: Wait for benchmark slot
+    needs: precheck
+    if: needs.precheck.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Wait for shared benchmark slot
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BENCH_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          python3 scripts/wait-for-benchmark-slot.py \
+            --current-run-id "${{ github.run_id }}" \
+            --head-sha "${BENCH_HEAD_SHA}" \
+            --max-active 2 \
+            --poll-seconds 15 \
+            --timeout-seconds 7200
 
   benchmark-smoke:
     name: Behavior Benchmark Smoke
