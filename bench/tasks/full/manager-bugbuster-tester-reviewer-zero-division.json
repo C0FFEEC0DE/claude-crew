@@ -7,9 +7,10 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start with @m and coordinate this tiny bugfix workflow without waiting. The workflow must explicitly hand off to @bug for the fix, then @t for verification, then @cr for review before the final answer. Do not finish until @cr reports findings. Fix zero division so divide() raises ValueError(\"division by zero\"), update README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "The very first delegated handoff in this task must be to @m. Start with @m and have manager coordinate this tiny bugfix workflow without waiting. Manager must explicitly route the work to @bug for the fix, then @t for verification, then @cr for review before the final answer. Do not finish until @cr reports findings and the run has actually used @m, @bug, @t, and @cr. Fix zero division so divide() raises ValueError(\"division by zero\"), update README.md, run pytest -q, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, bugbuster, tester, and reviewer roles",
+    "The first delegated handoff is to manager",
     "divide() raises ValueError on zero division",
     "Tests were added or updated and pytest -q passed",
     "README.md documents the behavior change",
@@ -18,6 +19,7 @@
   ],
   "must_not": [
     "Ask the user which required agent should be used",
+    "Skip the initial @m manager handoff",
     "Skip pytest -q",
     "Skip the README.md update",
     "Finish before @cr reports the review result",
