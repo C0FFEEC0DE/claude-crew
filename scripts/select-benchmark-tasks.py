@@ -90,6 +90,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--suite", required=True, choices=sorted(SUITE_DEFAULTS))
     parser.add_argument("--changed-files-file")
     parser.add_argument("--selection-mode", choices=("all", "changed"), default="changed")
+    parser.add_argument("--exclude-overlap-with-suite", choices=sorted(SUITE_DEFAULTS))
     return parser.parse_args()
 
 
@@ -146,57 +147,94 @@ def is_global_behavior_change(changed_files: Iterable[str]) -> bool:
     return False
 
 
-def select_tasks(tasks: list[dict], suite: str, changed_files: list[str], selection_mode: str) -> tuple[list[dict], list[str]]:
-    suite_tasks = [task for task in tasks if task.get("suite") == suite]
-    reasons: list[str] = []
+def task_overlap_key(task: dict) -> str | None:
+    key = task.get("overlap_key")
+    if isinstance(key, str) and key.strip():
+        return key.strip()
+    return None
 
-    if selection_mode == "all":
-        reasons.append("manual_all")
-        return suite_tasks, reasons
 
-    task_path_hits = changed_task_paths(changed_files)
-    fixtures = impacted_fixtures(changed_files)
-    agents = impacted_agents(changed_files)
-    global_behavior = is_global_behavior_change(changed_files)
-
-    selected: list[dict] = []
-
-    if global_behavior:
-        reasons.append("global_behavior_change")
-        return suite_tasks, reasons
-
-    for task in suite_tasks:
-        task_path = str(task["_path"])
-        related_agents = set(task.get("related_agents", []))
-        fixture = str(task.get("fixture", "") or "")
-
-        if task_path in task_path_hits:
-            selected.append(task)
-            continue
-        if fixture and fixture in fixtures:
-            selected.append(task)
-            continue
-        if agents and related_agents.intersection(agents):
-            selected.append(task)
-            continue
-
-    if task_path_hits:
-        reasons.append("task_file_change")
-    if fixtures:
-        reasons.append("fixture_change")
-    if agents:
-        reasons.append("agent_or_skill_change")
-
+def dedupe_tasks(tasks: list[dict]) -> list[dict]:
     seen: set[str] = set()
     deduped: list[dict] = []
-    for task in selected:
+    for task in tasks:
         task_path = str(task["_path"])
         if task_path in seen:
             continue
         seen.add(task_path)
         deduped.append(task)
+    return deduped
 
-    return deduped, reasons
+
+def select_tasks(
+    tasks: list[dict],
+    suite: str,
+    changed_files: list[str],
+    selection_mode: str,
+    *,
+    exclude_overlap_with_suite: str | None = None,
+) -> tuple[list[dict], list[str]]:
+    suite_tasks = [task for task in tasks if task.get("suite") == suite]
+    reasons: list[str] = []
+
+    if selection_mode == "all":
+        reasons.append("manual_all")
+        selected = suite_tasks
+    else:
+        task_path_hits = changed_task_paths(changed_files)
+        fixtures = impacted_fixtures(changed_files)
+        agents = impacted_agents(changed_files)
+        global_behavior = is_global_behavior_change(changed_files)
+
+        selected: list[dict] = []
+
+        if global_behavior:
+            reasons.append("global_behavior_change")
+            selected = suite_tasks
+        else:
+            for task in suite_tasks:
+                task_path = str(task["_path"])
+                related_agents = set(task.get("related_agents", []))
+                fixture = str(task.get("fixture", "") or "")
+
+                if task_path in task_path_hits:
+                    selected.append(task)
+                    continue
+                if fixture and fixture in fixtures:
+                    selected.append(task)
+                    continue
+                if agents and related_agents.intersection(agents):
+                    selected.append(task)
+                    continue
+
+        if task_path_hits:
+            reasons.append("task_file_change")
+        if fixtures:
+            reasons.append("fixture_change")
+        if agents:
+            reasons.append("agent_or_skill_change")
+
+    selected = dedupe_tasks(selected)
+
+    if exclude_overlap_with_suite and exclude_overlap_with_suite != suite and selected:
+        overlapping_tasks, _ = select_tasks(
+            tasks,
+            exclude_overlap_with_suite,
+            changed_files,
+            selection_mode,
+        )
+        overlap_keys = {
+            key
+            for key in (task_overlap_key(task) for task in overlapping_tasks)
+            if key
+        }
+        if overlap_keys:
+            filtered = [task for task in selected if task_overlap_key(task) not in overlap_keys]
+            if len(filtered) != len(selected):
+                selected = filtered
+                reasons.append(f"overlap_excluded:{exclude_overlap_with_suite}")
+
+    return selected, reasons
 
 
 def format_label(selected: list[dict], suite: str) -> str:
@@ -244,7 +282,13 @@ def main() -> None:
     args = parse_args()
     tasks = iter_tasks()
     changed_files = load_changed_files(args.changed_files_file)
-    selected, reasons = select_tasks(tasks, args.suite, changed_files, args.selection_mode)
+    selected, reasons = select_tasks(
+        tasks,
+        args.suite,
+        changed_files,
+        args.selection_mode,
+        exclude_overlap_with_suite=args.exclude_overlap_with_suite,
+    )
     write_github_output(selected, reasons, args.suite)
 
 

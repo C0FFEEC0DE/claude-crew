@@ -85,13 +85,18 @@ jobs:
           INPUT_SELECTION_MODE: ${{ inputs.selection_mode }}
         run: |
           selection_mode="changed"
+          extra_args=()
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             selection_mode="${INPUT_SELECTION_MODE:-all}"
+          fi
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            extra_args+=(--exclude-overlap-with-suite smoke)
           fi
           python3 scripts/select-benchmark-tasks.py \
             --suite full \
             --selection-mode "$selection_mode" \
-            --changed-files-file .bench-changed-files.txt
+            --changed-files-file .bench-changed-files.txt \
+            "${extra_args[@]}"
 
       - name: Render precheck summary
         shell: bash

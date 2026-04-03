@@ -1,6 +1,7 @@
 {
   "id": "bugfix-zero-division",
   "suite": "full",
+  "overlap_key": "bugfix-zero-division",
   "category": "bugfix",
   "related_agents": ["bug", "dbg", "t", "cr"],
   "fixture": "python-math",

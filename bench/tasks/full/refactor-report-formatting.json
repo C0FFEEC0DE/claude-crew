@@ -1,6 +1,7 @@
 {
   "id": "refactor-report-formatting",
   "suite": "full",
+  "overlap_key": "refactor-report-formatting",
   "category": "refactor",
   "related_agents": ["hk", "t", "cr"],
   "fixture": "text-report",

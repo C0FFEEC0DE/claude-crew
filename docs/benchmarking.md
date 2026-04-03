@@ -16,7 +16,8 @@ Current task assertions include:
 - workspace changes were actually made
 - verification-required tasks still pass the fixture-appropriate test command such as `pytest -q`, `npm test`, `cargo test`, or `go test ./...`
 - implementation tasks verify the final Claude response includes exact stop-safe summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`
-- subagent golden tasks verify the transcript includes exact handoff-footer markers for `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:`
+- transcript-sensitive tasks verify exact handoff markers only when the benchmark is explicitly about output shape
+- role-sensitive tasks can instead verify actual subagent usage with `required_used_agents` and `required_used_agent_groups`, which are resolved from `SubagentStart` and recorded handoff lines in the debug log
 - docs-required tasks changed documentation
 - docs-only tasks did not change non-doc files
 
@@ -46,7 +47,9 @@ Recovery metrics such as `recovered_tasks`, `timeout_recovered`, `max_turns_reco
 The benchmark harness also now exercises the same project-local Claude settings as the repository by copying `.claude/` into each fixture workdir. Root-level read-only tool calls such as `Read(.)`, `Glob(.)`, and `Grep(.)` are allowed so models do not waste turns on harmless repository scans.
 Benchmark tasks may also declare `forbidden_doc_patterns`; the runner scans changed documentation files and fails the task if the edited docs mention forbidden hallucinated paths or commands. Those patterns should target invented commands themselves, not negative statements that say an install or clone step is unnecessary.
 Benchmark tasks may also declare `forbidden_transcript_patterns`; the runner scans the Claude session transcript and fails the task if those patterns appear anywhere in the interaction. This is useful for catching orchestration regressions such as asking the user to choose mandatory subagents instead of selecting them automatically.
-Benchmark tasks may also declare `required_transcript_patterns`; the runner scans assistant/result transcript entries and fails the task if those regexes never appear. This is useful for subagent-focused cases where you want evidence of the expected handoff format or review/debug/testing structure without matching the user prompt itself. The repository validator now enforces a shared footer-marker subset across all golden subagent tasks so those transcript requirements do not drift away from the hook contract.
+Benchmark tasks may also declare `required_transcript_patterns`; the runner scans assistant/result transcript entries and fails the task if those regexes never appear. This is useful when the benchmark is specifically about a stable handoff shape or review/debug/testing structure without matching the user prompt itself.
+Benchmark tasks may also declare `required_used_agents` and `required_used_agent_groups`; the runner parses actual `SubagentStart` and recorded handoff lines from the effective debug log of the attempt that produced the final result and fails the task if the expected role usage never happened. Use this for workflow-combination or docs workflows where the right behavioral signal is "which role actually ran", not "did the final visible reply preserve one exact heading block".
+The repository validator now requires every subagent task to declare at least one required-behavior assertion through transcript patterns or used-agent expectations. If a subagent task still relies on transcript requirements, validation also enforces the shared footer-marker subset so those regexes do not drift away from the hook contract.
 For prompt-behavior regressions, keep a reusable forbidden pattern set in [`../bench/patterns/forbidden-meta-chatter.json`](../bench/patterns/forbidden-meta-chatter.json). Use it to block internal-enforcement leakage such as `I see the issue`, `prefix match`, `shell guard`, or other footer-repair chatter from appearing in assistant output. The runner evaluates forbidden transcript patterns against assistant-like transcript entries only, so user prompts quoting those phrases do not create false failures.
 
 Recommended transcript regression coverage:
@@ -61,7 +64,7 @@ Additional focused suites can live under nested globs such as:
 - `bench/tasks/subagents/golden/*.json` for stricter per-role regressions
 - `bench/tasks/full/*.json` for multi-role workflow combinations
 
-The subagent smoke suite under `bench/tasks/subagents/smoke/*.json` keeps one short canary task per canonical alias for PR-time coverage. The golden suite under `bench/tasks/subagents/golden/*.json` keeps one stricter regression task per alias for scheduled and manual coverage. Every golden subagent task is expected to carry the shared footer markers `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:` so role prompts, hook contracts, and runner assertions stay aligned.
+The subagent smoke suite under `bench/tasks/subagents/smoke/*.json` keeps one short canary task per canonical alias for PR-time coverage. The golden suite under `bench/tasks/subagents/golden/*.json` keeps one stricter regression task per alias for scheduled and manual coverage. Tasks that still validate transcript shape are expected to carry the shared footer markers `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:` so role prompts, hook contracts, and runner assertions stay aligned.
 
 ## Hook Test Layers
 
@@ -108,8 +111,10 @@ Agent and slash-skill changes are mapped through the frontmatter declared in `cl
 1. runs on benchmark-relevant PRs, every night at `01:30 UTC`, and via manual dispatch
 2. maps changed agents to related multi-role workflow tasks
 3. selects only impacted tasks from `bench/tasks/full/*.json` on PRs and scheduled runs
-4. skips the scheduled job when there were no relevant changes in the recent lookback window
-5. supports manual `workflow_dispatch` so the full suite can be launched on `main` without waiting for cron, or narrowed to changed-only selection when debugging; changed-only dispatch compares the current branch to `main`, and falls back to the recent lookback window when you dispatch directly on `main`
+4. on PRs, excludes full tasks whose `overlap_key` is already covered by the smoke suite selected from the same diff, so CI does not pay twice for the same bugfix/docs/refactor scenario
+5. keeps those overlapping tasks in scheduled and manual full runs, so nightly/manual coverage remains complete
+6. skips the scheduled job when there were no relevant changes in the recent lookback window
+7. supports manual `workflow_dispatch` so the full suite can be launched on `main` without waiting for cron, or narrowed to changed-only selection when debugging; changed-only dispatch compares the current branch to `main`, and falls back to the recent lookback window when you dispatch directly on `main`
 
 `benchmark-nightly.yml`:
 

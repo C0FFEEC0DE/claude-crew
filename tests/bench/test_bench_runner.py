@@ -396,3 +396,105 @@ def test_completed_task_recovery_mode_accepts_max_turns_with_zero_exit_when_cont
     )
 
     assert recovery == "max_turns"
+
+
+def test_extract_used_agent_aliases_normalizes_hook_labels_and_recorded_handoffs(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    debug_log = """
+2026-04-03T12:40:16.646Z [DEBUG] "Hook SubagentStart:Code Reviewer (SubagentStart) success:
+{
+  "hookSpecificOutput": {
+    "additionalContext": "Recorded subagent handoff: @cr."
+  }
+}
+"
+2026-04-03T12:42:29.426Z [DEBUG] "Hook SubagentStart:Explore (SubagentStart) success:
+{
+  "hookSpecificOutput": {
+    "additionalContext": "Recorded subagent handoff: @explore."
+  }
+}
+"
+2026-04-03T12:42:33.723Z [DEBUG] "Hook SubagentStart:Architect (SubagentStart) success:
+{
+  "hookSpecificOutput": {
+    "additionalContext": "Recorded subagent handoff: @a."
+  }
+}
+"
+"""
+
+    assert runner.extract_used_agent_aliases(debug_log) == ["cr", "e", "a"]
+
+
+def test_extract_used_agent_aliases_accepts_recorded_handoff_without_hook_label(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    debug_log = """
+2026-04-03T12:40:16.646Z [DEBUG] "Recorded subagent handoff: @cr. Parallel same-role handoffs are allowed."
+"""
+
+    assert runner.extract_used_agent_aliases(debug_log) == ["cr"]
+
+
+def test_required_used_agent_misses_report_missing_roles(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    task = {
+        "required_used_agents": ["m", "cr"],
+        "required_used_agent_groups": [["e", "a", "t"]],
+    }
+
+    assert runner.required_used_agent_misses(task, ["m", "e"]) == ["cr"]
+    assert runner.required_used_agent_group_misses(task, ["m", "cr"]) == [["e", "a", "t"]]
+
+
+def test_required_used_agent_groups_accept_any_alias_in_group(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    task = {"required_used_agent_groups": [["e", "a", "t"], ["doc", "hk"]]}
+
+    assert runner.required_used_agent_group_misses(task, ["a", "doc"]) == []
+
+
+def test_try_budget_retry_returns_effective_retry_debug_log_path(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    output_dir = tmp_path / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(runner, "OUTPUT_DIR", output_dir)
+    monkeypatch.setattr(runner, "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "1024")
+
+    def fake_run_claude(prompt, debug_log_path, stderr_log_path, max_turns=runner.MAX_TURNS, max_output_tokens=None):
+        debug_log_path.write_text(
+            '2026-04-03T12:40:16.646Z [DEBUG] "Recorded subagent handoff: @m. Retry success."\n',
+            encoding="utf-8",
+        )
+        stderr_log_path.write_text("", encoding="utf-8")
+        return 0, json.dumps({"result": "Verification status: passed - retry ok."}), ""
+
+    monkeypatch.setattr(runner, "run_claude", fake_run_claude)
+
+    (
+        _exit_code,
+        _raw_stdout,
+        _raw_stderr,
+        _payload,
+        _result_text,
+        _fatal_error,
+        retry_summaries,
+        retry_source,
+        effective_debug_log_path,
+        effective_stderr_log_path,
+    ) = runner.try_budget_retry(
+        prompt="retry me",
+        exit_code=1,
+        raw_stdout="",
+        raw_stderr="",
+        payload=None,
+        result_text="requested up to 1024 tokens, but can only afford 768",
+        fatal_error="provider affordability error",
+        debug_log_path=output_dir / "claude-debug.log",
+        stderr_log_path=output_dir / "claude-stderr.log",
+    )
+
+    assert retry_source == "output-budget"
+    assert len(retry_summaries) == 1
+    assert effective_debug_log_path.name == "claude-debug-budget-retry-1.log"
+    assert effective_stderr_log_path.name == "claude-stderr-budget-retry-1.log"

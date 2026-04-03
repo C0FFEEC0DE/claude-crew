@@ -1,6 +1,7 @@
 {
   "id": "docs-quickstart-clarity-lite",
   "suite": "smoke",
+  "overlap_key": "docs-quickstart-clarity",
   "category": "docs",
   "related_agents": ["doc"],
   "fixture": "text-report",

@@ -12,9 +12,15 @@ def load_selector_module():
     return module
 
 
-def select_ids(module, suite, changed_files, selection_mode="changed"):
+def select_ids(module, suite, changed_files, selection_mode="changed", exclude_overlap_with_suite=None):
     tasks = module.iter_tasks()
-    selected, reasons = module.select_tasks(tasks, suite, changed_files, selection_mode)
+    selected, reasons = module.select_tasks(
+        tasks,
+        suite,
+        changed_files,
+        selection_mode,
+        exclude_overlap_with_suite=exclude_overlap_with_suite,
+    )
     return {task["id"] for task in selected}, reasons
 
 
@@ -103,6 +109,40 @@ def test_fixture_change_selects_tasks_for_that_fixture_only():
     }
 
 
+def test_full_pr_selection_excludes_tasks_already_covered_by_smoke():
+    selector = load_selector_module()
+    selected_ids, reasons = select_ids(
+        selector,
+        "full",
+        ["bench/fixtures/text-report/reporter.py"],
+        exclude_overlap_with_suite="smoke",
+    )
+
+    assert "fixture_change" in reasons
+    assert "overlap_excluded:smoke" in reasons
+    assert "docs-quickstart-clarity" not in selected_ids
+    assert "refactor-report-formatting" not in selected_ids
+    assert selected_ids == {
+        "feature-report-summary-line",
+        "manager-explorer-reviewer-code-map",
+        "manager-housekeeper-tester-reviewer-report-refactor",
+    }
+
+
+def test_full_task_file_change_keeps_task_when_smoke_does_not_run():
+    selector = load_selector_module()
+    selected_ids, reasons = select_ids(
+        selector,
+        "full",
+        ["bench/tasks/full/bugfix-zero-division.json"],
+        exclude_overlap_with_suite="smoke",
+    )
+
+    assert "task_file_change" in reasons
+    assert "overlap_excluded:smoke" not in reasons
+    assert selected_ids == {"bugfix-zero-division"}
+
+
 def test_subagent_smoke_agent_change_selects_only_that_role():
     selector = load_selector_module()
     selected_ids, reasons = select_ids(
@@ -124,7 +164,31 @@ def test_full_name_skill_mapping_selects_related_subagent_smoke_task():
     )
 
     assert "agent_or_skill_change" in reasons
-    assert selected_ids == {"subagent-docwriter-quickstart-lite"}
+    assert selected_ids == {
+        "subagent-architect-rollout-lite",
+        "subagent-docwriter-quickstart-lite",
+    }
+
+
+def test_docwriter_change_also_selects_architect_doc_tasks():
+    selector = load_selector_module()
+    smoke_ids, smoke_reasons = select_ids(
+        selector,
+        "subagents_smoke",
+        ["claudecfg/agents/docwriter.md"],
+    )
+    golden_ids, golden_reasons = select_ids(
+        selector,
+        "subagents_golden",
+        ["claudecfg/agents/docwriter.md"],
+    )
+
+    assert smoke_reasons == ["agent_or_skill_change"]
+    assert "subagent-docwriter-quickstart-lite" in smoke_ids
+    assert "subagent-architect-rollout-lite" in smoke_ids
+    assert golden_reasons == ["agent_or_skill_change"]
+    assert "subagent-docwriter-fixture-accuracy" in golden_ids
+    assert "subagent-architect-design-note" in golden_ids
 
 
 def test_manual_all_returns_entire_golden_suite():

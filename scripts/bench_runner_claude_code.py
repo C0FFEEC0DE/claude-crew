@@ -16,6 +16,47 @@ WORKDIR = pathlib.Path(os.environ["BENCH_WORKDIR"]).resolve()
 OUTPUT_DIR = pathlib.Path(os.environ["BENCH_OUTPUT_DIR"]).resolve()
 
 
+EXTRA_AGENT_LABELS = {
+    "a": "a",
+    "architect": "a",
+    "the-architect": "a",
+    "design": "a",
+    "plan": "a",
+    "e": "e",
+    "explorer": "e",
+    "explore": "e",
+    "nerd": "e",
+    "bug": "bug",
+    "bugbuster": "bug",
+    "bug-pattern-hunter": "bug",
+    "bug-pattern": "bug",
+    "dbg": "dbg",
+    "debugger": "dbg",
+    "debugging-specialist": "dbg",
+    "t": "t",
+    "tester": "t",
+    "testing": "t",
+    "paranoid": "t",
+    "cr": "cr",
+    "code-reviewer": "cr",
+    "code-review": "cr",
+    "reviewer": "cr",
+    "toxic-senior": "cr",
+    "doc": "doc",
+    "docwriter": "doc",
+    "documentation-writer": "doc",
+    "docs-writer": "doc",
+    "docs": "doc",
+    "hk": "hk",
+    "housekeeper": "hk",
+    "the-cleaner": "hk",
+    "cleaner": "hk",
+    "m": "m",
+    "manager": "m",
+    "big-boss": "m",
+}
+
+
 def env_or_default(name: str, default: str) -> str:
     value = os.environ.get(name, "")
     value = value.strip()
@@ -39,6 +80,68 @@ REQUIRED_SUMMARY_PREFIXES = (
     "Review outcome:",
     "Remaining risks:",
 )
+
+
+def normalize_subagent_key(raw: str) -> str:
+    return re.sub(
+        r"-+",
+        "-",
+        re.sub(r"[^a-z0-9.-]+", "-", raw.strip().lstrip("@").casefold().replace("_", "-").replace(" ", "-")),
+    ).strip("-.")
+
+
+def frontmatter_field(path: pathlib.Path, field: str) -> str | None:
+    text = path.read_text(encoding="utf-8")
+    if not text.startswith("---\n"):
+        return None
+    match = re.search(rf"(?m)^{re.escape(field)}:\s*(.+)$", text)
+    if not match:
+        return None
+    return match.group(1).strip()
+
+
+def build_agent_label_map() -> dict[str, str]:
+    mapping = dict(EXTRA_AGENT_LABELS)
+    for path in sorted((REPO_ROOT / "claudecfg" / "agents").glob("*.md")):
+        alias = frontmatter_field(path, "alias")
+        if not alias:
+            continue
+        candidates = {
+            alias,
+            path.stem,
+            frontmatter_field(path, "name"),
+            frontmatter_field(path, "type"),
+        }
+        for candidate in candidates:
+            if not candidate:
+                continue
+            normalized = normalize_subagent_key(candidate)
+            if normalized:
+                mapping[normalized] = alias
+    return mapping
+
+
+AGENT_LABEL_TO_ALIAS = build_agent_label_map()
+
+
+def canonicalize_subagent_label(raw: str) -> str | None:
+    normalized = normalize_subagent_key(raw)
+    if not normalized:
+        return None
+    alias = AGENT_LABEL_TO_ALIAS.get(normalized)
+    if alias:
+        return alias
+    return normalized if normalized in AGENT_LABEL_TO_ALIAS.values() else None
+
+
+def normalize_required_used_agent(raw: object) -> str | None:
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    alias = canonicalize_subagent_label(raw)
+    if alias:
+        return alias
+    normalized = normalize_subagent_key(raw)
+    return normalized or None
 
 
 def is_docs_path(path_str: str) -> bool:
@@ -239,10 +342,25 @@ def try_budget_retry(
     payload: dict | None,
     result_text: str,
     fatal_error: str,
-) -> tuple[int, str, str, dict | None, str, str, list[dict[str, object]], str]:
+    debug_log_path: pathlib.Path,
+    stderr_log_path: pathlib.Path,
+) -> tuple[
+    int,
+    str,
+    str,
+    dict | None,
+    str,
+    str,
+    list[dict[str, object]],
+    str,
+    pathlib.Path,
+    pathlib.Path,
+]:
     current_output_budget = CLAUDE_CODE_MAX_OUTPUT_TOKENS.strip()
     retry_summaries: list[dict[str, object]] = []
     retry_source = "none"
+    effective_debug_log_path = debug_log_path
+    effective_stderr_log_path = stderr_log_path
 
     for attempt in range(1, OUTPUT_TOKEN_BUDGET_RETRIES + 1):
         affordability = parse_affordable_max_tokens(result_text)
@@ -317,6 +435,8 @@ def try_budget_retry(
         fatal_error = retry_error
         current_output_budget = next_budget_str
         retry_source = "output-budget"
+        effective_debug_log_path = retry_debug_log_path
+        effective_stderr_log_path = retry_stderr_log_path
 
         if exit_code == 0 and result_text.strip():
             break
@@ -330,6 +450,8 @@ def try_budget_retry(
         fatal_error,
         retry_summaries,
         retry_source,
+        effective_debug_log_path,
+        effective_stderr_log_path,
     )
 
 
@@ -341,9 +463,24 @@ def try_provider_retry(
     payload: dict | None,
     result_text: str,
     fatal_error: str,
-) -> tuple[int, str, str, dict | None, str, str, list[dict[str, object]], str]:
+    debug_log_path: pathlib.Path,
+    stderr_log_path: pathlib.Path,
+) -> tuple[
+    int,
+    str,
+    str,
+    dict | None,
+    str,
+    str,
+    list[dict[str, object]],
+    str,
+    pathlib.Path,
+    pathlib.Path,
+]:
     retry_summaries: list[dict[str, object]] = []
     retry_source = "none"
+    effective_debug_log_path = debug_log_path
+    effective_stderr_log_path = stderr_log_path
 
     for attempt in range(1, PROVIDER_ERROR_RETRIES + 1):
         if exit_code == 0 or not is_retryable_provider_error(result_text):
@@ -397,6 +534,8 @@ def try_provider_retry(
             retry_error,
             budget_retry_summaries,
             budget_retry_source,
+            retry_debug_log_path,
+            retry_stderr_log_path,
         ) = try_budget_retry(
             prompt=prompt,
             exit_code=retry_exit_code,
@@ -405,6 +544,8 @@ def try_provider_retry(
             payload=retry_payload,
             result_text=retry_result_text,
             fatal_error=retry_error,
+            debug_log_path=retry_debug_log_path,
+            stderr_log_path=retry_stderr_log_path,
         )
 
         retry_summaries.append(
@@ -425,6 +566,8 @@ def try_provider_retry(
         result_text = retry_result_text
         fatal_error = retry_error
         retry_source = "provider-error"
+        effective_debug_log_path = retry_debug_log_path
+        effective_stderr_log_path = retry_stderr_log_path
 
         if exit_code == 0 and result_text.strip():
             break
@@ -438,6 +581,8 @@ def try_provider_retry(
         fatal_error,
         retry_summaries,
         retry_source,
+        effective_debug_log_path,
+        effective_stderr_log_path,
     )
 
 
@@ -912,6 +1057,58 @@ def required_transcript_pattern_misses(task: dict, payload: dict | None) -> tupl
     return True, misses
 
 
+def extract_used_agent_aliases(debug_log_text: str) -> list[str]:
+    aliases: list[str] = []
+    seen: set[str] = set()
+    patterns = (
+        r"Hook SubagentStart:([^\(\n\"]+)",
+        r"Recorded subagent handoff:\s*@([A-Za-z0-9_-]+)",
+    )
+    for pattern in patterns:
+        for raw_label in re.findall(pattern, debug_log_text or ""):
+            alias = canonicalize_subagent_label(raw_label)
+            if alias and alias not in seen:
+                seen.add(alias)
+                aliases.append(alias)
+    return aliases
+
+
+def required_used_agent_misses(task: dict, used_agent_aliases: list[str]) -> list[str]:
+    raw_required = task.get("required_used_agents", [])
+    if not isinstance(raw_required, list) or not raw_required:
+        return []
+
+    used_aliases = set(used_agent_aliases)
+    misses: list[str] = []
+    for raw_alias in raw_required:
+        alias = normalize_required_used_agent(raw_alias)
+        if alias and alias not in used_aliases and alias not in misses:
+            misses.append(alias)
+    return misses
+
+
+def required_used_agent_group_misses(task: dict, used_agent_aliases: list[str]) -> list[list[str]]:
+    raw_groups = task.get("required_used_agent_groups", [])
+    if not isinstance(raw_groups, list) or not raw_groups:
+        return []
+
+    used_aliases = set(used_agent_aliases)
+    misses: list[list[str]] = []
+    for raw_group in raw_groups:
+        if not isinstance(raw_group, list):
+            continue
+        group = [alias for alias in (normalize_required_used_agent(raw) for raw in raw_group) if alias]
+        if group and not any(alias in used_aliases for alias in group):
+            misses.append(group)
+    return misses
+
+
+def format_agent_group_misses(groups: list[list[str]]) -> str:
+    if not groups:
+        return "none"
+    return "; ".join("[" + " | ".join(group) + "]" for group in groups)
+
+
 def build_task_summary(
     task: dict,
     prompt: str,
@@ -933,6 +1130,9 @@ def build_task_summary(
     transcript_pattern_hits: list[str],
     required_transcript_scanned: bool,
     required_transcript_misses: list[str],
+    used_agent_aliases: list[str],
+    required_used_agent_misses: list[str],
+    required_used_agent_group_misses: list[list[str]],
 ) -> str:
     lines = [
         f"Task: {task['id']}",
@@ -953,6 +1153,9 @@ def build_task_summary(
         f"Forbidden transcript hits: {'; '.join(transcript_pattern_hits) if transcript_pattern_hits else 'none'}",
         f"Required assistant transcript scanned: {required_transcript_scanned}",
         f"Required assistant transcript misses: {'; '.join(required_transcript_misses) if required_transcript_misses else 'none'}",
+        f"Used agent aliases: {', '.join(used_agent_aliases) if used_agent_aliases else 'none'}",
+        f"Missing required used agents: {', '.join(required_used_agent_misses) if required_used_agent_misses else 'none'}",
+        f"Missing required used agent groups: {format_agent_group_misses(required_used_agent_group_misses)}",
         f"stdout bytes: {len(raw_json.encode('utf-8'))}",
         f"stderr bytes: {len(stderr_text.encode('utf-8'))}",
         "",
@@ -1004,6 +1207,8 @@ def main() -> int:
     provider_repaired_by = "none"
     debug_log_path = OUTPUT_DIR / "claude-debug.log"
     stderr_log_path = OUTPUT_DIR / "claude-stderr.log"
+    effective_debug_log_path = debug_log_path
+    effective_stderr_log_path = stderr_log_path
 
     try:
         exit_code, raw_stdout, raw_stderr = run_claude(prompt, debug_log_path, stderr_log_path)
@@ -1039,6 +1244,8 @@ def main() -> int:
         fatal_error,
         output_budget_retry_summaries,
         output_budget_retry_source,
+        effective_debug_log_path,
+        effective_stderr_log_path,
     ) = try_budget_retry(
         prompt=prompt,
         exit_code=exit_code,
@@ -1047,6 +1254,8 @@ def main() -> int:
         payload=payload,
         result_text=result_text,
         fatal_error=fatal_error,
+        debug_log_path=effective_debug_log_path,
+        stderr_log_path=effective_stderr_log_path,
     )
     if output_budget_retry_summaries:
         output_budget_retry_attempts = len(output_budget_retry_summaries)
@@ -1065,6 +1274,8 @@ def main() -> int:
         fatal_error,
         provider_retry_summaries,
         provider_retry_source,
+        effective_debug_log_path,
+        effective_stderr_log_path,
     ) = try_provider_retry(
         prompt=prompt,
         exit_code=exit_code,
@@ -1073,6 +1284,8 @@ def main() -> int:
         payload=payload,
         result_text=result_text,
         fatal_error=fatal_error,
+        debug_log_path=effective_debug_log_path,
+        stderr_log_path=effective_stderr_log_path,
     )
     if provider_retry_summaries:
         provider_retry_attempts = len(provider_retry_summaries)
@@ -1084,7 +1297,9 @@ def main() -> int:
 
     write_text(OUTPUT_DIR / "claude-result.json", raw_stdout)
     write_text(OUTPUT_DIR / "claude-result.txt", result_text)
-    debug_log_text = debug_log_path.read_text(encoding="utf-8") if debug_log_path.exists() else ""
+    debug_log_text = (
+        effective_debug_log_path.read_text(encoding="utf-8") if effective_debug_log_path.exists() else ""
+    )
     payload_subtype = payload_string(payload, "subtype")
     payload_stop_reason = payload_string(payload, "stop_reason")
     permission_denials = payload_permission_denials(payload)
@@ -1182,6 +1397,9 @@ def main() -> int:
     doc_pattern_hits = forbidden_doc_pattern_hits(task, after, changed_files)
     transcript_scanned, transcript_pattern_hits = forbidden_transcript_pattern_hits(task, payload)
     required_transcript_scanned, required_transcript_misses = required_transcript_pattern_misses(task, payload)
+    used_agent_aliases = extract_used_agent_aliases(debug_log_text)
+    missing_required_used_agents = required_used_agent_misses(task, used_agent_aliases)
+    missing_required_used_agent_groups = required_used_agent_group_misses(task, used_agent_aliases)
     completed = len(changed_files) > 0
     patch_text = build_patch(before, after)
     write_text(OUTPUT_DIR / "workspace.patch", patch_text)
@@ -1261,6 +1479,10 @@ def main() -> int:
         failures.append("transcript_forbidden_content")
     if required_transcript_misses:
         failures.append("transcript_required_content_missing")
+    if missing_required_used_agents:
+        failures.append("required_used_agents_missing")
+    if missing_required_used_agent_groups:
+        failures.append("required_used_agent_groups_missing")
 
     if failures:
         status = "failed"
@@ -1283,6 +1505,9 @@ def main() -> int:
         f"Forbidden transcript hits: {'; '.join(transcript_pattern_hits) if transcript_pattern_hits else 'none'}. "
         f"Required assistant transcript scanned: {required_transcript_scanned}. "
         f"Required assistant transcript misses: {'; '.join(required_transcript_misses) if required_transcript_misses else 'none'}. "
+        f"Used agent aliases: {', '.join(used_agent_aliases) if used_agent_aliases else 'none'}. "
+        f"Missing required used agents: {', '.join(missing_required_used_agents) if missing_required_used_agents else 'none'}. "
+        f"Missing required used agent groups: {format_agent_group_misses(missing_required_used_agent_groups)}. "
         f"Failures: {', '.join(failures) if failures else 'none'}. "
         f"Result: {truncate(result_text, 700) or 'missing'}. "
         f"Verification: {truncate(verification_output, 700) or 'not required'}"
@@ -1323,6 +1548,9 @@ def main() -> int:
         "forbidden_transcript_pattern_hits": transcript_pattern_hits,
         "required_transcript_scanned": required_transcript_scanned,
         "required_transcript_pattern_misses": required_transcript_misses,
+        "used_agent_aliases": used_agent_aliases,
+        "missing_required_used_agents": missing_required_used_agents,
+        "missing_required_used_agent_groups": missing_required_used_agent_groups,
         "fatal_error": fatal_error,
         "failures": failures,
     }
@@ -1351,6 +1579,9 @@ def main() -> int:
             transcript_pattern_hits=transcript_pattern_hits,
             required_transcript_scanned=required_transcript_scanned,
             required_transcript_misses=required_transcript_misses,
+            used_agent_aliases=used_agent_aliases,
+            required_used_agent_misses=missing_required_used_agents,
+            required_used_agent_group_misses=missing_required_used_agent_groups,
         ),
     )
     if fatal_error:

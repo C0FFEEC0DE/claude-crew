@@ -167,7 +167,7 @@ GitHub Actions now covers eight layers:
 - `Behavior Benchmark Subagents Golden` — nightly/manual golden agent-level regression suite
 - `Security Checks` — repository secret and sensitive-file scan
 
-The fast checks run automatically on every push and PR. `Behavior Benchmark Smoke` and `Behavior Benchmark Subagents Smoke` only run on PRs that touch benchmark-relevant files, and they now select only the task files impacted by the changed agents, skills, fixtures, hooks, or benchmark infrastructure. `Behavior Benchmark Full` runs targeted workflow-combination checks on PRs, then broadens to scheduled or manual runs when needed. `Behavior Benchmark Subagents Golden` remains the heavier role-regression layer for scheduled or manual runs.
+The fast checks run automatically on every push and PR. `Behavior Benchmark Smoke` and `Behavior Benchmark Subagents Smoke` only run on PRs that touch benchmark-relevant files, and they now select only the task files impacted by the changed agents, skills, fixtures, hooks, or benchmark infrastructure. `Behavior Benchmark Full` runs targeted workflow-combination checks on PRs and scheduled runs, and supports manual all-task runs when needed. `Behavior Benchmark Subagents Golden` remains the heavier role-regression layer for scheduled or manual runs.
 That selection is derived from benchmark task metadata plus the frontmatter in `claudecfg/agents/*.md` and `claudecfg/skills/*.md`, so alias files and full-name files stay wired to the same benchmark coverage.
 
 ### Fast CI
@@ -210,6 +210,7 @@ That workflow:
 - only runs on PRs when benchmark-relevant files changed, so normal feature pushes do not keep re-running the live smoke suite unnecessarily
 - checks that required tasks actually changed files, kept docs/code scope rules, and still pass verification
 - requires the final Claude response to include exact stop-safe summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`
+- can require actual subagent usage through `required_used_agents` and `required_used_agent_groups`, so workflow-combination tests assert real role handoffs instead of brittle markdown headings
 - reports both configured and executed task counts so fail-fast runs are not mistaken for full-suite coverage
 - uploads per-task Claude logs, results, and workspace patches as artifacts
 - fails unless every benchmark task passes
@@ -226,7 +227,7 @@ The default CI suite covers three small agent workflows:
 
 The broader workflow-combination suite now lives under `bench/tasks/full/` and is selected dynamically in the dedicated `Behavior Benchmark Full` workflow when manager/agent/workflow changes require it.
 
-The per-agent suites are split between `bench/tasks/subagents/smoke/` and `bench/tasks/subagents/golden/`. Smoke keeps one short canary task per role for PR coverage. Golden keeps one stricter regression task per role for scheduled or manual runs.
+The per-agent suites are split between `bench/tasks/subagents/smoke/` and `bench/tasks/subagents/golden/`. Smoke keeps one short canary task per role for PR coverage. Golden keeps one stricter regression task per role for scheduled or manual runs. Tasks that care about exact handoff shape still use transcript regexes; tasks that mainly care about real role activation now assert the actual `SubagentStart`/recorded handoff aliases captured in the debug log.
 
 ### Behavior Benchmark Subagents Smoke
 
@@ -247,6 +248,7 @@ That workflow:
 
 - selects workflow-combination tasks from `bench/tasks/full/*.json`
 - runs only the tasks related to changed agents, fixtures, task files, or shared workflow logic on PRs and scheduled runs
+- on PRs, skips full tasks whose overlap is already covered by the selected smoke suite so the same bugfix/docs/refactor path is not paid for twice
 - supports manual `workflow_dispatch`, including all-task runs when you want the full suite on demand and changed-only runs that compare the current branch to `main` or, on `main` itself, use the recent lookback window
 
 ### Behavior Benchmark Subagents Golden

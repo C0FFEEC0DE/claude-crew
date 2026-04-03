@@ -3,16 +3,16 @@
   "suite": "subagents_smoke",
   "agent_alias": "a",
   "category": "docs",
-  "related_agents": ["a"],
+  "related_agents": ["a", "doc"],
   "fixture": "text-report",
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @a for this tiny design-only task. Update README.md with a short design note that explains how a shared normalization helper could reduce duplication between render_title() and render_subtitle() without changing current behavior. Do not implement the refactor itself. Keep it docs-only. The architect handoff itself must visibly use the standard output headings `Task: Design`, `Solution:`, `Outcome:`, and `Changed files:` or `No files changed:` in the transcript, then finish with the required footer.",
+  "prompt": "Start by using @a for this tiny design-only task. Update README.md with a short design note that explains how a shared normalization helper could reduce duplication between render_title() and render_subtitle() without changing current behavior. Do not implement the refactor itself. Keep it docs-only. The run must actually use @a for the design handoff even if the docs workflow later brings in @doc to finish the note.",
   "success_criteria": [
     "README.md includes a short design note",
     "The run stays docs-only",
-    "The transcript shows architect-style solution output with exact `Task: Design` and `Solution:` headings",
+    "The workflow actually uses the architect role for the design handoff",
     "The final response includes the required footer"
   ],
   "must_not": [
@@ -32,12 +32,6 @@
     "exact line prefixes",
     "my formatting is breaking"
   ],
-  "required_transcript_patterns": [
-    "Task:\\s*Design",
-    "Solution:",
-    "Outcome:",
-    "Changed files:|No files changed:",
-    "Verification status:",
-    "Remaining risks:|Next step:"
-  ]
+  "required_transcript_patterns": [],
+  "required_used_agents": ["a"]
 }

@@ -375,13 +375,14 @@ fi
 
 if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q -- '--suite full' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q -- '--exclude-overlap-with-suite smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && ! grep -Fq -- "[ \"\${{ github.event_name }}\" = \"schedule\" ]" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml"; then
     echo "OK: Behavior Benchmark Full schedule and selector"
 else
-    report_error "Behavior Benchmark Full workflow must run nightly, stay change-gated by default, and keep manual all-task selection"
+    report_error "Behavior Benchmark Full workflow must run nightly, stay change-gated by default, keep manual all-task selection, and exclude smoke-covered overlap on PRs"
 fi
 
 if grep -q -- '--suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
@@ -513,6 +514,9 @@ while IFS= read -r task_file; do
         and ((.forbidden_doc_patterns // []) | type == "array")
         and ((.forbidden_transcript_patterns // []) | type == "array")
         and ((.required_transcript_patterns // []) | type == "array")
+        and ((.required_used_agents // []) | type == "array")
+        and ((.required_used_agent_groups // []) | type == "array")
+        and ((.required_used_agent_groups // []) | all(.[]?; type == "array"))
     ' "$task_file" >/dev/null; then
         report_error "Benchmark task has missing required fields: $task_file"
         continue
@@ -522,13 +526,31 @@ while IFS= read -r task_file; do
         report_error "Benchmark task '$task_id' references missing fixture: $fixture"
     fi
 
+    while IFS= read -r required_alias; do
+        [ -z "$required_alias" ] && continue
+        if ! printf '%s\n' "${EXPECTED_SUBAGENT_ALIASES[@]}" | grep -Fxq "$required_alias"; then
+            report_error "Benchmark task references unknown required_used_agents alias '$required_alias': $task_file"
+        fi
+    done < <(jq -r '.required_used_agents[]? // empty' "$task_file")
+
+    while IFS= read -r required_alias; do
+        [ -z "$required_alias" ] && continue
+        if ! printf '%s\n' "${EXPECTED_SUBAGENT_ALIASES[@]}" | grep -Fxq "$required_alias"; then
+            report_error "Benchmark task references unknown required_used_agent_groups alias '$required_alias': $task_file"
+        fi
+    done < <(jq -r '.required_used_agent_groups[]?[]? // empty' "$task_file")
+
     if [[ "$task_file" == *"/bench/tasks/subagents/"* ]]; then
         if ! jq -e '
             .agent_alias
-            and ((.required_transcript_patterns // []) | type == "array" and length > 0)
             and ((.forbidden_transcript_patterns // []) | type == "array" and length > 0)
+            and (
+                ((.required_transcript_patterns // []) | type == "array" and length > 0)
+                or ((.required_used_agents // []) | type == "array" and length > 0)
+                or ((.required_used_agent_groups // []) | type == "array" and any(.[]?; type == "array" and length > 0))
+            )
         ' "$task_file" >/dev/null; then
-            report_error "Subagent benchmark task must declare agent_alias plus non-empty required/forbidden transcript patterns: $task_file"
+            report_error "Subagent benchmark task must declare agent_alias, non-empty forbidden transcript patterns, and at least one required transcript or used-agent assertion: $task_file"
         else
             if [[ "$task_file" == *"/bench/tasks/subagents/smoke/"* ]]; then
                 SUBAGENT_SMOKE_ALIASES_SEEN+=("$agent_alias")
@@ -538,13 +560,15 @@ while IFS= read -r task_file; do
             fi
         fi
 
-        for required_regex in "${SUBAGENT_REQUIRED_FOOTER_REGEXES[@]}"; do
-            if ! jq -e --arg pattern "$required_regex" '
-                (.required_transcript_patterns // []) | any(test($pattern))
-            ' "$task_file" >/dev/null; then
-                report_error "Subagent benchmark task is missing required footer transcript pattern '$required_regex': $task_file"
-            fi
-        done
+        if jq -e '(.required_transcript_patterns // []) | length > 0' "$task_file" >/dev/null; then
+            for required_regex in "${SUBAGENT_REQUIRED_FOOTER_REGEXES[@]}"; do
+                if ! jq -e --arg pattern "$required_regex" '
+                    (.required_transcript_patterns // []) | any(test($pattern))
+                ' "$task_file" >/dev/null; then
+                    report_error "Subagent benchmark task is missing required footer transcript pattern '$required_regex': $task_file"
+                fi
+            done
+        fi
 
         if [ "$agent_alias" = "cr" ]; then
             if ! jq -e '
