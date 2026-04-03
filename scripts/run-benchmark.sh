@@ -4,7 +4,9 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTPUT_DIR=""
-TASK_GLOB="bench/tasks/lite/*.json"
+TASK_GLOB="bench/tasks/smoke/*.json"
+TASK_LIST_FILE=""
+TASK_LABEL=""
 MODE="${BENCH_MODE:-}"
 SOURCE_REF="${BENCH_SOURCE_REF:-working-tree}"
 FAIL_FAST="${BENCH_FAIL_FAST:-0}"
@@ -13,7 +15,7 @@ configured_task_count=0
 executed_task_count=0
 
 usage() {
-    echo "Usage: $0 --output-dir DIR [--task-glob GLOB] [--mode mock|command] [--ref REF]" >&2
+    echo "Usage: $0 --output-dir DIR [--task-glob GLOB | --task-list-file FILE] [--task-label LABEL] [--mode mock|command] [--ref REF]" >&2
     exit 1
 }
 
@@ -25,6 +27,14 @@ while [ $# -gt 0 ]; do
             ;;
         --task-glob)
             TASK_GLOB="$2"
+            shift 2
+            ;;
+        --task-list-file)
+            TASK_LIST_FILE="$2"
+            shift 2
+            ;;
+        --task-label)
+            TASK_LABEL="$2"
             shift 2
             ;;
         --mode)
@@ -42,6 +52,10 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$OUTPUT_DIR" ] || usage
+
+if [ -n "$TASK_LIST_FILE" ] && [ -n "$TASK_GLOB" ] && [ "$TASK_GLOB" != "bench/tasks/smoke/*.json" ]; then
+    usage
+fi
 
 if [ -z "$MODE" ]; then
     if [ -n "${BENCH_RUNNER_CMD:-}" ]; then
@@ -70,13 +84,41 @@ esac
 mkdir -p "$OUTPUT_DIR/tasks"
 
 shopt -s nullglob
-mapfile -t task_files < <(compgen -G "$REPO_ROOT/$TASK_GLOB" || true)
+if [ -n "$TASK_LIST_FILE" ]; then
+    if [ ! -f "$TASK_LIST_FILE" ]; then
+        echo "Task list file does not exist: $TASK_LIST_FILE" >&2
+        exit 1
+    fi
+    mapfile -t task_files < <(
+        sed '/^[[:space:]]*$/d' "$TASK_LIST_FILE" \
+        | while IFS= read -r task_path; do
+            case "$task_path" in
+                /*) printf '%s\n' "$task_path" ;;
+                *) printf '%s\n' "$REPO_ROOT/$task_path" ;;
+            esac
+          done
+    )
+else
+    mapfile -t task_files < <(compgen -G "$REPO_ROOT/$TASK_GLOB" || true)
+fi
 shopt -u nullglob
 configured_task_count="${#task_files[@]}"
 
 if [ "${#task_files[@]}" -eq 0 ]; then
-    echo "No benchmark tasks matched glob: $TASK_GLOB" >&2
+    if [ -n "$TASK_LIST_FILE" ]; then
+        echo "No benchmark tasks matched task list file: $TASK_LIST_FILE" >&2
+    else
+        echo "No benchmark tasks matched glob: $TASK_GLOB" >&2
+    fi
     exit 1
+fi
+
+if [ -z "$TASK_LABEL" ]; then
+    if [ -n "$TASK_LIST_FILE" ]; then
+        TASK_LABEL="task-list:$(basename "$TASK_LIST_FILE")"
+    else
+        TASK_LABEL="$TASK_GLOB"
+    fi
 fi
 
 result_files=()
@@ -172,7 +214,7 @@ jq -s \
     --arg generated_at "$generated_at" \
     --arg source_ref "$SOURCE_REF" \
     --arg source_sha "$source_sha" \
-    --arg task_glob "$TASK_GLOB" \
+    --arg task_glob "$TASK_LABEL" \
     --argjson configured_tasks "$configured_task_count" \
     --argjson executed_tasks "$executed_task_count" \
     '

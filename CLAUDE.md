@@ -57,9 +57,12 @@ Slash skills under `claudecfg/skills/` use YAML frontmatter for routing/tool con
 Repository CI now includes:
 - status badges in `README.md`
 - `Validate`, `Hook Tests`, and `Security Scan` on every push and PR
-- `Behavior Benchmark` on every push, plus manual runs with model and task-glob overrides, using real `claude -p` inside isolated benchmark fixtures
+- `Behavior Benchmark Smoke` on benchmark-related PRs
+- `Behavior Benchmark Full` as a smart-selected workflow-combination suite on PRs plus manual/nightly runs
+- `Behavior Benchmark Subagents Smoke` on benchmark-related PRs with per-role task selection
+- `Behavior Benchmark Subagents Golden` as a smart-selected nightly/manual golden agent suite
 
-Agent-level regressions are covered by the golden suite in `bench/tasks/subagents/`. Use `docs/agent-contracts.md` for the contract matrix and the expected benchmark/hook layers for each agent.
+Agent-level regressions are covered by the smoke and golden suites under `bench/tasks/subagents/`. Use `docs/agent-contracts.md` for the contract matrix and the expected benchmark/hook layers for each agent.
 The repository validator also enforces the shared subagent footer markers inside those golden benchmark tasks, so prompt, benchmark, and hook contracts cannot silently drift apart.
 
 OpenRouter-backed Claude Code is configured via repository secrets/variables. See `docs/benchmarking.md`.

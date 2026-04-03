@@ -1,0 +1,39 @@
+{
+  "id": "manager-explorer-reviewer-code-map",
+  "suite": "full",
+  "category": "review",
+  "related_agents": ["m", "e", "cr"],
+  "fixture": "text-report",
+  "review_required": true,
+  "docs_required": true,
+  "verification_required": false,
+  "prompt": "Start by using @m to coordinate this tiny review workflow without waiting for more user input. Use @e to map reporter.py and README.md first, then use @cr to review them. Add a concise REVIEW.md note that records the most important finding or explicitly says there are no material findings. Keep runtime code unchanged and finish with the required footer.",
+  "success_criteria": [
+    "The transcript shows manager coordination, exploration, and code review handoffs",
+    "A REVIEW.md file is added with a concise review note",
+    "Runtime code stays unchanged",
+    "The final response includes review status in the required footer"
+  ],
+  "must_not": [
+    "Modify reporter.py",
+    "Ask the user which subagent to use",
+    "Invent review findings",
+    "Perform release or deploy work"
+  ],
+  "forbidden_transcript_patterns": [
+    "which agent would you prefer",
+    "which required agent",
+    "prefix match",
+    "footer repair",
+    "shell guard",
+    "stop-guard",
+    "subagent-stop-guard"
+  ],
+  "required_transcript_patterns": [
+    "Plan:",
+    "Task:\\s*Explore",
+    "Task:\\s*Code Review",
+    "Findings:",
+    "Review outcome:"
+  ]
+}

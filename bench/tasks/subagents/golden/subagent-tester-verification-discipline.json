@@ -1,0 +1,35 @@
+{
+  "id": "subagent-tester-verification-discipline",
+  "suite": "subagents_golden",
+  "agent_alias": "t",
+  "category": "feature",
+  "related_agents": ["t"],
+  "fixture": "python-math",
+  "review_required": false,
+  "docs_required": true,
+  "verification_required": true,
+  "prompt": "Start by using @t for this verification-first task. Add one regression test covering add() with a negative operand, update README.md with a one-line note that pytest -q covers additive regression, keep runtime code unchanged, run pytest -q, and finish with the required footer.",
+  "success_criteria": [
+    "A regression test is added without changing runtime code",
+    "pytest -q passes",
+    "README.md mentions the verification coverage",
+    "The transcript shows tester-style verification output"
+  ],
+  "must_not": [
+    "Modify calculator.py",
+    "Skip pytest -q",
+    "Perform release or deploy work"
+  ],
+  "required_transcript_patterns": [
+    "Task:\\s*Testing",
+    "Gaps:",
+    "Outcome:",
+    "Changed files:|No files changed:",
+    "Verification status:",
+    "Remaining risks:|Next step:"
+  ],
+  "forbidden_transcript_patterns": [
+    "footer repair",
+    "shell guard"
+  ]
+}

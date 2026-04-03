@@ -1,0 +1,34 @@
+{
+  "id": "manager-debugger-tester-reviewer-zero-division",
+  "suite": "full",
+  "category": "bugfix",
+  "related_agents": ["m", "dbg", "t", "cr"],
+  "fixture": "python-math",
+  "review_required": true,
+  "docs_required": true,
+  "verification_required": true,
+  "prompt": "Start by using @m to coordinate this tiny debugging workflow without waiting for more user input. Use @dbg to reproduce and isolate the zero-division bug, fix it so divide() raises ValueError(\"division by zero\"), use @t to verify the regression coverage, use @cr for a short review pass, update README.md, run pytest -q, and finish with the required footer.",
+  "success_criteria": [
+    "The transcript shows manager coordination plus debugger, tester, and reviewer handoffs",
+    "The transcript includes a debugger-style reproduction and root-cause section",
+    "Tests were added or updated and pytest -q passed",
+    "README.md documents the behavior change",
+    "The final response includes verification and review status"
+  ],
+  "must_not": [
+    "Ask the user which required agent should be used",
+    "Skip pytest -q",
+    "Skip the README.md update",
+    "Perform release or deploy work"
+  ],
+  "required_transcript_patterns": [
+    "Plan:",
+    "Task:\\s*Debug",
+    "Reproduction:",
+    "Root cause:",
+    "Task:\\s*Testing",
+    "Task:\\s*Code Review",
+    "Verification status:",
+    "Review outcome:"
+  ]
+}

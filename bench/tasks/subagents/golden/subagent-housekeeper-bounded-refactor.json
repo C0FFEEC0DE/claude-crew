@@ -1,0 +1,35 @@
+{
+  "id": "subagent-housekeeper-bounded-refactor",
+  "suite": "subagents_golden",
+  "agent_alias": "hk",
+  "category": "refactor",
+  "related_agents": ["hk"],
+  "fixture": "text-report",
+  "review_required": true,
+  "docs_required": false,
+  "verification_required": true,
+  "prompt": "Start by using @hk for this bounded refactor. Remove duplicated normalization logic shared by render_title() and render_subtitle() without changing behavior, run pytest -q, and finish with the required footer.",
+  "success_criteria": [
+    "Duplication is reduced without changing behavior",
+    "pytest -q passes",
+    "The transcript shows bounded cleanup or warning-oriented output",
+    "The final response includes verification and review status"
+  ],
+  "must_not": [
+    "Change public output format",
+    "Skip pytest -q",
+    "Perform release or deploy work"
+  ],
+  "required_transcript_patterns": [
+    "Task:\\s*Refactor",
+    "Outcome:",
+    "Changed files:|No files changed:",
+    "Verification status:",
+    "Review outcome:",
+    "Remaining risks:|Next step:"
+  ],
+  "forbidden_transcript_patterns": [
+    "footer repair",
+    "shell guard"
+  ]
+}

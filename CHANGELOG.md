@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- `Behavior Benchmark Full` workflow as a separate manually runnable full-suite entry instead of hiding the full run inside the nightly matrix
+- `Behavior Benchmark Subagents Smoke` workflow for fast PR/manual subagent-only checks
+- Smart benchmark task selection scripts that map agent, skill, fixture, workflow, and runner changes to the smallest relevant behavioral suites
+- Workflow-combination benchmark tasks covering common manager-led chains such as manager+explorer+reviewer and manager+bugbuster/debugger/tester+reviewer
+- Golden per-agent benchmark tasks under `bench/tasks/subagents/golden/` so every specialist role has both smoke and stricter regression coverage
 - Shared-state hook scenarios via `tests/hooks/scenarios.json` plus scenario-aware `scripts/test-hooks.sh` coverage for multi-hook flows
 - `Python Tests` GitHub Actions workflow for non-hook pytest coverage
 - `Benchmark Nightly` workflow that runs broader live benchmark suites on schedule when `main` changed in the last 24 hours
@@ -28,6 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - README status badges for repository workflows
 
 ### Changed
+- Renamed benchmark workflows to clearer GitHub Actions labels: `Behavior Benchmark Smoke`, `Behavior Benchmark Full`, `Behavior Benchmark Subagents Smoke`, and `Behavior Benchmark Subagents Golden`
+- Reorganized benchmark tasks into `bench/tasks/smoke/`, `bench/tasks/full/`, `bench/tasks/subagents/smoke/`, and `bench/tasks/subagents/golden/`
+- Taught behavioral CI to select only the impacted smoke/full/subagent tasks from changed agents, skills, fixtures, task files, and shared benchmark logic instead of rerunning whole suites by default
+- Split the nightly live benchmark matrix so the full workflow suite and the golden subagent suite appear as separate Actions entries and the full suite can be launched manually on `main`
 - Expanded the benchmark matrix with a new Node fixture plus fixture-aware verification detection (`pytest`, `npm`, `cargo`, `go`) so manual/full benchmark runs can cover non-Python repos without widening the default PR suite
 - Added workflow linting with `actionlint`, shell linting with `shellcheck`, and an installer smoke/idempotency test to the Validate path
 - Renamed GitHub workflows to more neutral CI labels and split general `pytest` coverage into a dedicated `Python Tests` workflow while keeping hook-contract checks grouped with the hook harness
@@ -51,7 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated GUIDE.md with new agents and skills
 - Updated GitHub Actions workflows to run on every push
 - Replaced the custom benchmark coding-agent workflow with automatic real Claude Code CLI runs via OpenRouter
-- Removed the standalone `Real Claude Code` smoke workflow so `Behavior Benchmark` is now the only real-agent GitHub workflow
+- Removed the standalone `Real Claude Code` smoke workflow in favor of the `Behavior Benchmark` workflow family
 - Tightened hook safety and completion gates: expanded dangerous-command blocking, unified failed test/lint/build gating, and moved `Stop` enforcement fully into shell hooks to avoid tool-only prompt-hook failures
 - Moved `SubagentStop` enforcement into a shell hook so subagent stop validation no longer depends on prompt-hook message availability
 - Updated shell stop gating so repos without detectable `test`/`lint`/`build` commands do not deadlock completion after config changes

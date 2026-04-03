@@ -359,17 +359,43 @@ else
 fi
 
 if grep -q 'default: "300"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -q 'VAR_BENCHMARK_MODEL' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml"; then
-    echo "OK: Benchmark Smoke default timeout/model override"
+    && grep -q 'scripts/select-benchmark-tasks.py' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
+    && grep -q -- '--ref-name "${REF_NAME:-}"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
+    && ! grep -q "if: github.event_name != 'workflow_dispatch'" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml"; then
+    echo "OK: Behavior Benchmark Smoke smart selection"
 else
-    report_error "Benchmark Smoke workflow must expose the 300s default timeout and dedicated model override"
+    report_error "Behavior Benchmark Smoke workflow must expose the 300s default timeout, smart selection precheck, and working manual changed-file collection"
+fi
+
+if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q -- '--suite full' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q -- '--ref-name "${REF_NAME:-}"' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && ! grep -q '\[ "${{ github.event_name }}" = "schedule" \]' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml"; then
+    echo "OK: Behavior Benchmark Full schedule and selector"
+else
+    report_error "Behavior Benchmark Full workflow must run nightly, stay change-gated by default, and keep manual all-task selection"
+fi
+
+if grep -q -- '--suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
+    && grep -q 'pull_request:' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
+    && grep -q -- '--ref-name "${REF_NAME:-}"' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
+    && ! grep -q "if: github.event_name != 'workflow_dispatch'" "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml"; then
+    echo "OK: Behavior Benchmark Subagents Smoke PR selector"
+else
+    report_error "Behavior Benchmark Subagents Smoke workflow must select the subagent smoke suite on PRs and support manual changed-file collection"
 fi
 
 if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -q "git rev-list --count --since='24 hours ago' origin/main" "$REPO_ROOT/.github/workflows/benchmark-nightly.yml"; then
-    echo "OK: Benchmark Nightly schedule and commit precheck"
+    && grep -q -- '--suite subagents_golden' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && grep -q -- '--ref-name "${REF_NAME:-}"' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && ! grep -q '\[ "${{ github.event_name }}" = "schedule" \]' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml"; then
+    echo "OK: Behavior Benchmark Subagents Golden schedule and selector"
 else
-    report_error "Benchmark Nightly workflow must run nightly and gate on commits from the last 24 hours"
+    report_error "Behavior Benchmark Subagents Golden workflow must run nightly, stay change-gated by default, and keep manual all-task selection"
 fi
 echo ""
 
@@ -456,7 +482,8 @@ echo ""
 echo "--- Checking benchmark tasks ---"
 TASK_IDS=()
 EXPECTED_SUBAGENT_ALIASES=(m e a bug dbg t cr doc hk)
-SUBAGENT_ALIASES_SEEN=()
+SUBAGENT_SMOKE_ALIASES_SEEN=()
+SUBAGENT_GOLDEN_ALIASES_SEEN=()
 SUBAGENT_REQUIRED_FOOTER_REGEXES=(
     "Outcome:"
     "Changed files:|No files changed:"
@@ -470,7 +497,8 @@ while IFS= read -r task_file; do
     agent_alias="$(jq -r '.agent_alias // empty' "$task_file")"
 
     if ! jq -e '
-        .id and .category and .fixture and .prompt
+        .id and .suite and .category and .fixture and .prompt
+        and (.related_agents | type == "array" and length > 0)
         and has("review_required")
         and has("docs_required")
         and has("verification_required")
@@ -496,7 +524,12 @@ while IFS= read -r task_file; do
         ' "$task_file" >/dev/null; then
             report_error "Subagent benchmark task must declare agent_alias plus non-empty required/forbidden transcript patterns: $task_file"
         else
-            SUBAGENT_ALIASES_SEEN+=("$agent_alias")
+            if [[ "$task_file" == *"/bench/tasks/subagents/smoke/"* ]]; then
+                SUBAGENT_SMOKE_ALIASES_SEEN+=("$agent_alias")
+            fi
+            if [[ "$task_file" == *"/bench/tasks/subagents/golden/"* ]]; then
+                SUBAGENT_GOLDEN_ALIASES_SEEN+=("$agent_alias")
+            fi
         fi
 
         for required_regex in "${SUBAGENT_REQUIRED_FOOTER_REGEXES[@]}"; do
@@ -527,7 +560,10 @@ done < <(find "$REPO_ROOT/bench/tasks" -type f -name "*.json" | sort)
 shopt -u nullglob
 
 for expected_alias in "${EXPECTED_SUBAGENT_ALIASES[@]}"; do
-    if ! printf '%s\n' "${SUBAGENT_ALIASES_SEEN[@]}" | grep -Fxq "$expected_alias"; then
+    if ! printf '%s\n' "${SUBAGENT_SMOKE_ALIASES_SEEN[@]}" | grep -Fxq "$expected_alias"; then
+        report_error "Missing subagent smoke benchmark coverage for agent alias: $expected_alias"
+    fi
+    if ! printf '%s\n' "${SUBAGENT_GOLDEN_ALIASES_SEEN[@]}" | grep -Fxq "$expected_alias"; then
         report_error "Missing golden subagent benchmark coverage for agent alias: $expected_alias"
     fi
 done

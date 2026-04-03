@@ -1,0 +1,37 @@
+{
+  "id": "subagent-explorer-implementation-handoff",
+  "suite": "subagents_golden",
+  "agent_alias": "e",
+  "category": "feature",
+  "related_agents": ["e"],
+  "fixture": "python-math",
+  "review_required": true,
+  "docs_required": true,
+  "verification_required": true,
+  "prompt": "Start by using @e to map this feature task, then continue end to end without waiting for more user input. Add a subtract helper, update tests and README.md, and make sure the transcript includes a real explorer-style handoff before implementation. Run pytest -q and finish with the required footer.",
+  "success_criteria": [
+    "The transcript includes an explorer-style handoff before implementation",
+    "The feature is implemented with tests and docs",
+    "pytest -q passes",
+    "The final response includes verification and review status"
+  ],
+  "must_not": [
+    "Skip the initial map/handoff",
+    "Ask the user for more input",
+    "Perform release or deploy work"
+  ],
+  "required_transcript_patterns": [
+    "Task:\\s*Explore",
+    "Locations:",
+    "Task:\\s*(Testing|Code Review)",
+    "Outcome:",
+    "Changed files:|No files changed:",
+    "Verification status:",
+    "Remaining risks:|Next step:"
+  ],
+  "forbidden_transcript_patterns": [
+    "footer repair",
+    "shell guard",
+    "stop-guard"
+  ]
+}

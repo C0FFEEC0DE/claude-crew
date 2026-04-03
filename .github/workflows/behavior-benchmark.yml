@@ -1,4 +1,4 @@
-name: Benchmark Smoke
+name: Behavior Benchmark Smoke
 
 on:
   pull_request:
@@ -6,19 +6,23 @@ on:
       - main
     paths:
       - '.github/workflows/behavior-benchmark.yml'
+      - '.github/workflows/behavior-benchmark-full.yml'
+      - '.github/workflows/behavior-benchmark-subagents-smoke.yml'
       - '.github/workflows/benchmark-nightly.yml'
       - 'bench/**'
       - 'claudecfg/**'
       - 'scripts/assert-benchmark-summary.sh'
       - 'scripts/bench_runner_claude_code.py'
+      - 'scripts/collect-benchmark-changes.sh'
       - 'scripts/run-benchmark.sh'
+      - 'scripts/select-benchmark-tasks.py'
       - 'CLAUDE.md'
   workflow_dispatch:
     inputs:
-      task_glob:
-        description: "Task glob relative to repository root"
+      selection_mode:
+        description: "Use all smoke tasks or only tasks impacted by recent changes"
         required: false
-        default: "bench/tasks/lite/*.json"
+        default: "all"
         type: string
       max_turns:
         description: "Maximum Claude Code turns per task"
@@ -47,12 +51,70 @@ on:
         type: string
 
 jobs:
+  precheck:
+    name: Behavior Benchmark Smoke Precheck
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.select.outputs.should_run }}
+      task_files: ${{ steps.select.outputs.task_files }}
+      task_count: ${{ steps.select.outputs.task_count }}
+      task_label: ${{ steps.select.outputs.task_label }}
+      task_ids: ${{ steps.select.outputs.task_ids }}
+      selection_reason: ${{ steps.select.outputs.selection_reason }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Collect changed files
+        shell: bash
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          bash scripts/collect-benchmark-changes.sh \
+            --event "${{ github.event_name }}" \
+            --output .bench-changed-files.txt \
+            --base-ref "${BASE_REF:-main}" \
+            --ref-name "${REF_NAME:-}"
+
+      - name: Select smoke tasks
+        id: select
+        shell: bash
+        env:
+          INPUT_SELECTION_MODE: ${{ inputs.selection_mode }}
+        run: |
+          selection_mode="changed"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            selection_mode="${INPUT_SELECTION_MODE:-all}"
+          fi
+          python3 scripts/select-benchmark-tasks.py \
+            --suite smoke \
+            --selection-mode "$selection_mode" \
+            --changed-files-file .bench-changed-files.txt
+
+      - name: Render precheck summary
+        shell: bash
+        run: |
+          {
+            echo "## Behavior Benchmark Smoke Precheck"
+            echo ""
+            echo "- Event: \`${{ github.event_name }}\`"
+            echo "- Selection reason: \`${{ steps.select.outputs.selection_reason }}\`"
+            echo "- Selected tasks: \`${{ steps.select.outputs.task_count }}\`"
+            echo "- Task ids: \`${{ steps.select.outputs.task_ids || 'none' }}\`"
+            echo "- Will run smoke suite: \`${{ steps.select.outputs.should_run }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   benchmark-smoke:
-    name: Benchmark Smoke
+    name: Behavior Benchmark Smoke
+    needs: precheck
+    if: needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     concurrency:
-      group: behavior-benchmark-${{ github.ref }}
+      group: behavior-benchmark-smoke-${{ github.ref }}
       cancel-in-progress: true
     permissions:
       contents: read
@@ -63,11 +125,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Write selected task list
+        shell: bash
+        run: |
+          cat > .bench-selected-tasks.txt <<'EOF'
+          ${{ needs.precheck.outputs.task_files }}
+          EOF
+
       - name: Resolve benchmark config
         id: cfg
         shell: bash
         env:
-          INPUT_TASK_GLOB: ${{ inputs.task_glob }}
           INPUT_MAX_TURNS: ${{ inputs.max_turns }}
           INPUT_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
           INPUT_MAX_OUTPUT_TOKENS: ${{ inputs.max_output_tokens }}
@@ -80,7 +148,6 @@ jobs:
           VAR_BENCHMARK_MAX_RECOVERED_TASKS: ${{ vars.BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS }}
           VAR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS: ${{ vars.BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS }}
         run: |
-          task_glob="${INPUT_TASK_GLOB:-bench/tasks/lite/*.json}"
           max_turns="${INPUT_MAX_TURNS:-8}"
           model="${VAR_BENCHMARK_MODEL:-${VAR_OLLAMA_MODEL:-}}"
           timeout_seconds="${INPUT_TIMEOUT_SECONDS:-${VAR_BENCHMARK_TIMEOUT_SECONDS:-300}}"
@@ -94,7 +161,6 @@ jobs:
           fi
 
           {
-            echo "task_glob=$task_glob"
             echo "max_turns=$max_turns"
             echo "model=$model"
             echo "timeout_seconds=$timeout_seconds"
@@ -123,7 +189,6 @@ jobs:
         env:
           BENCH_RUNNER_CMD: python3 "$GITHUB_WORKSPACE/scripts/bench_runner_claude_code.py"
           BENCH_SOURCE_REF: ${{ github.ref }}
-          TASK_GLOB: ${{ steps.cfg.outputs.task_glob }}
           MAX_TURNS: ${{ steps.cfg.outputs.max_turns }}
           BENCH_FAIL_FAST: "1"
           CLAUDE_TIMEOUT_SECONDS: ${{ steps.cfg.outputs.timeout_seconds }}
@@ -141,7 +206,8 @@ jobs:
           bash scripts/run-benchmark.sh \
             --output-dir bench-output \
             --mode command \
-            --task-glob "$TASK_GLOB" \
+            --task-list-file .bench-selected-tasks.txt \
+            --task-label "${{ needs.precheck.outputs.task_label }}" \
             --ref "${GITHUB_REF}"
 
       - name: Render benchmark summary
@@ -155,8 +221,10 @@ jobs:
             max_recovered_display="${MAX_RECOVERED_TASKS:-report-only}"
             max_summary_repaired_display="${MAX_SUMMARY_REPAIRED_TASKS:-report-only}"
             {
-              echo "## Benchmark Smoke"
+              echo "## Behavior Benchmark Smoke"
               echo ""
+              echo "- Selection reason: \`${{ needs.precheck.outputs.selection_reason }}\`"
+              echo "- Task ids: \`${{ needs.precheck.outputs.task_ids }}\`"
               echo "- Model: \`${{ steps.cfg.outputs.model }}\`"
               echo "- Max turns: \`${{ steps.cfg.outputs.max_turns }}\`"
               echo "- Timeout seconds: \`${{ steps.cfg.outputs.timeout_seconds }}\`"
@@ -165,43 +233,13 @@ jobs:
               echo "- Max summary-repaired tasks allowed: \`${max_summary_repaired_display}\`"
               jq -r '
                 def pct($value): (($value * 1000 | round) / 10 | tostring) + "%";
-                "- Task glob: `${{ steps.cfg.outputs.task_glob }}`",
+                "- Task selection: `${{ needs.precheck.outputs.task_label }}`",
                 "- Configured tasks: `\(.totals.configured_tasks)`",
                 "- Executed tasks: `\(.totals.executed_tasks)`",
                 "- Execution coverage: \(pct(.rates.execution_coverage_rate))",
                 "- Clean pass rate: \(pct(.rates.clean_pass_rate))",
                 "- Recovered task rate: \(pct(.rates.recovered_task_rate))",
-                "- Summary repair rate: \(pct(.rates.summary_repair_rate))",
-                "",
-                "| Task | Status | Changed Files | Notes |",
-                "| --- | --- | --- | --- |",
-                (.tasks[] | "| `\(.task_id)` | `\(.status)` | \((.changed_files // []) | join(", ")) | \(.notes | gsub("\n"; " ") | .[0:180]) |"),
-                "",
-                "- Pass rate: \(pct(.rates.task_pass_rate))",
-                "- Clean pass rate: \(pct(.rates.clean_pass_rate))",
-                "- Verification pass rate: \(pct(.rates.verification_pass_rate))",
-                "- Review compliance: \(pct(.rates.review_compliance_rate))",
-                "- Docs compliance: \(pct(.rates.docs_compliance_rate))",
-                "- Recovered tasks: `\(.totals.recovered_tasks)`",
-                "- Summary repaired tasks: `\(.totals.summary_repaired)`",
-                (
-                  [.tasks[] | select(.status != "passed") | "- `\(.task_id)`: \((.failures // []) | join(", ")) | \(.notes | gsub("\n"; " ") | .[0:220])"] as $failed
-                  | [.tasks[] | select((.recovered_nonzero_exit == true) or ((.summary_repaired_by // "none") != "none")) | "- `\(.task_id)`: recovered=\(.recovered_nonzero_exit // false), summary_repaired_by=`\(.summary_repaired_by // "none")`, exit=`\(.claude_exit_code)` | \(.notes | gsub("\n"; " ") | .[0:220])"] as $recovered
-                  | if ($failed | length) > 0 then
-                      "",
-                      "### Failed Tasks",
-                      "",
-                      ($failed[])
-                    else empty end,
-                    if ($recovered | length) > 0 then
-                      "",
-                      "### Recovered Tasks",
-                      "",
-                      ($recovered[])
-                    else
-                      empty
-                    end
-                )
+                "- Summary repair rate: \(pct(.rates.summary_repair_rate))"
               ' bench-output/summary.json
             } >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -218,8 +256,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: behavior-benchmark-${{ github.run_id }}
+          name: behavior-benchmark-smoke-${{ github.run_id }}
           path: |
+            .bench-selected-tasks.txt
             bench-output/summary.json
             bench-output/tasks/**/result.json
             bench-output/tasks/**/claude-result.json

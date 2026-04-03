@@ -1,12 +1,24 @@
-name: Behavior Benchmark Subagents Golden
+name: Behavior Benchmark Subagents Smoke
 
 on:
-  schedule:
-    - cron: '30 1 * * *'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/behavior-benchmark-subagents-smoke.yml'
+      - '.github/workflows/benchmark-nightly.yml'
+      - 'bench/**'
+      - 'claudecfg/**'
+      - 'scripts/assert-benchmark-summary.sh'
+      - 'scripts/bench_runner_claude_code.py'
+      - 'scripts/collect-benchmark-changes.sh'
+      - 'scripts/run-benchmark.sh'
+      - 'scripts/select-benchmark-tasks.py'
+      - 'CLAUDE.md'
   workflow_dispatch:
     inputs:
       selection_mode:
-        description: "Use all golden subagent tasks or only tasks impacted by recent changes"
+        description: "Use all subagent smoke tasks or only tasks impacted by recent changes"
         required: false
         default: "all"
         type: string
@@ -28,7 +40,7 @@ on:
 
 jobs:
   precheck:
-    name: Behavior Benchmark Subagents Golden Precheck
+    name: Behavior Benchmark Subagents Smoke Precheck
     runs-on: ubuntu-latest
     outputs:
       should_run: ${{ steps.select.outputs.should_run }}
@@ -46,14 +58,16 @@ jobs:
       - name: Collect changed files
         shell: bash
         env:
+          BASE_REF: ${{ github.base_ref }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           bash scripts/collect-benchmark-changes.sh \
             --event "${{ github.event_name }}" \
             --output .bench-changed-files.txt \
+            --base-ref "${BASE_REF:-main}" \
             --ref-name "${REF_NAME:-}"
 
-      - name: Select golden subagent tasks
+      - name: Select subagent smoke tasks
         id: select
         shell: bash
         env:
@@ -64,7 +78,7 @@ jobs:
             selection_mode="${INPUT_SELECTION_MODE:-all}"
           fi
           python3 scripts/select-benchmark-tasks.py \
-            --suite subagents_golden \
+            --suite subagents_smoke \
             --selection-mode "$selection_mode" \
             --changed-files-file .bench-changed-files.txt
 
@@ -72,23 +86,23 @@ jobs:
         shell: bash
         run: |
           {
-            echo "## Behavior Benchmark Subagents Golden Precheck"
+            echo "## Behavior Benchmark Subagents Smoke Precheck"
             echo ""
             echo "- Event: \`${{ github.event_name }}\`"
             echo "- Selection reason: \`${{ steps.select.outputs.selection_reason }}\`"
             echo "- Selected tasks: \`${{ steps.select.outputs.task_count }}\`"
             echo "- Task ids: \`${{ steps.select.outputs.task_ids || 'none' }}\`"
-            echo "- Will run golden subagent suite: \`${{ steps.select.outputs.should_run }}\`"
+            echo "- Will run subagent smoke suite: \`${{ steps.select.outputs.should_run }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  nightly-benchmark:
-    name: Behavior Benchmark Subagents Golden
+  benchmark-subagents-smoke:
+    name: Behavior Benchmark Subagents Smoke
     needs: precheck
     if: needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     concurrency:
-      group: behavior-benchmark-subagents-golden-${{ github.ref }}
+      group: behavior-benchmark-subagents-smoke-${{ github.ref }}
       cancel-in-progress: true
     permissions:
       contents: read
@@ -129,10 +143,10 @@ jobs:
           fi
 
           {
+            echo "max_turns=$max_turns"
             echo "model=$model"
             echo "timeout_seconds=$timeout_seconds"
             echo "max_output_tokens=$max_output_tokens"
-            echo "max_turns=$max_turns"
           } >> "$GITHUB_OUTPUT"
 
       - name: Install Claude Code CLI and pytest
@@ -150,7 +164,7 @@ jobs:
         run: |
           bash ./install.sh
 
-      - name: Run golden subagent benchmark suite
+      - name: Run subagent smoke benchmark
         shell: bash
         env:
           BENCH_RUNNER_CMD: python3 "$GITHUB_WORKSPACE/scripts/bench_runner_claude_code.py"
@@ -176,20 +190,21 @@ jobs:
             --task-label "${{ needs.precheck.outputs.task_label }}" \
             --ref "${GITHUB_REF}"
 
-      - name: Render golden subagent benchmark summary
+      - name: Render subagent smoke summary
         if: always()
         shell: bash
         run: |
           if [ -f bench-output/summary.json ]; then
             {
-              echo "## Behavior Benchmark Subagents Golden"
+              echo "## Behavior Benchmark Subagents Smoke"
               echo ""
-              echo "- Event: \`${{ github.event_name }}\`"
               echo "- Selection reason: \`${{ needs.precheck.outputs.selection_reason }}\`"
               echo "- Task ids: \`${{ needs.precheck.outputs.task_ids }}\`"
               echo "- Model: \`${{ steps.cfg.outputs.model }}\`"
               echo "- Task selection: \`${{ needs.precheck.outputs.task_label }}\`"
               echo "- Max turns: \`${{ steps.cfg.outputs.max_turns }}\`"
+              echo "- Timeout seconds: \`${{ steps.cfg.outputs.timeout_seconds }}\`"
+              echo "- Max output tokens: \`${{ steps.cfg.outputs.max_output_tokens }}\`"
               jq -r '
                 def pct($value): (($value * 1000 | round) / 10 | tostring) + "%";
                 "- Configured tasks: `\(.totals.configured_tasks)`",
@@ -202,16 +217,16 @@ jobs:
             } >> "$GITHUB_STEP_SUMMARY"
           fi
 
-      - name: Enforce golden subagent benchmark gate
+      - name: Enforce subagent smoke gate
         shell: bash
         run: |
           bash scripts/assert-benchmark-summary.sh bench-output/summary.json
 
-      - name: Upload golden subagent benchmark artifacts
+      - name: Upload subagent smoke artifacts
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: behavior-benchmark-subagents-golden-${{ github.run_id }}
+          name: behavior-benchmark-subagents-smoke-${{ github.run_id }}
           path: |
             .bench-selected-tasks.txt
             bench-output/summary.json

@@ -5,7 +5,7 @@ This repository has two benchmark paths:
 - `scripts/bench_runner_openrouter.py` — legacy one-shot worker for cheap baseline experiments
 - `scripts/bench_runner_claude_code.py` — the primary real Claude Code benchmark runner that executes `claude -p` inside isolated fixture repositories
 
-If you want to know whether the installed profile actually works as a coding agent, use the real Claude Code path. This is also the only live Claude runtime workflow in GitHub Actions.
+If you want to know whether the installed profile actually works as a coding agent, use the real Claude Code path. GitHub Actions exposes that live path as separate smoke, full-suite, and subagent benchmark workflows.
 
 ## What It Checks
 
@@ -22,7 +22,7 @@ Current task assertions include:
 
 This makes the benchmark a behavioral acceptance gate, not just a process smoke test.
 
-The live GitHub smoke workflow now defaults to the cheaper suite in `bench/tasks/lite/*.json` so it can run on smaller models without turning every PR into a long provider soak:
+The live GitHub smoke workflow now defaults to the cheaper suite in `bench/tasks/smoke/*.json` so it can run on smaller models without turning every PR into a long provider soak:
 
 - implement a small bugfix end to end
 - keep a docs-only task out of runtime code
@@ -30,8 +30,8 @@ The live GitHub smoke workflow now defaults to the cheaper suite in `bench/tasks
 - run `pytest -q` when code changed
 - finish with the required stop-safe summary or subagent handoff footer
 
-The fuller suite in `bench/tasks/*.json` remains available for manual or slower runs when you want broader workflow coverage.
-That fuller matrix now includes mixed-language fixtures such as `bench/fixtures/node-app`, so the benchmark can cover non-Python verification without forcing the default PR path to grow.
+The broader workflow-combination suite now lives in `bench/tasks/full/*.json`, while subagent coverage is split between `bench/tasks/subagents/smoke/*.json` and `bench/tasks/subagents/golden/*.json`. That split keeps PR coverage cheap while still preserving full role and orchestration coverage in the heavier suites.
+The broader matrix still includes mixed-language fixtures such as `bench/fixtures/node-app`, so the benchmark can cover non-Python verification without forcing the default PR path to grow.
 
 The runner invokes Claude Code with `--permission-mode acceptEdits` so isolated fixture repositories can be modified non-interactively during CI. The bundled profile allows the relevant fixture-local test commands directly, including `pytest`, `npm`, `cargo`, and `go`, so harmless verification runs do not inflate `permission_denials_count`. If a task still fails, inspect `claude_subtype`, `claude_stop_reason`, `permission_denials_count`, and `first_permission_denial` in the task summary and `result.json`.
 The GitHub smoke workflow default is `8` turns per task so CI stays bounded for small models; raise it manually in `workflow_dispatch` when you want a slower debug run.
@@ -57,10 +57,11 @@ Recommended transcript regression coverage:
 
 Additional focused suites can live under nested globs such as:
 
-- `bench/tasks/subagents/*.json` for single-agent behavior checks
-- `bench/tasks/chains/*.json` for longer orchestration suites when you want them
+- `bench/tasks/subagents/smoke/*.json` for short per-role canaries
+- `bench/tasks/subagents/golden/*.json` for stricter per-role regressions
+- `bench/tasks/full/*.json` for multi-role workflow combinations
 
-The subagent suite under `bench/tasks/subagents/*.json` is the repository's golden regression suite for agent behavior. Every canonical agent alias is expected to have coverage there, and each task should include both `required_transcript_patterns` and `forbidden_transcript_patterns` so the runner can catch “agent did not do the expected thing” failures automatically. In addition to role-specific markers such as `Findings:` or `Root cause:`, every subagent golden task is expected to carry the shared footer markers `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:`.
+The subagent smoke suite under `bench/tasks/subagents/smoke/*.json` keeps one short canary task per canonical alias for PR-time coverage. The golden suite under `bench/tasks/subagents/golden/*.json` keeps one stricter regression task per alias for scheduled and manual coverage. Every golden subagent task is expected to carry the shared footer markers `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and `Remaining risks:` or `Next step:` so role prompts, hook contracts, and runner assertions stay aligned.
 
 ## Hook Test Layers
 
@@ -76,6 +77,8 @@ Use cases for edge payloads, null/empty field handling, and single-hook contract
 The behavioral benchmark workflows are:
 
 - `.github/workflows/behavior-benchmark.yml`
+- `.github/workflows/behavior-benchmark-full.yml`
+- `.github/workflows/behavior-benchmark-subagents-smoke.yml`
 - `.github/workflows/benchmark-nightly.yml`
 
 `behavior-benchmark.yml`:
@@ -83,21 +86,38 @@ The behavioral benchmark workflows are:
 1. installs the Claude Code CLI
 2. runs `./install.sh` so CI uses the same repo installer as local setup
 3. copies the repository `.claude/` directory into each isolated fixture workdir so project-local config is exercised during the benchmark
-4. runs `scripts/run-benchmark.sh` in `command` mode with the default `bench/tasks/lite/*.json` task glob
-5. uses `scripts/bench_runner_claude_code.py` as the per-task runner
-6. uploads per-task Claude artifacts plus `summary.json`
-7. fails the workflow unless every benchmark task passes
+4. collects the PR diff and maps it to affected agents, fixtures, task files, and shared workflow logic
+5. selects the impacted tasks from `bench/tasks/smoke/*.json`
+6. runs `scripts/run-benchmark.sh` in `command` mode with the selected task list
+7. uses `scripts/bench_runner_claude_code.py` as the per-task runner
+8. uploads per-task Claude artifacts plus `summary.json`
+9. fails the workflow unless every selected benchmark task passes
 
 It only runs on PRs when benchmark-relevant files changed, which keeps the live smoke path from re-running on unrelated pushes.
+Agent and slash-skill changes are mapped through the frontmatter declared in `claudecfg/agents/*.md` and `claudecfg/skills/*.md`, so full-name files like `manager.md` and skill files like `review.md` stay aligned with the canonical role aliases used by the task metadata.
+
+`behavior-benchmark-subagents-smoke.yml`:
+
+1. runs on PRs when benchmark-relevant files changed
+2. maps changed agent, skill, fixture, and workflow files to the affected subagent canaries
+3. runs the selected tasks from `bench/tasks/subagents/smoke/*.json`
+4. supports manual `workflow_dispatch` for on-demand checks
+
+`behavior-benchmark-full.yml`:
+
+1. runs on benchmark-relevant PRs, every night at `01:30 UTC`, and via manual dispatch
+2. maps changed agents to related multi-role workflow tasks
+3. selects only impacted tasks from `bench/tasks/full/*.json` on PRs and scheduled runs
+4. skips the scheduled job when there were no relevant changes in the recent lookback window
+5. supports manual `workflow_dispatch` so the full suite can be launched on `main` without waiting for cron, or narrowed to changed-only selection when debugging; changed-only dispatch compares the current branch to `main`, and falls back to the recent lookback window when you dispatch directly on `main`
 
 `benchmark-nightly.yml`:
 
 1. runs every night at `01:30 UTC`
-2. checks whether `main` had any commits in the last `24` hours
-3. skips the expensive run when there were no recent commits
-4. runs `bench/tasks/*.json` as the broader workflow suite
-5. runs `bench/tasks/subagents/*.json` as the golden per-agent suite
-6. supports `workflow_dispatch` with an optional force-run override
+2. maps recent relevant changes to the affected golden role regressions
+3. skips the scheduled job when there were no relevant changes in the recent lookback window
+4. still supports change-targeted or all-task runs through `workflow_dispatch`; the changed-only manual path compares the current branch to `main`, and falls back to the recent lookback window when dispatched on `main`
+5. runs tasks from `bench/tasks/subagents/golden/*.json`
 
 ## Required GitHub Setup
 
@@ -149,10 +169,17 @@ bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench --mode command
 bash scripts/assert-benchmark-summary.sh /tmp/claude-bench/summary.json
 ```
 
-To run the fuller manual suite instead of the default cheap CI suite:
+To run the broader workflow-combination suite manually:
 
 ```bash
-bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench-full --mode command --task-glob 'bench/tasks/*.json'
+bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench-full --mode command --task-glob 'bench/tasks/full/*.json'
+```
+
+To run the smoke or golden subagent suites manually:
+
+```bash
+bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench-subagents-smoke --mode command --task-glob 'bench/tasks/subagents/smoke/*.json'
+bash scripts/run-benchmark.sh --output-dir /tmp/claude-bench-subagents-golden --mode command --task-glob 'bench/tasks/subagents/golden/*.json'
 ```
 
 For cheap synthetic checks without the real agent:

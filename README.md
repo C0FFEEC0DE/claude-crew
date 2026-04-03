@@ -3,7 +3,10 @@
 [![Repository Checks](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/validate.yml)
 [![Hook Contracts](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/hooks-test.yml)
 [![Python Tests](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/python-tests.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/python-tests.yml)
-[![Benchmark Smoke](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml)
+[![Behavior Benchmark Smoke](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark.yml)
+[![Behavior Benchmark Full](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark-full.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark-full.yml)
+[![Behavior Benchmark Subagents Smoke](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark-subagents-smoke.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/behavior-benchmark-subagents-smoke.yml)
+[![Behavior Benchmark Subagents Golden](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/benchmark-nightly.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/benchmark-nightly.yml)
 [![Security Checks](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/C0FFEEC0DE/claude-crew/actions/workflows/security-scan.yml)
 
 Badges reflect the latest workflow result for the `main` branch.
@@ -153,16 +156,19 @@ The default output style is `Default` to preserve Claude Code's built-in softwar
 
 ## CI and Claude Code
 
-GitHub Actions now covers six layers:
+GitHub Actions now covers eight layers:
 
 - `Repository Checks` — fast structural and lint checks on every push and PR
 - `Hook Contracts` — behavior tests for the SDLC hook scripts
 - `Python Tests` — focused pytest coverage for the benchmark runner and profile metadata
-- `Benchmark Smoke` — fast live Claude Code smoke coverage on PRs when benchmark-relevant files change
-- `Benchmark Nightly` — larger live Claude Code suites executed at night when `main` changed in the last 24 hours
+- `Behavior Benchmark Smoke` — fast live Claude Code smoke coverage on PRs when benchmark-relevant files change
+- `Behavior Benchmark Full` — full live behavioral suite, available as a separate manual run and also scheduled nightly when `main` changed in the last 24 hours
+- `Behavior Benchmark Subagents Smoke` — fast subagent-only smoke coverage on PRs when benchmark-relevant files change
+- `Behavior Benchmark Subagents Golden` — nightly/manual golden agent-level regression suite
 - `Security Checks` — repository secret and sensitive-file scan
 
-The fast checks run automatically on every push and PR. `Benchmark Smoke` only runs on PRs that touch benchmark-relevant files, and `Benchmark Nightly` runs on schedule only when `main` changed in the last 24 hours.
+The fast checks run automatically on every push and PR. `Behavior Benchmark Smoke` and `Behavior Benchmark Subagents Smoke` only run on PRs that touch benchmark-relevant files, and they now select only the task files impacted by the changed agents, skills, fixtures, hooks, or benchmark infrastructure. `Behavior Benchmark Full` runs targeted workflow-combination checks on PRs, then broadens to scheduled or manual runs when needed. `Behavior Benchmark Subagents Golden` remains the heavier role-regression layer for scheduled or manual runs.
+That selection is derived from benchmark task metadata plus the frontmatter in `claudecfg/agents/*.md` and `claudecfg/skills/*.md`, so alias files and full-name files stay wired to the same benchmark coverage.
 
 ### Fast CI
 
@@ -184,12 +190,12 @@ The fast checks run automatically on every push and PR. `Benchmark Smoke` only r
 
 `Python Tests` runs:
 
-- `python -m pytest tests/bench/test_bench_runner.py tests/test_skills_frontmatter.py -v`
+- `python -m pytest tests/bench/test_bench_runner.py tests/bench/test_benchmark_task_selection.py tests/bench/test_collect_benchmark_changes.py tests/test_skills_frontmatter.py -v`
 - `python -m pytest tests/test_settings_hooks.py tests/test_hook_scenarios.py -v` remains grouped with `Hook Contracts`, because those tests validate the hook manifests and hook configuration contract directly
 
 This harness verifies that key hooks block dangerous commands, classify prompts correctly, record verification state, reject incomplete stop summaries, and refuse completion after missing or failed verification when code changed.
 
-### Benchmark Smoke
+### Behavior Benchmark Smoke
 
 `.github/workflows/behavior-benchmark.yml` is the behavioral acceptance gate for the profile.
 
@@ -199,7 +205,8 @@ That workflow:
 - runs `./install.sh` to install the repo config into `~/.claude`
 - copies each benchmark fixture into an isolated task workdir
 - runs the real `claude -p` inside that workdir
-- uses the default cheap CI suite under `bench/tasks/lite/` so the gate stays fast enough for small models
+- uses the default cheap CI suite under `bench/tasks/smoke/` so the gate stays fast enough for small models
+- uses smart task selection, so agent-only changes run only the smoke tasks related to those agents instead of re-running the entire smoke suite
 - only runs on PRs when benchmark-relevant files changed, so normal feature pushes do not keep re-running the live smoke suite unnecessarily
 - checks that required tasks actually changed files, kept docs/code scope rules, and still pass verification
 - requires the final Claude response to include exact stop-safe summary lines for `Verification status:`, `Review outcome:`, `Changed files:` or `No files changed:`, and `Remaining risks:`
@@ -210,28 +217,47 @@ That workflow:
 - only turns recovery metrics into a hard gate when explicit GitHub variables or `workflow_dispatch` inputs set recovery limits
 - can also fail on forbidden transcript patterns, which are used to catch prompt regressions such as internal hook/footer repair chatter leaking into user-facing output
 
-This is now the only real Claude Code workflow in the repository.
+This is the fast real Claude Code PR gate in the repository.
 
 The default CI suite covers three small agent workflows:
 - a bugfix with tests and a short docs update
 - a docs-only README task that must not touch code
 - a bounded refactor that must preserve behavior
 
-The fuller suite in `bench/tasks/*.json` remains available for manual or slower evaluation runs when you want broader workflow coverage.
+The broader workflow-combination suite now lives under `bench/tasks/full/` and is selected dynamically in the dedicated `Behavior Benchmark Full` workflow when manager/agent/workflow changes require it.
 
-The per-agent golden regression suite lives under `bench/tasks/subagents/*.json`. Each canonical agent alias must have at least one focused task with non-empty required and forbidden transcript assertions so agent-level prompt regressions are caught automatically instead of through manual spot checks.
+The per-agent suites are split between `bench/tasks/subagents/smoke/` and `bench/tasks/subagents/golden/`. Smoke keeps one short canary task per role for PR coverage. Golden keeps one stricter regression task per role for scheduled or manual runs.
 
-### Benchmark Nightly
+### Behavior Benchmark Subagents Smoke
 
-`.github/workflows/benchmark-nightly.yml` runs the broader live suites on a nightly schedule at `01:30 UTC`.
+`.github/workflows/behavior-benchmark-subagents-smoke.yml` runs the fast subagent-only smoke suite on PRs and via manual dispatch.
 
 That workflow:
 
-- checks whether `main` had any commits in the last `24` hours
-- skips the expensive nightly run when nothing changed
-- runs `bench/tasks/*.json` as the broader workflow suite
-- runs `bench/tasks/subagents/*.json` as the golden per-agent suite
-- still supports manual `workflow_dispatch`, with an optional force-run override
+- runs on PRs when benchmark-relevant files changed
+- runs `bench/tasks/subagents/smoke/*.json` as the fast subagent-only smoke path
+- uses smart task selection so a change in one agent only re-runs that role's smoke task unless shared workflow logic changed
+- supports manual `workflow_dispatch` for on-demand checks on `main`
+
+### Behavior Benchmark Full
+
+`.github/workflows/behavior-benchmark-full.yml` runs the broader live workflow-combination suite on PRs, on a nightly schedule at `01:30 UTC`, and via manual dispatch.
+
+That workflow:
+
+- selects workflow-combination tasks from `bench/tasks/full/*.json`
+- runs only the tasks related to changed agents, fixtures, task files, or shared workflow logic on PRs and scheduled runs
+- supports manual `workflow_dispatch`, including all-task runs when you want the full suite on demand and changed-only runs that compare the current branch to `main` or, on `main` itself, use the recent lookback window
+
+### Behavior Benchmark Subagents Golden
+
+`.github/workflows/benchmark-nightly.yml` runs the golden per-agent suite on a nightly schedule at `01:30 UTC`.
+
+That workflow:
+
+- selects the stricter per-agent regression tasks from `bench/tasks/subagents/golden/*.json`
+- skips the expensive scheduled run when no relevant agent, fixture, task, hook, or benchmark infrastructure changes were detected
+- still supports manual `workflow_dispatch`, including all-task runs and changed-only runs against the current ref
 
 Required benchmark model variable:
 
