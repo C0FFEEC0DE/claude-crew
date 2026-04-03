@@ -313,9 +313,6 @@ jobs:
 
       - name: Render benchmark summary
         shell: bash
-        env:
-          MAX_RECOVERED_TASKS: ${{ needs.benchmark-smoke-shards.outputs.max_recovered_tasks }}
-          MAX_SUMMARY_REPAIRED_TASKS: ${{ needs.benchmark-smoke-shards.outputs.max_summary_repaired_tasks }}
         run: |
           max_recovered_display="${{ inputs.max_recovered_tasks || vars.BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS || 'report-only' }}"
           max_summary_repaired_display="${{ inputs.max_summary_repaired_tasks || vars.BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS || 'report-only' }}"
