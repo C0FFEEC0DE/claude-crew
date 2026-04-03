@@ -10,7 +10,7 @@ TASK_LABEL=""
 MODE="${BENCH_MODE:-}"
 SOURCE_REF="${BENCH_SOURCE_REF:-working-tree}"
 FAIL_FAST="${BENCH_FAIL_FAST:-0}"
-PROJECT_CLAUDE_DIR="${REPO_ROOT}/.claude"
+PROJECT_CLAUDE_DIR="${BENCH_CLAUDE_PROFILE_DIR:-}"
 configured_task_count=0
 executed_task_count=0
 
@@ -52,6 +52,17 @@ while [ $# -gt 0 ]; do
 done
 
 [ -n "$OUTPUT_DIR" ] || usage
+
+if [ -z "$PROJECT_CLAUDE_DIR" ]; then
+    if [ -d "$HOME/.claude" ]; then
+        PROJECT_CLAUDE_DIR="$HOME/.claude"
+    else
+        PROJECT_CLAUDE_DIR="${REPO_ROOT}/.claude"
+    fi
+fi
+
+mkdir -p "$HOME/.claude" "$HOME/.claude/state" "$HOME/.claude/logs"
+touch "$HOME/.claude.json"
 
 if [ -n "$TASK_LIST_FILE" ] && [ -n "$TASK_GLOB" ] && [ "$TASK_GLOB" != "bench/tasks/smoke/*.json" ]; then
     usage

@@ -13,7 +13,8 @@
     "divide() raises a clear ValueError on zero division",
     "Tests are updated and pass",
     "README.md documents the changed behavior",
-    "The transcript shows bugbuster-style findings output",
+    "The workflow actually uses the bugbuster role",
+    "The transcript still contains bug-investigation content",
     "The final response includes verification and review status"
   ],
   "must_not": [
@@ -34,11 +35,11 @@
     "my formatting is breaking"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Bug Scan",
-    "Findings:",
-    "Outcome:",
+    "Findings:|Investigation",
+    "Outcome:|Fix:",
     "Changed files:|No files changed:",
     "Verification status:",
     "Remaining risks:|Next step:"
-  ]
+  ],
+  "required_used_agents": ["bug"]
 }

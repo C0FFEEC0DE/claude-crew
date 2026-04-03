@@ -1,4 +1,5 @@
 import importlib.util
+import json
 from pathlib import Path
 
 
@@ -202,3 +203,40 @@ def test_manual_all_returns_entire_golden_suite():
 
     assert reasons == ["manual_all"]
     assert len(selected_ids) == 9
+
+
+def test_manager_led_full_tasks_require_role_usage_assertions():
+    repo_root = Path(__file__).resolve().parents[2]
+    task_files = sorted((repo_root / "bench" / "tasks" / "full").glob("manager-*.json"))
+
+    assert task_files
+
+    for task_file in task_files:
+        task = json.loads(task_file.read_text(encoding="utf-8"))
+        assert task.get("required_used_agents"), f"{task_file.name} must declare required_used_agents"
+
+
+def test_bugbuster_tasks_use_role_assertion_and_relaxed_findings_patterns():
+    repo_root = Path(__file__).resolve().parents[2]
+    smoke_task = json.loads(
+        (repo_root / "bench" / "tasks" / "subagents" / "smoke" / "subagent-bugbuster-zero-division-lite.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    golden_task = json.loads(
+        (
+            repo_root
+            / "bench"
+            / "tasks"
+            / "subagents"
+            / "golden"
+            / "subagent-bugbuster-findings-regression.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert smoke_task["required_used_agents"] == ["bug"]
+    assert golden_task["required_used_agents"] == ["bug"]
+    assert "Findings:|Investigation" in smoke_task["required_transcript_patterns"]
+    assert "Outcome:|Fix:" in smoke_task["required_transcript_patterns"]
+    assert "Findings:|Investigation" in golden_task["required_transcript_patterns"]
+    assert "Outcome:|Fix:" in golden_task["required_transcript_patterns"]

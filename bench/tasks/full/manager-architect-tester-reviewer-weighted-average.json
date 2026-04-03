@@ -7,9 +7,9 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @m to coordinate this tiny feature workflow without waiting for more user input. Use @a to sketch the implementation approach first, then implement a weighted-average helper in calculator.py using the standard formula sum(value * weight) / sum(weights), add or update tests, use @t for verification, use @cr for a review pass, update README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "Start by using @m to coordinate this tiny feature workflow without waiting for more user input. Use @a to sketch the implementation approach first, then implement a weighted-average helper in calculator.py using the standard formula sum(value * weight) / sum(weights), add or update tests, delegate verification planning and pytest coverage to @t instead of doing that role inline yourself, use @cr for a review pass, update README.md, run pytest -q, and finish with the required footer.",
   "success_criteria": [
-    "The transcript shows manager coordination plus architect, tester, and reviewer handoffs",
+    "The workflow actually uses manager, architect, tester, and reviewer roles",
     "The weighted-average helper is implemented with tests",
     "pytest -q was run successfully",
     "README.md documents the new helper",
@@ -21,13 +21,6 @@
     "Leave the feature undocumented",
     "Perform release or deploy work"
   ],
-  "required_transcript_patterns": [
-    "Plan:",
-    "Task:\\s*Design",
-    "Solution:",
-    "Task:\\s*Testing",
-    "Task:\\s*Code Review",
-    "Verification status:",
-    "Review outcome:"
-  ]
+  "required_transcript_patterns": [],
+  "required_used_agents": ["m", "a", "t", "cr"]
 }

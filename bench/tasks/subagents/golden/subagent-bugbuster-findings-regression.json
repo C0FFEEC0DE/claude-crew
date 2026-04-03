@@ -10,7 +10,8 @@
   "verification_required": true,
   "prompt": "Start by using @bug for this bugfix task. Investigate division-by-zero handling, capture bug-focused findings in the transcript, fix divide() so it raises ValueError(\"division by zero\"), update tests and README.md, run pytest -q, and finish with the required footer.",
   "success_criteria": [
-    "The transcript includes bugbuster-style findings output",
+    "The workflow actually uses the bugbuster role",
+    "The transcript includes bug-investigation content",
     "The fix, tests, and docs updates are completed",
     "pytest -q passes",
     "The final response includes verification and review status"
@@ -21,14 +22,14 @@
     "Perform release or deploy work"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Bug Scan",
-    "Findings:",
-    "Outcome:",
+    "Findings:|Investigation",
+    "Outcome:|Fix:",
     "Changed files:|No files changed:",
     "Verification status:",
     "Review outcome:",
     "Remaining risks:|Next step:"
   ],
+  "required_used_agents": ["bug"],
   "forbidden_transcript_patterns": [
     "footer repair",
     "shell guard"

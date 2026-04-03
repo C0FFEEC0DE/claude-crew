@@ -587,6 +587,12 @@ while IFS= read -r task_file; do
         fi
     fi
 
+    if [[ "$task_file" == *"/bench/tasks/full/manager-"* ]]; then
+        if ! jq -e '(.required_used_agents // []) | type == "array" and length > 0' "$task_file" >/dev/null; then
+            report_error "Manager-led full benchmark task must declare required_used_agents so orchestration coverage is role-based: $task_file"
+        fi
+    fi
+
     if printf '%s\n' "${TASK_IDS[@]}" | grep -Fxq "$task_id"; then
         report_error "Duplicate benchmark task id: $task_id"
     else

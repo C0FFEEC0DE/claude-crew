@@ -29,6 +29,8 @@ fi
 echo "[2/3] Installing new config..."
 mkdir -p "$HOME/.claude"
 cp -r "$CONFIG_DIR"/* "$HOME/.claude/"
+mkdir -p "$HOME/.claude/state" "$HOME/.claude/logs"
+touch "$HOME/.claude.json"
 find "$HOME/.claude/hooks" -type f -name "*.sh" -exec chmod +x {} \;
 echo "      Done!"
 

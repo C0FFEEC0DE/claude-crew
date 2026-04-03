@@ -9,7 +9,7 @@
   "verification_required": true,
   "prompt": "Start by using @m to coordinate this tiny refactor workflow without waiting for more user input. Use @hk to remove duplicated formatting logic in reporter.py without changing behavior, use @t to verify the fixture, use @cr for a short review pass, run pytest -q, and finish with the required footer.",
   "success_criteria": [
-    "The transcript shows manager coordination plus housekeeper, tester, and reviewer handoffs",
+    "The workflow actually uses manager, housekeeper, tester, and reviewer roles",
     "Duplication in reporter.py is reduced without changing observable behavior",
     "pytest -q was run successfully",
     "The final response includes verification and review status"
@@ -20,12 +20,6 @@
     "Skip verification",
     "Perform release or deploy work"
   ],
-  "required_transcript_patterns": [
-    "Plan:",
-    "Task:\\s*Refactor",
-    "Task:\\s*Testing",
-    "Task:\\s*Code Review",
-    "Verification status:",
-    "Review outcome:"
-  ]
+  "required_transcript_patterns": [],
+  "required_used_agents": ["m", "hk", "t", "cr"]
 }

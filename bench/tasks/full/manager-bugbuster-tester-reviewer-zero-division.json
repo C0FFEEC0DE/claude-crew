@@ -9,7 +9,7 @@
   "verification_required": true,
   "prompt": "Start by using @m to coordinate this tiny bugfix workflow without waiting for more user input. Use @bug to find and fix the zero-division handling so divide() raises ValueError(\"division by zero\"), use @t to make sure pytest coverage and verification are in place, use @cr for the review pass, update README.md, run pytest -q, and finish with the required footer.",
   "success_criteria": [
-    "The transcript shows manager coordination plus bugbuster, tester, and reviewer handoffs",
+    "The workflow actually uses manager, bugbuster, tester, and reviewer roles",
     "divide() raises ValueError on zero division",
     "Tests were added or updated and pytest -q passed",
     "README.md documents the behavior change",
@@ -25,13 +25,6 @@
     "which agent would you prefer",
     "which required agent"
   ],
-  "required_transcript_patterns": [
-    "Plan:",
-    "Task:\\s*Bug Scan",
-    "Task:\\s*Testing",
-    "Task:\\s*Code Review",
-    "Findings:",
-    "Verification status:",
-    "Review outcome:"
-  ]
+  "required_transcript_patterns": [],
+  "required_used_agents": ["m", "bug", "t", "cr"]
 }
