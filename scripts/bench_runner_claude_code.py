@@ -16,6 +16,16 @@ WORKDIR = pathlib.Path(os.environ["BENCH_WORKDIR"]).resolve()
 OUTPUT_DIR = pathlib.Path(os.environ["BENCH_OUTPUT_DIR"]).resolve()
 
 
+def task_path_for_output(task_file: pathlib.Path) -> str:
+    try:
+        return task_file.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return task_file.name
+
+
+TASK_PATH = task_path_for_output(TASK_FILE)
+
+
 EXTRA_AGENT_LABELS = {
     "a": "a",
     "architect": "a",
@@ -1529,6 +1539,7 @@ def main() -> int:
 
     result = {
         "task_id": task["id"],
+        "task_path": TASK_PATH,
         "status": status,
         "completed": completed,
         "verification_required": verification_required,

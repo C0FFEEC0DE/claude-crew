@@ -18,6 +18,7 @@ def select_ids(
     suite,
     changed_files,
     selection_mode="changed",
+    previous_summary=None,
     exclude_overlap_with_suite=None,
     priority_profile=None,
     max_tasks=None,
@@ -28,6 +29,7 @@ def select_ids(
         suite,
         changed_files,
         selection_mode,
+        previous_summary=previous_summary,
         exclude_overlap_with_suites=[exclude_overlap_with_suite] if exclude_overlap_with_suite else [],
     )
     selected = module.apply_priority_profile(selected, priority_profile)
@@ -230,6 +232,108 @@ def test_manual_all_returns_entire_golden_suite():
     assert reasons == ["manual_all"]
 
 
+def test_resume_selects_unresolved_tasks_from_previous_summary():
+    selector = load_selector_module()
+    previous_summary = {
+        "tasks": [
+            {"task_id": "bugfix-zero-division-lite", "status": "failed"},
+            {"task_id": "docs-quickstart-clarity-lite", "status": "not-run"},
+            {"task_id": "refactor-report-formatting-lite", "status": "passed"},
+        ]
+    }
+
+    selected_ids, reasons = select_ids(
+        selector,
+        "smoke",
+        [],
+        selection_mode="resume",
+        previous_summary=previous_summary,
+    )
+
+    assert reasons == ["resume_previous_unresolved"]
+    assert selected_ids == {
+        "bugfix-zero-division-lite",
+        "docs-quickstart-clarity-lite",
+    }
+
+
+def test_resume_unions_previous_unresolved_with_changed_files():
+    selector = load_selector_module()
+    previous_summary = {
+        "tasks": [
+            {"task_id": "bugfix-zero-division-lite", "status": "failed"},
+            {"task_id": "docs-quickstart-clarity-lite", "status": "passed"},
+            {"task_id": "refactor-report-formatting-lite", "status": "passed"},
+        ]
+    }
+
+    selected_ids, reasons = select_ids(
+        selector,
+        "smoke",
+        ["bench/fixtures/text-report/reporter.py"],
+        selection_mode="resume",
+        previous_summary=previous_summary,
+    )
+
+    assert "resume_previous_unresolved" in reasons
+    assert "fixture_change" in reasons
+    assert selected_ids == {
+        "bugfix-zero-division-lite",
+        "docs-quickstart-clarity-lite",
+        "refactor-report-formatting-lite",
+    }
+
+
+def test_resume_global_behavior_change_overrides_previous_summary():
+    selector = load_selector_module()
+    previous_summary = {
+        "tasks": [
+            {"task_id": "bugfix-zero-division-lite", "status": "failed"},
+            {"task_id": "docs-quickstart-clarity-lite", "status": "not-run"},
+        ]
+    }
+
+    selected_ids, reasons = select_ids(
+        selector,
+        "smoke",
+        [".github/workflows/behavior-benchmark.yml"],
+        selection_mode="resume",
+        previous_summary=previous_summary,
+    )
+
+    assert reasons == ["global_behavior_change"]
+    assert selected_ids == {
+        "bugfix-zero-division-lite",
+        "docs-quickstart-clarity-lite",
+        "refactor-report-formatting-lite",
+    }
+
+
+def test_resume_selects_unexecuted_tasks_from_previous_summary_lists():
+    selector = load_selector_module()
+    previous_summary = {
+        "unresolved_task_ids": ["docs-quickstart-clarity-lite"],
+        "unresolved_task_paths": ["bench/tasks/smoke/refactor-report-formatting-lite.json"],
+        "tasks": [
+            {"task_id": "bugfix-zero-division-lite", "status": "passed"},
+        ],
+    }
+
+    selected_ids, reasons = select_ids(
+        selector,
+        "smoke",
+        [],
+        selection_mode="resume",
+        previous_summary=previous_summary,
+    )
+
+    assert reasons == ["resume_previous_unresolved"]
+    assert selected_ids == {
+        "docs-quickstart-clarity-lite",
+        "refactor-report-formatting-lite",
+    }
+
+
 def test_full_pr_priority_profile_limits_global_change_to_six_tasks():
     selector = load_selector_module()
     selected_ids, reasons = select_ids(
@@ -381,4 +485,3 @@ def test_dedupe_tasks_removes_duplicates():
     result = selector.dedupe_tasks([task_a, task_b, task_a_dup])
     assert len(result) == 2
     assert {t["id"] for t in result} == {"task-a", "task-b"}
-

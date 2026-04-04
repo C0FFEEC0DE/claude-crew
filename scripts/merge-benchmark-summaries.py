@@ -29,6 +29,62 @@ def rate(num: int, den: int) -> float:
     return num / den
 
 
+def count_preferred(primary: list[str], secondary: list[str], fallback: int = 0) -> int:
+    if primary:
+        return len(primary)
+    if secondary:
+        return len(secondary)
+    return fallback
+
+
+def normalize_string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    normalized: list[str] = []
+    for item in value:
+        if isinstance(item, str):
+            cleaned = item.strip()
+            if cleaned:
+                normalized.append(cleaned)
+    return normalized
+
+
+def merge_string_lists(summary_payloads: list[dict], field_name: str) -> list[str]:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for payload in summary_payloads:
+        for value in normalize_string_list(payload.get(field_name)):
+            if value in seen:
+                continue
+            seen.add(value)
+            merged.append(value)
+    return merged
+
+
+def task_ids(tasks: list[dict]) -> list[str]:
+    return [str(task["task_id"]) for task in tasks if isinstance(task.get("task_id"), str)]
+
+
+def task_paths(tasks: list[dict]) -> list[str]:
+    paths: list[str] = []
+    for task in tasks:
+        path = task.get("task_path") or task.get("task_file") or task.get("path")
+        if isinstance(path, str) and path.strip():
+            paths.append(path.strip())
+    return paths
+
+
+def merge_unique(primary: list[str], secondary: list[str]) -> list[str]:
+    merged: list[str] = []
+    seen: set[str] = set()
+    for value in [*primary, *secondary]:
+        if value in seen:
+            continue
+        seen.add(value)
+        merged.append(value)
+    return merged
+
+
 def merge_summaries(summary_payloads: list[dict]) -> dict:
     if not summary_payloads:
         raise ValueError("at least one summary is required")
@@ -42,7 +98,17 @@ def merge_summaries(summary_payloads: list[dict]) -> dict:
         executed_tasks += int(payload["totals"]["executed_tasks"])
         tasks.extend(payload.get("tasks", []))
 
+    selected_task_ids = merge_string_lists(summary_payloads, "selected_task_ids")
+    selected_task_paths = merge_string_lists(summary_payloads, "selected_task_paths")
+    executed_task_ids = merge_string_lists(summary_payloads, "executed_task_ids")
+    executed_task_paths = merge_string_lists(summary_payloads, "executed_task_paths")
+    unexecuted_task_ids = merge_string_lists(summary_payloads, "unexecuted_task_ids")
+    unexecuted_task_paths = merge_string_lists(summary_payloads, "unexecuted_task_paths")
+    unresolved_task_ids = merge_string_lists(summary_payloads, "unresolved_task_ids")
+    unresolved_task_paths = merge_string_lists(summary_payloads, "unresolved_task_paths")
+
     total = len(tasks)
+    failed_tasks = [task for task in tasks if task.get("status") != "passed"]
     passed = len([task for task in tasks if task["status"] == "passed"])
     clean_passed = len(
         [
@@ -67,6 +133,28 @@ def merge_summaries(summary_payloads: list[dict]) -> dict:
     summary_repaired = len([task for task in tasks if (task.get("summary_repaired_by") or "none") != "none"])
     policy_violations = sum(int(task.get("policy_violations", 0)) for task in tasks)
     tool_failures = sum(int(task.get("tool_failures", 0)) for task in tasks)
+    selected_total = count_preferred(selected_task_ids, selected_task_paths, configured_tasks)
+    unexecuted_total = count_preferred(
+        unexecuted_task_ids,
+        unexecuted_task_paths,
+        max(selected_total - executed_tasks, 0),
+    )
+    unresolved_total = (
+        count_preferred(
+            unresolved_task_ids,
+            unresolved_task_paths,
+            len([task for task in tasks if task.get("status") != "passed"]) + unexecuted_total,
+        )
+    )
+
+    if not executed_task_ids:
+        executed_task_ids = task_ids(tasks)
+    if not executed_task_paths:
+        executed_task_paths = task_paths(tasks)
+    if not unresolved_task_ids:
+        unresolved_task_ids = merge_unique(task_ids(failed_tasks), unexecuted_task_ids)
+    if not unresolved_task_paths:
+        unresolved_task_paths = merge_unique(task_paths(failed_tasks), unexecuted_task_paths)
 
     return {
         "schema_version": first["schema_version"],
@@ -76,9 +164,20 @@ def merge_summaries(summary_payloads: list[dict]) -> dict:
         "source_ref": first["source_ref"],
         "source_sha": first["source_sha"],
         "task_glob": first["task_glob"],
+        "selected_task_ids": selected_task_ids,
+        "selected_task_paths": selected_task_paths,
+        "executed_task_ids": executed_task_ids,
+        "executed_task_paths": executed_task_paths,
+        "unexecuted_task_ids": unexecuted_task_ids,
+        "unexecuted_task_paths": unexecuted_task_paths,
+        "unresolved_task_ids": unresolved_task_ids,
+        "unresolved_task_paths": unresolved_task_paths,
         "totals": {
             "configured_tasks": configured_tasks,
+            "selected_tasks": selected_total,
             "executed_tasks": executed_tasks,
+            "unexecuted_tasks": unexecuted_total,
+            "unresolved_tasks": unresolved_total,
             "tasks": executed_tasks,
             "passed": passed,
             "clean_passed": clean_passed,
@@ -108,6 +207,8 @@ def merge_summaries(summary_payloads: list[dict]) -> dict:
             "recovered_task_rate": rate(recovered_tasks, total),
             "summary_repair_rate": rate(summary_repaired, total),
             "execution_coverage_rate": rate(executed_tasks, configured_tasks),
+            "unexecuted_rate": rate(unexecuted_total, selected_total),
+            "unresolved_rate": rate(unresolved_total, selected_total),
         },
         "median_runtime_seconds": median([float(task["runtime_seconds"]) for task in tasks]),
         "tasks": tasks,

@@ -18,6 +18,7 @@ on:
       - 'scripts/bench_runner_claude_code.py'
       - 'scripts/build-benchmark-matrix.py'
       - 'scripts/collect-benchmark-changes.sh'
+      - 'scripts/download-benchmark-summary.py'
       - 'scripts/merge-benchmark-summaries.py'
       - 'scripts/render-benchmark-summary.sh'
       - 'scripts/run-benchmark.sh'
@@ -29,9 +30,14 @@ on:
   workflow_dispatch:
     inputs:
       selection_mode:
-        description: "Use all smoke tasks or only tasks impacted by recent changes"
+        description: "Use all smoke tasks, only changed tasks, or resume unresolved tasks from a previous run"
         required: false
         default: "all"
+        type: string
+      resume_run_id:
+        description: "Previous smoke workflow run id to resume when selection_mode=resume"
+        required: false
+        default: ""
         type: string
       max_turns:
         description: "Maximum Claude Code turns per task"
@@ -70,7 +76,11 @@ jobs:
       task_label: ${{ steps.select.outputs.task_label }}
       task_ids: ${{ steps.select.outputs.task_ids }}
       selection_reason: ${{ steps.select.outputs.selection_reason }}
+      resume_run_id: ${{ steps.select.outputs.resume_run_id }}
       matrix_json: ${{ steps.matrix.outputs.matrix_json }}
+    permissions:
+      actions: read
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -94,15 +104,32 @@ jobs:
         shell: bash
         env:
           INPUT_SELECTION_MODE: ${{ inputs.selection_mode }}
+          INPUT_RESUME_RUN_ID: ${{ inputs.resume_run_id }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           selection_mode="changed"
+          resume_args=()
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             selection_mode="${INPUT_SELECTION_MODE:-all}"
+            if [ "$selection_mode" = "resume" ]; then
+              if [ -z "${INPUT_RESUME_RUN_ID:-}" ]; then
+                echo "resume_run_id input is required when selection_mode=resume" >&2
+                exit 1
+              fi
+              python3 scripts/download-benchmark-summary.py \
+                --repo "${GITHUB_REPOSITORY}" \
+                --run-id "${INPUT_RESUME_RUN_ID}" \
+                --artifact-name "behavior-benchmark-smoke-${INPUT_RESUME_RUN_ID}" \
+                --output .bench-previous-summary.json
+              resume_args+=(--previous-summary-file .bench-previous-summary.json)
+              echo "resume_run_id=${INPUT_RESUME_RUN_ID}" >> "$GITHUB_OUTPUT"
+            fi
           fi
           python3 scripts/select-benchmark-tasks.py \
             --suite smoke \
             --selection-mode "$selection_mode" \
-            --changed-files-file .bench-changed-files.txt
+            --changed-files-file .bench-changed-files.txt \
+            "${resume_args[@]}"
 
       - name: Render precheck summary
         shell: bash
@@ -112,6 +139,7 @@ jobs:
             echo ""
             echo "- Event: \`${{ github.event_name }}\`"
             echo "- Selection reason: \`${{ steps.select.outputs.selection_reason }}\`"
+            echo "- Resume source run id: \`${{ steps.select.outputs.resume_run_id || 'n/a' }}\`"
             echo "- Selected tasks: \`${{ steps.select.outputs.task_count }}\`"
             echo "- Task ids: \`${{ steps.select.outputs.task_ids || 'none' }}\`"
             echo "- Will run smoke suite: \`${{ steps.select.outputs.should_run }}\`"
@@ -168,6 +196,7 @@ jobs:
           INPUT_MAX_OUTPUT_TOKENS: ${{ inputs.max_output_tokens }}
           INPUT_MAX_RECOVERED_TASKS: ${{ inputs.max_recovered_tasks }}
           INPUT_MAX_SUMMARY_REPAIRED_TASKS: ${{ inputs.max_summary_repaired_tasks }}
+          INPUT_SELECTION_MODE: ${{ inputs.selection_mode }}
           VAR_BENCHMARK_MODEL: ${{ vars.BEHAVIOR_BENCHMARK_MODEL }}
           VAR_OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL }}
           VAR_BENCHMARK_TIMEOUT_SECONDS: ${{ vars.BEHAVIOR_BENCHMARK_TIMEOUT_SECONDS }}
@@ -181,6 +210,10 @@ jobs:
           max_output_tokens="${INPUT_MAX_OUTPUT_TOKENS:-${VAR_BENCHMARK_MAX_OUTPUT_TOKENS:-768}}"
           max_recovered_tasks="${INPUT_MAX_RECOVERED_TASKS:-${VAR_BENCHMARK_MAX_RECOVERED_TASKS:-}}"
           max_summary_repaired_tasks="${INPUT_MAX_SUMMARY_REPAIRED_TASKS:-${VAR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS:-}}"
+          fail_fast="1"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${INPUT_SELECTION_MODE:-all}" = "resume" ]; then
+            fail_fast="0"
+          fi
 
           if [ -z "$model" ]; then
             echo "OLLAMA_MODEL GitHub Actions variable is required" >&2
@@ -194,6 +227,7 @@ jobs:
             echo "max_output_tokens=$max_output_tokens"
             echo "max_recovered_tasks=$max_recovered_tasks"
             echo "max_summary_repaired_tasks=$max_summary_repaired_tasks"
+            echo "fail_fast=$fail_fast"
           } >> "$GITHUB_OUTPUT"
 
       - name: Restore dependency caches
@@ -222,7 +256,7 @@ jobs:
           BENCH_RUNNER_CMD: python3 "$GITHUB_WORKSPACE/scripts/bench_runner_claude_code.py"
           BENCH_SOURCE_REF: ${{ github.ref }}
           MAX_TURNS: ${{ steps.cfg.outputs.max_turns }}
-          BENCH_FAIL_FAST: "1"
+          BENCH_FAIL_FAST: ${{ steps.cfg.outputs.fail_fast }}
           CLAUDE_TIMEOUT_SECONDS: ${{ steps.cfg.outputs.timeout_seconds }}
           CLAUDE_CODE_MAX_OUTPUT_TOKENS: ${{ steps.cfg.outputs.max_output_tokens }}
           OLLAMA_MODEL: ${{ steps.cfg.outputs.model }}
@@ -256,6 +290,7 @@ jobs:
               echo "## Behavior Benchmark Smoke"
               echo ""
               echo "- Selection reason: \`${{ needs.precheck.outputs.selection_reason }}\`"
+              echo "- Resume source run id: \`${{ needs.precheck.outputs.resume_run_id || 'n/a' }}\`"
               echo "- Shard index: \`${{ matrix.shard_index }}\`"
               echo "- Task count: \`${{ matrix.task_count }}\`"
               echo "- Model: \`${{ steps.cfg.outputs.model }}\`"
@@ -365,6 +400,7 @@ jobs:
             echo "## Behavior Benchmark Smoke"
             echo ""
             echo "- Selection reason: \`${{ needs.precheck.outputs.selection_reason }}\`"
+            echo "- Resume source run id: \`${{ needs.precheck.outputs.resume_run_id || 'n/a' }}\`"
             echo "- Task ids: \`${{ needs.precheck.outputs.task_ids }}\`"
             echo "- Max recovered tasks allowed: \`${max_recovered_display}\`"
             echo "- Max summary-repaired tasks allowed: \`${max_summary_repaired_display}\`"

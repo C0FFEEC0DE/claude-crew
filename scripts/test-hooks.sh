@@ -9,6 +9,7 @@ FAILURES=0
 TOTAL=0
 SCENARIOS=0
 
+# shellcheck disable=SC2329
 cleanup() {
     # shellcheck disable=SC2317
     rm -rf "$TMP_ROOT"

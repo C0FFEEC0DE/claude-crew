@@ -36,6 +36,7 @@ GLOBAL_BEHAVIOR_PREFIXES = (
     "scripts/bench_runner_claude_code.py",
     "scripts/build-benchmark-matrix.py",
     "scripts/collect-benchmark-changes.sh",
+    "scripts/download-benchmark-summary.py",
     "scripts/merge-benchmark-summaries.py",
     "scripts/render-benchmark-summary.sh",
     "scripts/run-benchmark.sh",
@@ -104,7 +105,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--suite", required=True, choices=sorted(SUITE_DEFAULTS))
     parser.add_argument("--changed-files-file")
-    parser.add_argument("--selection-mode", choices=("all", "changed"), default="changed")
+    parser.add_argument("--previous-summary-file")
+    parser.add_argument("--selection-mode", choices=("all", "changed", "resume"), default="changed")
     parser.add_argument("--exclude-overlap-with-suite", action="append", choices=sorted(SUITE_DEFAULTS))
     parser.add_argument("--priority-profile", choices=sorted(PRIORITY_PROFILES))
     parser.add_argument("--max-tasks", type=int)
@@ -125,6 +127,27 @@ def load_changed_files(path: str | None) -> list[str]:
         return []
     raw = pathlib.Path(path).read_text(encoding="utf-8") if pathlib.Path(path).exists() else ""
     return [line.strip() for line in raw.splitlines() if line.strip()]
+
+
+def load_previous_summary(path: str | None) -> dict | None:
+    if not path:
+        return None
+    summary_path = pathlib.Path(path)
+    if not summary_path.exists():
+        raise FileNotFoundError(f"Previous summary file does not exist: {path}")
+    return json.loads(summary_path.read_text(encoding="utf-8"))
+
+
+def normalize_string_list(value: object) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    normalized: list[str] = []
+    for item in value:
+        if isinstance(item, str):
+            cleaned = item.strip()
+            if cleaned:
+                normalized.append(cleaned)
+    return normalized
 
 
 def impacted_agents(changed_files: Iterable[str]) -> set[str]:
@@ -183,11 +206,63 @@ def dedupe_tasks(tasks: list[dict]) -> list[dict]:
     return deduped
 
 
+def unresolved_previous_tasks(previous_summary: dict | None, suite_tasks: list[dict]) -> list[dict]:
+    if not previous_summary:
+        return []
+
+    tasks_by_id = {str(task["id"]): task for task in suite_tasks}
+    tasks_by_path = {str(task["_path"]): task for task in suite_tasks}
+    selected: list[dict] = []
+
+    unresolved_ids = normalize_string_list(previous_summary.get("unresolved_task_ids"))
+    unresolved_paths = normalize_string_list(previous_summary.get("unresolved_task_paths"))
+    if not unresolved_ids and not unresolved_paths:
+        unresolved_ids = [
+            str(task.get("task_id")).strip()
+            for task in previous_summary.get("tasks", [])
+            if str(task.get("status")) != "passed" and isinstance(task.get("task_id"), str) and str(task.get("task_id")).strip()
+        ]
+        unresolved_paths = [
+            path.strip()
+            for path in (
+                task.get("task_path") or task.get("_path")
+                for task in previous_summary.get("tasks", [])
+                if str(task.get("status")) != "passed"
+            )
+            if isinstance(path, str) and path.strip()
+        ]
+
+    for task_id in unresolved_ids:
+        task = tasks_by_id.get(task_id)
+        if task:
+            selected.append(task)
+
+    for task_path in unresolved_paths:
+        task = tasks_by_path.get(task_path)
+        if task:
+            selected.append(task)
+
+    for task in previous_summary.get("tasks", []):
+        if str(task.get("status")) == "passed":
+            continue
+
+        task_id = task.get("task_id")
+        task_path = task.get("task_path") or task.get("_path")
+        if isinstance(task_id, str) and task_id in tasks_by_id:
+            selected.append(tasks_by_id[task_id])
+            continue
+        if isinstance(task_path, str) and task_path in tasks_by_path:
+            selected.append(tasks_by_path[task_path])
+
+    return dedupe_tasks(selected)
+
+
 def select_tasks(
     tasks: list[dict],
     suite: str,
     changed_files: list[str],
     selection_mode: str,
+    previous_summary: dict | None = None,
     *,
     exclude_overlap_with_suites: list[str] | None = None,
 ) -> tuple[list[dict], list[str]]:
@@ -209,6 +284,13 @@ def select_tasks(
             reasons.append("global_behavior_change")
             selected = suite_tasks
         else:
+            if selection_mode == "resume":
+                if previous_summary is None:
+                    raise ValueError("previous summary is required when selection_mode=resume")
+                resumed_tasks = unresolved_previous_tasks(previous_summary, suite_tasks)
+                if resumed_tasks:
+                    reasons.append("resume_previous_unresolved")
+                    selected.extend(resumed_tasks)
             for task in suite_tasks:
                 task_path = str(task["_path"])
                 related_agents = set(task.get("related_agents", []))
@@ -324,11 +406,13 @@ def main() -> None:
     args = parse_args()
     tasks = iter_tasks()
     changed_files = load_changed_files(args.changed_files_file)
+    previous_summary = load_previous_summary(args.previous_summary_file)
     selected, reasons = select_tasks(
         tasks,
         args.suite,
         changed_files,
         args.selection_mode,
+        previous_summary=previous_summary,
         exclude_overlap_with_suites=args.exclude_overlap_with_suite or [],
     )
     selected = apply_priority_profile(selected, args.priority_profile)

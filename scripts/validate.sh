@@ -379,6 +379,7 @@ fi
 
 if grep -q 'default: "180"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q 'scripts/select-benchmark-tasks.py' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
+    && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
     && grep -q "'install.sh'" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
@@ -395,6 +396,7 @@ if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/behavior-
     && grep -q -- '--exclude-overlap-with-suite smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q -- '--exclude-overlap-with-suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q -- '--priority-profile pr_full --max-tasks 6' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
+    && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
     && grep -q "'install.sh'" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
@@ -410,6 +412,7 @@ fi
 
 if grep -q -- '--suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'pull_request:' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
+    && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q "'install.sh'" "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
@@ -423,6 +426,7 @@ fi
 
 if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q -- '--suite subagents_golden' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
+    && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
     && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \

@@ -14,6 +14,26 @@ PROJECT_CLAUDE_DIR="${BENCH_CLAUDE_PROFILE_DIR:-}"
 configured_task_count=0
 executed_task_count=0
 
+relative_task_path() {
+    local path="$1"
+    case "$path" in
+        "$REPO_ROOT"/*)
+            printf '%s\n' "${path#"$REPO_ROOT"/}"
+            ;;
+        *)
+            printf '%s\n' "$path"
+            ;;
+    esac
+}
+
+json_array_from_items() {
+    if [ "$#" -eq 0 ]; then
+        printf '[]'
+        return
+    fi
+    printf '%s\n' "$@" | jq -R . | jq -s .
+}
+
 usage() {
     echo "Usage: $0 --output-dir DIR [--task-glob GLOB | --task-list-file FILE] [--task-label LABEL] [--mode mock|command] [--ref REF]" >&2
     exit 1
@@ -132,13 +152,23 @@ if [ -z "$TASK_LABEL" ]; then
 fi
 
 result_files=()
+selected_task_paths=()
+selected_task_ids=()
+executed_task_paths=()
+executed_task_ids=()
+failed_task_paths=()
+failed_task_ids=()
 for task_file in "${task_files[@]}"; do
     task_id="$(jq -r '.id' "$task_file")"
+    task_path_rel="$(relative_task_path "$task_file")"
     category="$(jq -r '.category' "$task_file")"
     fixture_name="$(jq -r '.fixture' "$task_file")"
     fixture_dir="$REPO_ROOT/bench/fixtures/$fixture_name"
     task_output_dir="$OUTPUT_DIR/tasks/$task_id"
     task_workdir="$task_output_dir/workdir"
+
+    selected_task_paths+=("$task_path_rel")
+    selected_task_ids+=("$task_id")
 
     if [ ! -d "$fixture_dir" ]; then
         echo "Missing benchmark fixture directory: $fixture_dir" >&2
@@ -193,6 +223,15 @@ for task_file in "${task_files[@]}"; do
 
     result_files+=("$task_output_dir/result.json")
     executed_task_count=$((executed_task_count + 1))
+    executed_task_paths+=("$task_path_rel")
+    executed_task_ids+=("$task_id")
+
+    task_failed=0
+    if jq -e '.status != "passed"' "$task_output_dir/result.json" >/dev/null; then
+        failed_task_paths+=("$task_path_rel")
+        failed_task_ids+=("$task_id")
+        task_failed=1
+    fi
 
     if [ -f "$task_output_dir/task-summary.txt" ]; then
         cat "$task_output_dir/task-summary.txt"
@@ -206,13 +245,30 @@ for task_file in "${task_files[@]}"; do
     echo "Structured result:"
     cat "$task_output_dir/result.json"
 
-    if [ "$FAIL_FAST" = "1" ] || [ "$FAIL_FAST" = "true" ]; then
-        if jq -e '.status != "passed"' "$task_output_dir/result.json" >/dev/null; then
-            echo "Fail-fast enabled; stopping benchmark after first failing task: $task_id"
-            break
-        fi
+    if [ "$task_failed" = "1" ] && { [ "$FAIL_FAST" = "1" ] || [ "$FAIL_FAST" = "true" ]; }; then
+        echo "Fail-fast enabled; stopping benchmark after first failing task: $task_id"
+        break
     fi
 done
+
+unexecuted_task_paths=()
+unexecuted_task_ids=()
+for ((index=executed_task_count; index<configured_task_count; index++)); do
+    unexecuted_task_paths+=("${selected_task_paths[$index]}")
+    unexecuted_task_ids+=("${selected_task_ids[$index]}")
+done
+
+unresolved_task_paths=("${failed_task_paths[@]}" "${unexecuted_task_paths[@]}")
+unresolved_task_ids=("${failed_task_ids[@]}" "${unexecuted_task_ids[@]}")
+
+selected_task_paths_json="$(json_array_from_items "${selected_task_paths[@]}")"
+selected_task_ids_json="$(json_array_from_items "${selected_task_ids[@]}")"
+executed_task_paths_json="$(json_array_from_items "${executed_task_paths[@]}")"
+executed_task_ids_json="$(json_array_from_items "${executed_task_ids[@]}")"
+unexecuted_task_paths_json="$(json_array_from_items "${unexecuted_task_paths[@]}")"
+unexecuted_task_ids_json="$(json_array_from_items "${unexecuted_task_ids[@]}")"
+unresolved_task_paths_json="$(json_array_from_items "${unresolved_task_paths[@]}")"
+unresolved_task_ids_json="$(json_array_from_items "${unresolved_task_ids[@]}")"
 
 source_sha="$(git rev-parse --short HEAD)"
 generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
@@ -227,6 +283,14 @@ jq -s \
     --arg task_glob "$TASK_LABEL" \
     --argjson configured_tasks "$configured_task_count" \
     --argjson executed_tasks "$executed_task_count" \
+    --argjson selected_task_paths "$selected_task_paths_json" \
+    --argjson selected_task_ids "$selected_task_ids_json" \
+    --argjson executed_task_paths "$executed_task_paths_json" \
+    --argjson executed_task_ids "$executed_task_ids_json" \
+    --argjson unexecuted_task_paths "$unexecuted_task_paths_json" \
+    --argjson unexecuted_task_ids "$unexecuted_task_ids_json" \
+    --argjson unresolved_task_paths "$unresolved_task_paths_json" \
+    --argjson unresolved_task_ids "$unresolved_task_ids_json" \
     '
     def rate($num; $den):
         if $den == 0 then 0 else ($num / $den) end;
@@ -246,10 +310,21 @@ jq -s \
         source_ref: $source_ref,
         source_sha: $source_sha,
         task_glob: $task_glob,
+        selected_task_paths: $selected_task_paths,
+        selected_task_ids: $selected_task_ids,
+        executed_task_paths: $executed_task_paths,
+        executed_task_ids: $executed_task_ids,
+        unexecuted_task_paths: $unexecuted_task_paths,
+        unexecuted_task_ids: $unexecuted_task_ids,
+        unresolved_task_paths: $unresolved_task_paths,
+        unresolved_task_ids: $unresolved_task_ids,
         totals: {
             configured_tasks: $configured_tasks,
+            selected_tasks: ($selected_task_paths | length),
             executed_tasks: $executed_tasks,
             tasks: $executed_tasks,
+            unexecuted_tasks: ($unexecuted_task_paths | length),
+            unresolved_tasks: ($unresolved_task_paths | length),
             passed: ($tasks | map(select(.status == "passed")) | length),
             clean_passed: ($tasks | map(select(.status == "passed" and (.recovered_nonzero_exit != true) and ((.summary_repaired_by // "none") == "none"))) | length),
             completed: ($tasks | map(select(.completed == true)) | length),
@@ -277,7 +352,9 @@ jq -s \
             docs_compliance_rate: rate(($tasks | map(select((.docs_required == false) or (.docs_updated == true))) | length); $total),
             recovered_task_rate: rate(($tasks | map(select(.recovered_nonzero_exit == true)) | length); $total),
             summary_repair_rate: rate(($tasks | map(select((.summary_repaired_by // "none") != "none")) | length); $total),
-            execution_coverage_rate: rate($executed_tasks; $configured_tasks)
+            execution_coverage_rate: rate($executed_tasks; $configured_tasks),
+            unexecuted_rate: rate(($unexecuted_task_paths | length); ($selected_task_paths | length)),
+            unresolved_rate: rate(($unresolved_task_paths | length); ($selected_task_paths | length))
         },
         median_runtime_seconds: median($tasks | map(.runtime_seconds)),
         tasks: $tasks
@@ -294,6 +371,8 @@ jq -r '
     "- configured tasks: \(.totals.configured_tasks)",
     "- executed tasks: \(.totals.executed_tasks)",
     "- execution coverage: \(.rates.execution_coverage_rate)",
+    "- unexecuted tasks: \(.totals.unexecuted_tasks)",
+    "- unresolved tasks: \(.totals.unresolved_tasks)",
     "- tasks: \(.totals.tasks)",
     "- passed: \(.totals.passed)",
     "- clean_passed: \(.totals.clean_passed)",

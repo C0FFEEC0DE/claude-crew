@@ -19,6 +19,7 @@ def make_task(
     completed=True,
     recovered=False,
     summary_repaired_by="none",
+    task_path=None,
     verification_required=False,
     tests_run=False,
     tests_passed=False,
@@ -34,6 +35,7 @@ def make_task(
         "task_id": task_id,
         "status": status,
         "completed": completed,
+        "task_path": task_path,
         "verification_required": verification_required,
         "tests_run": tests_run,
         "tests_passed": tests_passed,
@@ -52,7 +54,7 @@ def make_task(
 
 
 def make_summary(tasks, configured=1, executed=1):
-    return {
+    summary = {
         "schema_version": "1.0",
         "mode": "cmd",
         "runner": "r",
@@ -63,6 +65,7 @@ def make_summary(tasks, configured=1, executed=1):
         "totals": {"configured_tasks": configured, "executed_tasks": executed},
         "tasks": tasks,
     }
+    return summary
 
 
 def test_median_odd_count():
@@ -161,6 +164,80 @@ def test_merge_summaries_tool_failures_summed():
     ]
     merged = module.merge_summaries(payloads)
     assert merged["totals"]["tool_failures"] == 5
+
+
+def test_merge_summaries_merges_resume_lists_and_totals():
+    module = load_merge_module()
+    payloads = [
+        {
+            **make_summary(
+                [make_task("task-a", task_path="bench/tasks/smoke/task-a.json")],
+                configured=2,
+                executed=1,
+            ),
+            "selected_task_ids": ["task-a", "task-b"],
+            "selected_task_paths": ["bench/tasks/smoke/task-a.json", "bench/tasks/smoke/task-b.json"],
+            "executed_task_ids": ["task-a"],
+            "executed_task_paths": ["bench/tasks/smoke/task-a.json"],
+            "unexecuted_task_ids": ["task-b"],
+            "unexecuted_task_paths": ["bench/tasks/smoke/task-b.json"],
+            "unresolved_task_ids": ["task-b"],
+            "unresolved_task_paths": ["bench/tasks/smoke/task-b.json"],
+        },
+        {
+            **make_summary(
+                [make_task("task-c", status="failed", task_path="bench/tasks/smoke/task-c.json")],
+                configured=1,
+                executed=1,
+            ),
+            "selected_task_ids": ["task-c"],
+            "selected_task_paths": ["bench/tasks/smoke/task-c.json"],
+            "executed_task_ids": ["task-c"],
+            "executed_task_paths": ["bench/tasks/smoke/task-c.json"],
+            "unexecuted_task_ids": [],
+            "unexecuted_task_paths": [],
+            "unresolved_task_ids": ["task-c"],
+            "unresolved_task_paths": ["bench/tasks/smoke/task-c.json"],
+        },
+    ]
+
+    merged = module.merge_summaries(payloads)
+
+    assert merged["selected_task_ids"] == ["task-a", "task-b", "task-c"]
+    assert merged["selected_task_paths"] == [
+        "bench/tasks/smoke/task-a.json",
+        "bench/tasks/smoke/task-b.json",
+        "bench/tasks/smoke/task-c.json",
+    ]
+    assert merged["executed_task_ids"] == ["task-a", "task-c"]
+    assert merged["unexecuted_task_ids"] == ["task-b"]
+    assert merged["unresolved_task_ids"] == ["task-b", "task-c"]
+    assert merged["totals"]["selected_tasks"] == 3
+    assert merged["totals"]["executed_tasks"] == 2
+    assert merged["totals"]["unexecuted_tasks"] == 1
+    assert merged["totals"]["unresolved_tasks"] == 2
+
+
+def test_merge_summaries_derives_resume_totals_without_explicit_lists():
+    module = load_merge_module()
+    payloads = [
+        make_summary(
+            [
+                make_task("task-a", status="passed"),
+                make_task("task-b", status="failed"),
+            ],
+            configured=3,
+            executed=2,
+        )
+    ]
+
+    merged = module.merge_summaries(payloads)
+
+    assert merged["totals"]["selected_tasks"] == 3
+    assert merged["totals"]["executed_tasks"] == 2
+    assert merged["totals"]["unexecuted_tasks"] == 1
+    assert merged["totals"]["unresolved_tasks"] == 2
+    assert merged["unresolved_task_ids"] == ["task-b"]
 
 
 def test_rate_function():
