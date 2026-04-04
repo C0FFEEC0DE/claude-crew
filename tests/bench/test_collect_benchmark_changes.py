@@ -111,5 +111,5 @@ def test_workflow_dispatch_on_main_collects_recent_history(tmp_path):
         cwd=worktree,
     )
 
-    # Files are sorted with sort -u, so README.md comes before bench/fixtures/node-app/README.md.
-    assert output_path.read_text(encoding="utf-8").splitlines() == ["README.md", "bench/fixtures/node-app/README.md"]
+    # Files are collected and sorted with sort -u; order is locale-dependent.
+    assert set(output_path.read_text(encoding="utf-8").splitlines()) == {"README.md", "bench/fixtures/node-app/README.md"}

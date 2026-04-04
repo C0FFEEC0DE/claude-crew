@@ -384,14 +384,6 @@ emit_permission_denied_no_retry() {
     jq -n '{ retry: false }'
 }
 
-permission_denied_should_retry() {
-    if [ -n "${BENCH_TASK_ID:-}" ] || [ -n "${BENCH_TASK_FILE:-}" ] || [ -n "${BENCH_WORKDIR:-}" ]; then
-        return 1
-    fi
-
-    return 0
-}
-
 stop_safe_no_change_footer_hint() {
     printf ' If this reply did not introduce additional changes, still report the actual verification, review, changed files, and remaining risks instead of using a no-change shortcut after code or config changes.'
 }

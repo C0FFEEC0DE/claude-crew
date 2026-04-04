@@ -323,3 +323,62 @@ def test_manager_bugbuster_full_task_requires_linear_handoffs():
     assert task["required_used_agents"] == ["m", "bug", "t", "cr"]
     assert "exact order: @bug for the fix, then directly to @t" in task["prompt"]
     assert any("directly from @bug to @t to @cr" in criterion for criterion in task["success_criteria"])
+
+
+def test_impacted_agents_returns_alias_for_agent_file():
+    selector = load_selector_module()
+    result = selector.impacted_agents(["claudecfg/agents/bug.md"])
+    assert "bug" in result
+
+
+def test_impacted_agents_returns_alias_for_skill_file():
+    selector = load_selector_module()
+    result = selector.impacted_agents(["claudecfg/skills/review.md"])
+    assert "cr" in result
+
+
+def test_impacted_agents_handles_multiple_changed_files():
+    selector = load_selector_module()
+    result = selector.impacted_agents([
+        "claudecfg/agents/docwriter.md",
+        "claudecfg/agents/architect.md",
+    ])
+    assert "doc" in result
+    assert "a" in result
+
+
+def test_impacted_agents_ignores_unrelated_files():
+    selector = load_selector_module()
+    result = selector.impacted_agents(["README.md", ".github/workflows/ci.yml"])
+    assert result == set()
+
+
+def test_changed_task_paths_filters_task_paths():
+    selector = load_selector_module()
+    result = selector.changed_task_paths([
+        "README.md",
+        "bench/tasks/smoke/test-task.json",
+        "scripts/helper.sh",
+        "bench/tasks/full/feature-x.json",
+    ])
+    assert result == {
+        "bench/tasks/smoke/test-task.json",
+        "bench/tasks/full/feature-x.json",
+    }
+
+
+def test_changed_task_paths_empty_input():
+    selector = load_selector_module()
+    assert selector.changed_task_paths([]) == set()
+
+
+def test_dedupe_tasks_removes_duplicates():
+    selector = load_selector_module()
+    # dedupe_tasks relies on _path being set on each task dict
+    task_a = {"id": "task-a", "_path": "bench/tasks/smoke/a.json"}
+    task_b = {"id": "task-b", "_path": "bench/tasks/smoke/b.json"}
+    task_a_dup = {"id": "task-a", "_path": "bench/tasks/smoke/a.json"}
+    result = selector.dedupe_tasks([task_a, task_b, task_a_dup])
+    assert len(result) == 2
+    assert {t["id"] for t in result} == {"task-a", "task-b"}
+

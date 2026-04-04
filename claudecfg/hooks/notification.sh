@@ -22,6 +22,19 @@ payload="$(jq -cn \
         context: $context
     }')"
 
+# Rotate notification.jsonl if it exceeds 1 MB to prevent unbounded growth.
+NOTIFICATION_LOG="${LOG_ROOT}/notification.jsonl"
+MAX_SIZE=1048576
+
+if [ -f "$NOTIFICATION_LOG" ]; then
+    size="$(stat -c%s "$NOTIFICATION_LOG" 2>/dev/null || echo 0)"
+    if [ "$size" -ge "$MAX_SIZE" ]; then
+        rm -f "${NOTIFICATION_LOG}.old"
+        mv "$NOTIFICATION_LOG" "${NOTIFICATION_LOG}.old"
+        touch "$NOTIFICATION_LOG"
+    fi
+fi
+
 append_jsonl "notification.jsonl" "$payload"
 
 title="$(json_get '.title')"

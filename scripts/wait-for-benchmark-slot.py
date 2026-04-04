@@ -19,6 +19,33 @@ BEHAVIOR_WORKFLOW_NAMES = {
 ACTIVE_STATUSES = {"queued", "in_progress", "waiting", "pending", "requested"}
 
 
+RATE_LIMIT_BODY_MARKERS = frozenset(["rate_limit_exceeded", "rate limit exceeded", "rate limit"])
+
+def is_github_rate_limit(exc: urllib.error.HTTPError) -> bool:
+    """Return True if this HTTP 403 is a GitHub API rate-limit response."""
+    if exc.code != 403:
+        return False
+    remaining = exc.headers.get("X-RateLimit-Remaining", "")
+    if remaining == "0":
+        return True
+    body = exc.read().decode("utf-8", errors="replace")
+    exc._body_cache = body  # type: ignore[attr-defined]
+    return any(marker in body.lower() for marker in RATE_LIMIT_BODY_MARKERS)
+
+
+def handle_rate_limit(exc: urllib.error.HTTPError) -> int | None:
+    """Sleep for the Retry-After period on a rate-limit hit; return None to retry."""
+    retry_after = exc.headers.get("Retry-After")
+    wait_seconds = int(retry_after) if retry_after and retry_after.isdigit() else 60
+    print(
+        f"GitHub API rate limit hit (HTTP 403). "
+        f"Retrying after {wait_seconds}s (Retry-After header, default 60).",
+        file=sys.stderr,
+    )
+    time.sleep(wait_seconds)
+    return None  # signal caller to continue/retry
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--current-run-id", type=int, required=True)
@@ -98,6 +125,11 @@ def main() -> int:
                 head_sha=args.head_sha,
             )
         except urllib.error.HTTPError as exc:
+            if is_github_rate_limit(exc):
+                result = handle_rate_limit(exc)
+                if result is not None:
+                    return result
+                continue  # retry after sleeping
             print(f"GitHub API request failed with HTTP {exc.code}", file=sys.stderr)
             return 1
         except urllib.error.URLError as exc:

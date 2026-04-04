@@ -46,11 +46,13 @@ jobs:
       - name: Collect changed files
         shell: bash
         env:
+          BASE_REF: ${{ github.base_ref }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           bash scripts/collect-benchmark-changes.sh \
             --event "${{ github.event_name }}" \
             --output .bench-changed-files.txt \
+            --base-ref "${BASE_REF:-main}" \
             --ref-name "${REF_NAME:-}"
 
       - name: Select golden subagent tasks
