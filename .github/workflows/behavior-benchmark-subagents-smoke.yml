@@ -5,6 +5,8 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/behavior-benchmark.yml'
+      - '.github/workflows/behavior-benchmark-full.yml'
       - '.github/workflows/behavior-benchmark-subagents-smoke.yml'
       - '.github/workflows/benchmark-nightly.yml'
       - 'bench/**'
@@ -19,6 +21,8 @@ on:
       - 'scripts/select-benchmark-tasks.py'
       - 'scripts/wait-for-benchmark-slot.py'
       - 'CLAUDE.md'
+      - 'install.sh'
+      - 'claudecfg/install.sh'
   workflow_dispatch:
     inputs:
       selection_mode:

@@ -21,6 +21,8 @@ on:
       - 'scripts/select-benchmark-tasks.py'
       - 'scripts/wait-for-benchmark-slot.py'
       - 'CLAUDE.md'
+      - 'install.sh'
+      - 'claudecfg/install.sh'
   workflow_dispatch:
     inputs:
       selection_mode:
