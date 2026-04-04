@@ -48,6 +48,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added YAML frontmatter to all bundled skills (`/design`, `/docs`, `/refactor`, `/review`, `/test`) with explicit `agent`, `context`, `disable-model-invocation`, `allowed-tools`, and scoped `paths` where useful
 - Updated docs (`README`, `GUIDE`, `claudecfg/README`, `CONTRIBUTING`, `CLAUDE.md`) to reflect Notification hook coverage, default output style, and skill-frontmatter requirements
 - Behavior Benchmark recovery metrics now remain visible in `summary.json` and the GitHub summary without failing CI by default; strict recovery caps only apply when explicitly set through GitHub variables or `workflow_dispatch`
+- `behavior-benchmark.yml`: removed duplicate `max_turns` default assignment
+- `benchmark-nightly.yml`: added `--base-ref` to `collect-benchmark-changes` call
+- `claudecfg/hooks/`: removed dead `permission_denied_should_retry()` function, added `notification.jsonl` log rotation
+- `scripts/wait-for-benchmark-slot.py`: added HTTP 403 rate-limit handling with `Retry-After` header support
+- `scripts/validate.sh`: replaced fragile `grep`-based policy checks with robust `jq` validation
+
+### Added
+
+- New pytest coverage: `test_build_benchmark_matrix.py` (shard distribution and chunking), `test_wait_for_benchmark_slot.py` (slot allocation and rate-limit handling), `test_merge_benchmark_summaries.py` (merge logic and totals computation), `test_render_benchmark_summary.py` (jq markdown rendering)
 - Benchmark transcript regression coverage now includes a reusable forbidden meta-chatter pattern set and limits forbidden transcript scans to assistant-like entries so user prompts do not trigger false positives
 - Golden subagent regression coverage is now explicit: every canonical agent alias must have at least one focused benchmark task with `agent_alias` plus non-empty required/forbidden transcript assertions, and the contract is documented in `docs/agent-contracts.md`
 - `PermissionDenied` retry behavior now disables retries in benchmark headless runs so denied shell commands do not consume turn budget during automated benchmark tasks

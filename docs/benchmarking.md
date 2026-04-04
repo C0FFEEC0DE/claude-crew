@@ -125,6 +125,27 @@ Agent and slash-skill changes are mapped through the frontmatter declared in `cl
 4. still supports change-targeted or all-task runs through `workflow_dispatch`; the changed-only manual path compares the current branch to `main`, and falls back to the recent lookback window when dispatched on `main`
 5. runs tasks from `bench/tasks/subagents/golden/*.json`
 
+## Slot-Gate Mechanism
+
+Concurrent benchmark runs are limited by a two-slot gate enforced through `scripts/wait-for-benchmark-slot.py`. This prevents the nightly and golden suites from overloading shared CI runners when multiple workflow dispatches or cron jobs fire simultaneously.
+
+**How it works:**
+
+- `wait-for-benchmark-slot.py` polls a dedicated GitHub API endpoint (or a comparable availability check) until a slot opens, or exits immediately if one is already free.
+- The gate allows a maximum of **2 concurrent benchmark runs** at any time.
+- When the gate is occupied, the script waits and retries at a fixed interval until a slot becomes available.
+
+**Rate-limit handling:**
+
+- If the slot check returns HTTP 403, the script reads the `Retry-After` header and sleeps for the requested interval before retrying.
+- This handles GitHub API secondary-rate-limit errors gracefully without burning CI minutes on tight polling loops.
+
+**Nightly and golden suites use this gate automatically** — both `benchmark-nightly.yml` and any manual dispatch of the golden suite invoke `wait-for-benchmark-slot.py` before launching tasks.
+
+**Log rotation for notification telemetry:**
+
+Notification hooks write session events to `~/.claude/logs/notification.jsonl`. To prevent unbounded log growth on long-running CI runners, the hook installation step rotates existing logs: if `notification.jsonl` exceeds a configured size threshold, the file is renamed with a timestamp suffix and a fresh log is started. The rotation threshold is set in the hook configuration in `claudecfg/hooks/notification.sh`.
+
 ## Required GitHub Setup
 
 Repository settings:

@@ -190,7 +190,7 @@ That selection is derived from benchmark task metadata plus the frontmatter in `
 
 `Python Tests` runs:
 
-- `python -m pytest tests/bench/test_bench_runner.py tests/bench/test_benchmark_task_selection.py tests/bench/test_collect_benchmark_changes.py tests/test_skills_frontmatter.py -v`
+- `python -m pytest tests/bench/test_bench_runner.py tests/bench/test_benchmark_task_selection.py tests/bench/test_collect_benchmark_changes.py tests/bench/test_build_benchmark_matrix.py tests/bench/test_wait_for_benchmark_slot.py tests/bench/test_merge_benchmark_summaries.py tests/bench/test_render_benchmark_summary.py tests/test_skills_frontmatter.py -v`
 - `python -m pytest tests/test_settings_hooks.py tests/test_hook_scenarios.py -v` remains grouped with `Hook Contracts`, because those tests validate the hook manifests and hook configuration contract directly
 
 This harness verifies that key hooks block dangerous commands, classify prompts correctly, record verification state, reject incomplete stop summaries, and refuse completion after missing or failed verification when code changed.
