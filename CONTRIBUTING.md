@@ -87,6 +87,15 @@ Before submitting:
 - [ ] Settings invariants still hold (`outputStyle: Default`, Notification hook configured)
 - [ ] All links in documentation work
 
+## GitHub Actions Requirements
+
+**Node.js 20 is deprecated on GitHub Actions runners** (removed September 2026). All workflows must target Node.js 24:
+
+- Set `env: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` at the workflow level
+- Use `actions/cache@v5` (not v4) — v4 targets Node.js 20
+- When adding new actions, verify they support Node.js 24 or add the env var
+- Check the [deprecation guide](https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/) before adding new JavaScript-based actions
+
 ## Questions?
 
 Open an issue or ask in discussions.

@@ -433,6 +433,19 @@ if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/benchmark
 else
     report_error "Behavior Benchmark Subagents Golden workflow must run nightly, stay change-gated by default, keep manual all-task selection, and publish markdown benchmark tables"
 fi
+
+echo ""
+echo "--- Checking GitHub Actions Node.js 24 readiness ---"
+if grep -q 'actions/cache@v4' "$REPO_ROOT/.github/workflows/"*.yml 2>/dev/null; then
+    report_error "actions/cache@v4 targets deprecated Node.js 20 — use v5"
+else
+    echo "OK: No actions/cache@v4 (uses v5)"
+fi
+if grep -q 'FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true' "$REPO_ROOT/.github/workflows/"*.yml 2>/dev/null; then
+    echo "OK: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 set"
+else
+    report_error "Benchmark workflows must set env: FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true"
+fi
 echo ""
 
 echo "--- Checking docs consistency for notification hook ---"
