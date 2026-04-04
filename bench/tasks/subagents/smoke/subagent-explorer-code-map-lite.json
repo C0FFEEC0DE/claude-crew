@@ -8,16 +8,17 @@
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @e for this tiny exploration task. The explorer output must explicitly include the headings `Task: Explore`, `Locations:`, and `Outcome:` before the final footer. Update README.md with a short code-map note that names calculator.py as the arithmetic module and test_calculator.py as the regression file. Keep it docs-only and finish with the required footer.",
+  "prompt": "Start by using @e for this tiny exploration task. The explorer output must explicitly include the headings `Task: Explore`, `Locations:`, `Outcome:`, and either `Changed files:` or `No files changed:` before the final footer. Update README.md with a short code-map note that names calculator.py as the arithmetic module and test_calculator.py as the regression file. Keep it docs-only and finish with the required footer.",
   "success_criteria": [
     "README.md includes a short code-map note",
     "The run stays docs-only",
     "The transcript shows explorer-style structure output",
+    "The transcript explicitly contains the required changed-files heading",
     "The final response includes the required footer"
   ],
   "must_not": [
     "Modify runtime code",
-    "Omit the exact headings Task: Explore, Locations:, or Outcome:",
+    "Omit the exact headings Task: Explore, Locations:, Outcome:, or Changed files:/No files changed:",
     "Invent files or commands that do not exist",
     "Perform release or deploy work"
   ],

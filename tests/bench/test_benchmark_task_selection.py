@@ -289,3 +289,37 @@ def test_bugbuster_tasks_use_role_assertion_and_relaxed_findings_patterns():
     assert "Outcome:|Fix:" in smoke_task["required_transcript_patterns"]
     assert "Findings:|Investigation" in golden_task["required_transcript_patterns"]
     assert "Outcome:|Fix:" in golden_task["required_transcript_patterns"]
+
+
+def test_subagent_explorer_code_map_requires_changed_files_heading():
+    repo_root = Path(__file__).resolve().parents[2]
+    task = json.loads(
+        (
+            repo_root
+            / "bench"
+            / "tasks"
+            / "subagents"
+            / "smoke"
+            / "subagent-explorer-code-map-lite.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert "Changed files:|No files changed:" in task["required_transcript_patterns"]
+    assert "Changed files:" in task["prompt"]
+
+
+def test_manager_bugbuster_full_task_requires_linear_handoffs():
+    repo_root = Path(__file__).resolve().parents[2]
+    task = json.loads(
+        (
+            repo_root
+            / "bench"
+            / "tasks"
+            / "full"
+            / "manager-bugbuster-tester-reviewer-zero-division.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert task["required_used_agents"] == ["m", "bug", "t", "cr"]
+    assert "exact order: @bug for the fix, then directly to @t" in task["prompt"]
+    assert any("directly from @bug to @t to @cr" in criterion for criterion in task["success_criteria"])

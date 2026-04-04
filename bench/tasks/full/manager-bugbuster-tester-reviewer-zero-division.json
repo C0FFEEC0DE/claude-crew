@@ -7,10 +7,11 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "The very first delegated handoff in this task must be to @m. Start with @m and have manager coordinate this tiny bugfix workflow without waiting. Manager must explicitly route the work to @bug for the fix, then @t for verification, then @cr for review before the final answer. Do not finish until @cr reports findings and the run has actually used @m, @bug, @t, and @cr. Fix zero division so divide() raises ValueError(\"division by zero\"), update README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "The very first delegated handoff in this task must be to @m. Keep the workflow terse and linear. Manager must immediately route the work in this exact order: @bug for the fix, then directly to @t for pytest -q verification, then directly to @cr for the review, with no extra planning turns between those handoffs. Do not finish until the run has actually used @m, @bug, @t, and @cr, and @cr has reported findings. Keep the code change minimal: make divide() raise ValueError(\"division by zero\"), update the affected test, add a brief README.md note, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, bugbuster, tester, and reviewer roles",
     "The first delegated handoff is to manager",
+    "Manager routes directly from @bug to @t to @cr without extra planning turns",
     "divide() raises ValueError on zero division",
     "Tests were added or updated and pytest -q passed",
     "README.md documents the behavior change",
@@ -22,6 +23,7 @@
     "Skip the initial @m manager handoff",
     "Skip pytest -q",
     "Skip the README.md update",
+    "Insert extra planning or analysis turns between the required @bug, @t, and @cr handoffs",
     "Finish before @cr reports the review result",
     "Perform release or deploy work"
   ],
