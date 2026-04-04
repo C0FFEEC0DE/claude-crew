@@ -146,6 +146,10 @@ Concurrent benchmark runs are limited by a two-slot gate enforced through `scrip
 
 Notification hooks write session events to `~/.claude/logs/notification.jsonl`. To prevent unbounded log growth on long-running CI runners, the hook installation step rotates existing logs: if `notification.jsonl` exceeds a configured size threshold, the file is renamed with a timestamp suffix and a fresh log is started. The rotation threshold is set in the hook configuration in `claudecfg/hooks/notification.sh`.
 
+**Node.js 24 requirement:**
+
+All benchmark workflows set `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` to opt into Node.js 24 ahead of the September 2026 runner deprecation of Node.js 20. If you run benchmarks locally or on a self-hosted runner, ensure it uses Node.js 24 or later.
+
 ## Required GitHub Setup
 
 Repository settings:
