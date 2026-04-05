@@ -53,7 +53,7 @@ on:
       timeout_seconds:
         description: "Per-task Claude timeout in seconds"
         required: false
-        default: "400"
+        default: "600"
         type: string
       max_output_tokens:
         description: "Claude Code max output tokens per request"
