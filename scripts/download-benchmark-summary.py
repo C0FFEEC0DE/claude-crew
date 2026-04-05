@@ -41,8 +41,9 @@ def github_request(url: str, token: str, *, follow_redirects: bool = True):
             "X-GitHub-Api-Version": "2022-11-28",
         },
     )
-    opener = urllib.request if follow_redirects else NO_REDIRECT_OPENER
-    return opener.open(request)
+    if follow_redirects:
+        return urllib.request.urlopen(request)
+    return NO_REDIRECT_OPENER.open(request)
 
 
 def github_get_json(url: str, token: str) -> dict:
