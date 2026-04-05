@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": false,
   "verification_required": true,
-  "prompt": "Start by using @m to coordinate this tiny refactor workflow without waiting for more user input. Use @hk to remove duplicated formatting logic in reporter.py without changing behavior, use @t to verify the fixture, use @cr for a short review pass, run pytest -q, and finish with the required footer.",
+  "prompt": "Start by using @m to coordinate this tiny refactor workflow without waiting for more user input. CRITICAL: You MUST launch @hk, @t, and @cr as real subagent handoffs using the handoff mechanism — not just mentions in text. The benchmark validates actual SubagentStart hooks. Use @hk to remove duplicated formatting logic in reporter.py without changing behavior, use @t to verify the fixture, use @cr for a short review pass, run pytest -q, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, housekeeper, tester, and reviewer roles",
     "Duplication in reporter.py is reduced without changing observable behavior",

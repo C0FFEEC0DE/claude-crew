@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @m to coordinate this tiny debugging workflow without waiting for more user input. Use @dbg to reproduce and isolate the zero-division bug, fix it so divide() raises ValueError(\"division by zero\"), use @t to verify the regression coverage, use @cr for a short review pass, update README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "Start by using @m to coordinate this tiny debugging workflow without waiting for more user input. CRITICAL: You MUST launch @dbg, @t, and @cr as real subagent handoffs using the handoff mechanism — not just mentions in text. The benchmark validates actual SubagentStart hooks. Use @dbg to reproduce and isolate the zero-division bug, fix it so divide() raises ValueError(\"division by zero\"), use @t to verify the regression coverage, use @cr for a short review pass, update README.md, run pytest -q, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, debugger, tester, and reviewer roles",
     "The debug workflow reproduces and isolates the zero-division issue before fixing it",

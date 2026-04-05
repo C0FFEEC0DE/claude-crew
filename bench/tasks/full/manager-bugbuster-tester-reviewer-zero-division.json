@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "The very first delegated handoff in this task must be to @m. Keep the workflow terse and linear. Manager must immediately route the work in this exact order: @bug for the fix, then directly to @t for pytest -q verification, then directly to @cr for the review, with no extra planning turns between those handoffs. Do not finish until the run has actually used @m, @bug, @t, and @cr, and @cr has reported findings. Keep the code change minimal: make divide() raise ValueError(\"division by zero\"), update the affected test, add a brief README.md note, and finish with the required footer.",
+  "prompt": "The very first delegated handoff in this task must be to @m. Keep the workflow terse and linear. Manager must immediately route the work in this exact order: @bug for the fix, then directly to @t for pytest -q verification, then directly to @cr for the review, with no extra planning turns between those handoffs. CRITICAL: You MUST launch @bug, @t, and @cr as real subagent handoffs using the handoff mechanism — not just mentions in text. The benchmark validates actual SubagentStart hooks. Do not finish until the run has actually used @m, @bug, @t, and @cr, and @cr has reported findings. Keep the code change minimal: make divide() raise ValueError(\"division by zero\"), update the affected test, add a brief README.md note, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, bugbuster, tester, and reviewer roles",
     "The first delegated handoff is to manager",

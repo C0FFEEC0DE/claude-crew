@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start with @m for this tiny review workflow without waiting. The manager MUST launch @e as a real subagent handoff (not just a mention) to map reporter.py and README.md before any review starts. Only after @e completes should @m launch @cr as a real subagent handoff for review. Add a concise REVIEW.md note with the main finding or explicitly say there are no material findings, keep runtime code unchanged, and finish with the required footer.",
+  "prompt": "Start with @m for this tiny review workflow without waiting. The manager MUST launch @e as a real subagent handoff (not just a mention) to map reporter.py and README.md before any review starts. CRITICAL: You MUST launch @e and @cr as real subagent handoffs using the handoff mechanism — not just mentions in text. The benchmark validates actual SubagentStart hooks. Only after @e completes should @m launch @cr as a real subagent handoff for review. Add a concise REVIEW.md note with the main finding or explicitly say there are no material findings, keep runtime code unchanged, and finish with the required footer.",
   "success_criteria": [
     "The workflow actually uses manager, explorer, and reviewer roles",
     "Explorer runs before reviewer and maps reporter.py and README.md first",
