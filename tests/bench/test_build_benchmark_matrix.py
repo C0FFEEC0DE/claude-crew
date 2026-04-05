@@ -44,14 +44,14 @@ def test_chunk_task_paths_more_shards_than_tasks():
 
 def test_build_matrix_shard_metadata():
     module = load_matrix_module()
-    result = module.build_matrix(["a", "b", "c"], 3)
+    result = module.build_matrix(["a", "b", "c", "d", "e"], 3)
     assert len(result) == 3
     assert result[0]["shard_index"] == 1
-    assert result[0]["task_count"] == 1
-    assert result[0]["task_files"] == "a"
+    assert result[0]["task_count"] == 2
+    assert result[0]["task_files"] == "a\nd"
     assert result[1]["shard_index"] == 2
-    assert result[1]["task_count"] == 1
-    assert result[1]["task_files"] == "b"
+    assert result[1]["task_count"] == 2
+    assert result[1]["task_files"] == "b\ne"
     assert result[2]["shard_index"] == 3
     assert result[2]["task_count"] == 1
     assert result[2]["task_files"] == "c"

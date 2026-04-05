@@ -13,6 +13,8 @@ def test_build_benchmark_matrix_splits_tasks_across_three_shards(tmp_path):
                 "bench/tasks/smoke/bugfix-zero-division-lite.json",
                 "bench/tasks/smoke/docs-quickstart-clarity-lite.json",
                 "bench/tasks/smoke/refactor-report-formatting-lite.json",
+                "bench/tasks/full/docs-node-app-quickstart.json",
+                "bench/tasks/full/feature-report-summary-line.json",
             ]
         )
         + "\n",
@@ -29,11 +31,17 @@ def test_build_benchmark_matrix_splits_tasks_across_three_shards(tmp_path):
     matrix = json.loads(completed.stdout)
     assert len(matrix) == 3
     assert matrix[0]["shard_index"] == 1
-    assert matrix[0]["task_count"] == 1
-    assert matrix[0]["task_files"].splitlines() == ["bench/tasks/smoke/bugfix-zero-division-lite.json"]
+    assert matrix[0]["task_count"] == 2
+    assert matrix[0]["task_files"].splitlines() == [
+        "bench/tasks/smoke/bugfix-zero-division-lite.json",
+        "bench/tasks/full/docs-node-app-quickstart.json",
+    ]
     assert matrix[1]["shard_index"] == 2
-    assert matrix[1]["task_count"] == 1
-    assert matrix[1]["task_files"].splitlines() == ["bench/tasks/smoke/docs-quickstart-clarity-lite.json"]
+    assert matrix[1]["task_count"] == 2
+    assert matrix[1]["task_files"].splitlines() == [
+        "bench/tasks/smoke/docs-quickstart-clarity-lite.json",
+        "bench/tasks/full/feature-report-summary-line.json",
+    ]
     assert matrix[2]["shard_index"] == 3
     assert matrix[2]["task_count"] == 1
     assert matrix[2]["task_files"].splitlines() == ["bench/tasks/smoke/refactor-report-formatting-lite.json"]
