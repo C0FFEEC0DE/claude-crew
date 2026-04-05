@@ -161,7 +161,7 @@ jobs:
           cat > .bench-selected-tasks.txt <<'EOF'
           ${{ steps.select.outputs.task_files }}
           EOF
-          matrix_json="$(python3 scripts/build-benchmark-matrix.py --task-list-file .bench-selected-tasks.txt --max-shards 2)"
+          matrix_json="$(python3 scripts/build-benchmark-matrix.py --task-list-file .bench-selected-tasks.txt --max-shards 3)"
           echo "matrix_json=$matrix_json" >> "$GITHUB_OUTPUT"
 
   benchmark-full-shards:

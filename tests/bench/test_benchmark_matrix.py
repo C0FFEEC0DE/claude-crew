@@ -3,7 +3,7 @@ import subprocess
 from pathlib import Path
 
 
-def test_build_benchmark_matrix_splits_tasks_across_two_shards(tmp_path):
+def test_build_benchmark_matrix_splits_tasks_across_three_shards(tmp_path):
     repo_root = Path(__file__).resolve().parents[2]
     script_path = repo_root / "scripts" / "build-benchmark-matrix.py"
     task_list = tmp_path / "tasks.txt"
@@ -20,23 +20,23 @@ def test_build_benchmark_matrix_splits_tasks_across_two_shards(tmp_path):
     )
 
     completed = subprocess.run(
-        ["python3", str(script_path), "--task-list-file", str(task_list), "--max-shards", "2"],
+        ["python3", str(script_path), "--task-list-file", str(task_list), "--max-shards", "3"],
         check=True,
         capture_output=True,
         text=True,
     )
 
     matrix = json.loads(completed.stdout)
-    assert len(matrix) == 2
+    assert len(matrix) == 3
     assert matrix[0]["shard_index"] == 1
-    assert matrix[0]["task_count"] == 2
-    assert matrix[0]["task_files"].splitlines() == [
-        "bench/tasks/smoke/bugfix-zero-division-lite.json",
-        "bench/tasks/smoke/refactor-report-formatting-lite.json",
-    ]
+    assert matrix[0]["task_count"] == 1
+    assert matrix[0]["task_files"].splitlines() == ["bench/tasks/smoke/bugfix-zero-division-lite.json"]
     assert matrix[1]["shard_index"] == 2
     assert matrix[1]["task_count"] == 1
     assert matrix[1]["task_files"].splitlines() == ["bench/tasks/smoke/docs-quickstart-clarity-lite.json"]
+    assert matrix[2]["shard_index"] == 3
+    assert matrix[2]["task_count"] == 1
+    assert matrix[2]["task_files"].splitlines() == ["bench/tasks/smoke/refactor-report-formatting-lite.json"]
 
 
 def test_merge_benchmark_summaries_recomputes_totals_and_rates(tmp_path):

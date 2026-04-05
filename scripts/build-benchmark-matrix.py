@@ -8,7 +8,7 @@ import pathlib
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--task-list-file", required=True)
-    parser.add_argument("--max-shards", type=int, default=2)
+    parser.add_argument("--max-shards", type=int, default=3)
     return parser.parse_args()
 
 
