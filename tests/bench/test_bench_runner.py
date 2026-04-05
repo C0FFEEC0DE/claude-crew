@@ -140,6 +140,32 @@ def test_build_prompt_mentions_fixture_specific_verification_command(tmp_path, m
     assert "Verification status: passed - npm test completed successfully." in prompt
 
 
+def test_build_prompt_includes_required_agent_and_transcript_contract(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    task = {
+        "id": "subagent-bugbuster-zero-division-lite",
+        "category": "bugfix",
+        "review_required": True,
+        "docs_required": True,
+        "verification_required": True,
+        "prompt": "Start by using @bug.",
+        "success_criteria": ["Fix the bug."],
+        "must_not": [],
+        "required_used_agents": ["bug"],
+        "required_transcript_patterns": [
+            r"Findings:|Investigation",
+            r"Changed files:|No files changed:",
+            r"Verification status:",
+        ],
+    }
+
+    prompt = runner.build_prompt(task, "pytest -q")
+
+    assert "Start with an actual handoff to: @bug" in prompt
+    assert "Findings: or Investigation:" in prompt
+    assert "Changed files: or No files changed:" in prompt
+
+
 def test_required_transcript_patterns_ignore_user_only_mentions(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
     transcript_path = tmp_path / "session.jsonl"
@@ -158,6 +184,32 @@ def test_required_transcript_patterns_ignore_user_only_mentions(tmp_path, monkey
 
     assert scanned is True
     assert misses == [r"@e"]
+
+
+def test_required_transcript_patterns_scan_final_result_text_when_transcript_misses_headings(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    transcript_path = tmp_path / "session.jsonl"
+    write_transcript(
+        transcript_path,
+        [
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Updated README.md with the requested note."}],
+                },
+            }
+        ],
+    )
+
+    scanned, misses = runner.required_transcript_pattern_misses(
+        {"required_transcript_patterns": [r"Task:\s*Docs", r"Coverage:"]},
+        {"transcript_path": str(transcript_path)},
+        result_text="Task: Docs - quickstart\nCoverage: README.md quickstart guidance",
+    )
+
+    assert scanned is True
+    assert misses == []
 
 
 def test_required_transcript_patterns_match_assistant_entries(tmp_path, monkeypatch):
@@ -280,6 +332,37 @@ def test_effective_required_transcript_misses_keeps_real_pattern_misses_after_re
     )
 
     assert misses == [r"Findings:", r"Outcome:"]
+
+
+def test_synthesize_required_transcript_lines_covers_docwriter_footer_shape(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+
+    lines = runner.synthesize_required_transcript_lines(
+        {
+            "id": "subagent-docwriter-quickstart-lite",
+            "agent_alias": "doc",
+            "required_transcript_patterns": [
+                r"Task:\s*Docs",
+                r"Coverage:",
+                r"Outcome:",
+                r"Changed files:|No files changed:",
+                r"Verification status:",
+                r"Remaining risks:|Next step:",
+            ],
+        },
+        changed_files=["README.md"],
+        verification_required=False,
+        tests_run=False,
+        tests_passed=False,
+        verification_label="verification",
+        review_required=False,
+        review_present=False,
+    )
+
+    assert "Task: Docs — benchmark handoff" in lines
+    assert "Coverage: updated README.md." in lines
+    assert "Changed files: README.md" in lines
+    assert any(line.startswith("Outcome:") for line in lines)
 
 
 def test_forbidden_transcript_patterns_catch_footer_repair_meta_chatter(tmp_path, monkeypatch):
@@ -457,6 +540,33 @@ def test_extract_used_agent_aliases_accepts_recorded_handoff_without_hook_label(
 """
 
     assert runner.extract_used_agent_aliases(debug_log) == ["cr"]
+
+
+def test_extract_used_agent_aliases_falls_back_to_transcript_roles(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    transcript_path = tmp_path / "transcript.jsonl"
+    write_transcript(
+        transcript_path,
+        [
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Explorer(Map reporter.py and README.md first)"}],
+                },
+            },
+            {
+                "type": "assistant",
+                "message": {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": "Code Reviewer(Review mapped files after Explorer)"}],
+                },
+            },
+        ],
+    )
+    payload = {"transcript_path": str(transcript_path)}
+
+    assert runner.extract_used_agent_aliases("", payload) == ["cr", "e"]
 
 
 def test_required_used_agent_misses_report_missing_roles(tmp_path, monkeypatch):
