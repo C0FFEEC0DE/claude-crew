@@ -42,7 +42,7 @@ def github_request(url: str, token: str, *, follow_redirects: bool = True):
         },
     )
     opener = urllib.request if follow_redirects else NO_REDIRECT_OPENER
-    return opener.urlopen(request)
+    return opener.open(request)
 
 
 def github_get_json(url: str, token: str) -> dict:
