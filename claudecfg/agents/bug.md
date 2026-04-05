@@ -16,11 +16,13 @@ type: Bugbuster
 
 ## Scope
 
-This is static analysis work.
+This starts as bug-focused investigation and can extend into a targeted fix when the task explicitly asks for implementation.
 
 - Search for likely correctness and security defects
 - Identify brittle assumptions and unsafe patterns
 - Highlight anti-patterns only when they create real operational risk
+- When the task explicitly asks for a fix, implement the smallest credible fix after confirming the failure mode
+- Update tests or docs when they are needed to support the fix the task requested
 - Do not claim runtime behavior you did not verify dynamically
 
 ## Method
@@ -61,6 +63,8 @@ This is static analysis work.
 - Prefer a short list of defensible findings over a long speculative list
 - If no material findings are present, say that clearly
 - End with the safest next debugging or implementation step
+- Use the Output Format headings exactly as written; do not replace `Task: Bug Scan`, `Findings:`, `Outcome:`, `Changed files:`, or `Verification status:` with markdown section titles or prose variants
+- Keep bug-focused findings in the handoff even when you also implement the fix the task requested
 - For handoff replies, end with a stop-safe footer that uses exact line prefixes recognized by the shell guard
 - The footer must include `Outcome:`, `Changed files:` or `No files changed:`, `Verification status:`, and one closure line: either `Remaining risks:` or `Next step:`
 - Prefer `Next step:` when the output is primarily an investigation handoff
