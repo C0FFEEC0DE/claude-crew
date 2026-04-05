@@ -67,7 +67,7 @@ def test_extract_summary_bytes_requires_summary_file():
         module.extract_summary_bytes(build_zip({"report.md": "missing summary"}))
 
 
-def test_download_summary_fetches_artifact_listing_then_zip(monkeypatch):
+def test_download_summary_fetches_artifact_listing_then_redirected_zip(monkeypatch):
     module = load_download_module()
     calls = []
 
@@ -79,17 +79,23 @@ def test_download_summary_fetches_artifact_listing_then_zip(monkeypatch):
             ]
         }
 
-    def fake_get_bytes(url, token):
-        calls.append(("bytes", url, token))
+    def fake_get_redirect_url(url, token):
+        calls.append(("redirect", url, token))
+        return "https://example.invalid/artifact.zip"
+
+    def fake_public_get_bytes(url):
+        calls.append(("public-bytes", url))
         return build_zip({"summary.json": '{"ok": true}'})
 
     monkeypatch.setattr(module, "github_get_json", fake_get_json)
-    monkeypatch.setattr(module, "github_get_bytes", fake_get_bytes)
+    monkeypatch.setattr(module, "github_get_redirect_url", fake_get_redirect_url)
+    monkeypatch.setattr(module, "public_get_bytes", fake_public_get_bytes)
 
     summary = module.download_summary("octo/repo", 123, "behavior-benchmark-smoke-123", "token")
 
     assert json.loads(summary.decode("utf-8")) == {"ok": True}
     assert calls == [
         ("json", "https://api.github.com/repos/octo/repo/actions/runs/123/artifacts", "token"),
-        ("bytes", "https://api.github.com/repos/octo/repo/actions/artifacts/42/zip", "token"),
+        ("redirect", "https://api.github.com/repos/octo/repo/actions/artifacts/42/zip", "token"),
+        ("public-bytes", "https://example.invalid/artifact.zip"),
     ]

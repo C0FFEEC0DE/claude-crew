@@ -10,6 +10,19 @@ import urllib.request
 import zipfile
 
 
+class NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def http_error_301(self, req, fp, code, msg, headers):  # noqa: ARG002
+        return fp
+
+    def http_error_302(self, req, fp, code, msg, headers):  # noqa: ARG002
+        return fp
+
+    http_error_303 = http_error_307 = http_error_308 = http_error_302
+
+
+NO_REDIRECT_OPENER = urllib.request.build_opener(NoRedirectHandler)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True, help="owner/repo")
@@ -19,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def github_request(url: str, token: str) -> urllib.request.addinfourl:
+def github_request(url: str, token: str, *, follow_redirects: bool = True):
     request = urllib.request.Request(
         url,
         headers={
@@ -28,7 +41,8 @@ def github_request(url: str, token: str) -> urllib.request.addinfourl:
             "X-GitHub-Api-Version": "2022-11-28",
         },
     )
-    return urllib.request.urlopen(request)
+    opener = urllib.request if follow_redirects else NO_REDIRECT_OPENER
+    return opener.urlopen(request)
 
 
 def github_get_json(url: str, token: str) -> dict:
@@ -38,6 +52,20 @@ def github_get_json(url: str, token: str) -> dict:
 
 def github_get_bytes(url: str, token: str) -> bytes:
     with github_request(url, token) as response:
+        return response.read()
+
+
+def github_get_redirect_url(url: str, token: str) -> str:
+    with github_request(url, token, follow_redirects=False) as response:
+        redirect_url = response.headers.get("Location", "").strip()
+    if not redirect_url:
+        raise RuntimeError("Artifact download did not return a redirect location")
+    return redirect_url
+
+
+def public_get_bytes(url: str) -> bytes:
+    request = urllib.request.Request(url)
+    with urllib.request.urlopen(request) as response:
         return response.read()
 
 
@@ -62,7 +90,8 @@ def download_summary(repo: str, run_id: int, artifact_name: str, token: str) -> 
     payload = github_get_json(artifacts_url, token)
     artifact = find_artifact(payload.get("artifacts", []), artifact_name)
     zip_url = f"https://api.github.com/repos/{repo}/actions/artifacts/{artifact['id']}/zip"
-    return extract_summary_bytes(github_get_bytes(zip_url, token))
+    redirect_url = github_get_redirect_url(zip_url, token)
+    return extract_summary_bytes(public_get_bytes(redirect_url))
 
 
 def main() -> None:
