@@ -366,22 +366,37 @@ jobs:
     if: always() && needs.precheck.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Download shard artifacts
-        uses: actions/download-artifact@v5
-        with:
-          path: shard-artifacts
-          pattern: behavior-benchmark-smoke-shard-*-${{ github.run_id }}
+      - name: Download shard summaries
+        shell: bash
+        env:
+          BENCH_MATRIX_JSON: ${{ needs.precheck.outputs.matrix_json }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p shard-artifacts
+          mapfile -t shard_indexes < <(printf '%s' "$BENCH_MATRIX_JSON" | jq -r '.[].shard_index')
+          if [ "${#shard_indexes[@]}" -eq 0 ]; then
+            echo "No shard indexes were produced by the precheck matrix" >&2
+            exit 1
+          fi
+          for shard_index in "${shard_indexes[@]}"; do
+            python3 scripts/download-benchmark-summary.py \
+              --repo "${GITHUB_REPOSITORY}" \
+              --run-id "${GITHUB_RUN_ID}" \
+              --artifact-name "behavior-benchmark-smoke-shard-${shard_index}-${GITHUB_RUN_ID}" \
+              --output "shard-artifacts/shard-${shard_index}-summary.json"
+          done
 
       - name: Merge shard summaries
         shell: bash
         run: |
           mkdir -p bench-output
-          mapfile -t summary_files < <(find shard-artifacts -type f -name summary.json | sort)
+          mapfile -t summary_files < <(find shard-artifacts -type f -name '*.json' | sort)
           if [ "${#summary_files[@]}" -eq 0 ]; then
             echo "No shard summary.json files were downloaded" >&2
             exit 1

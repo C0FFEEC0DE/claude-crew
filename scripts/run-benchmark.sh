@@ -159,6 +159,11 @@ executed_task_ids=()
 failed_task_paths=()
 failed_task_ids=()
 for task_file in "${task_files[@]}"; do
+    selected_task_paths+=("$(relative_task_path "$task_file")")
+    selected_task_ids+=("$(jq -r '.id' "$task_file")")
+done
+
+for task_file in "${task_files[@]}"; do
     task_id="$(jq -r '.id' "$task_file")"
     task_path_rel="$(relative_task_path "$task_file")"
     category="$(jq -r '.category' "$task_file")"
@@ -166,9 +171,6 @@ for task_file in "${task_files[@]}"; do
     fixture_dir="$REPO_ROOT/bench/fixtures/$fixture_name"
     task_output_dir="$OUTPUT_DIR/tasks/$task_id"
     task_workdir="$task_output_dir/workdir"
-
-    selected_task_paths+=("$task_path_rel")
-    selected_task_ids+=("$task_id")
 
     if [ ! -d "$fixture_dir" ]; then
         echo "Missing benchmark fixture directory: $fixture_dir" >&2
