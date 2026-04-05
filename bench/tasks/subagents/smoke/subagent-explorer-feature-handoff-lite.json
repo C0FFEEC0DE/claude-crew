@@ -8,7 +8,7 @@
   "review_required": true,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @e to map this tiny feature workflow, then continue end to end without waiting for more user input. Add a subtract helper to calculator.py, cover it with tests, update README.md with a short subtract example, and finish with verification plus review status. The transcript must include a real explorer-style handoff before implementation, not just the final result.",
+  "prompt": "Start by using @e to map this tiny feature workflow. The explorer MUST produce output with exact headings: `Task: Explore`, `Locations:`, `Outcome:`, and `Changed files:` or `No files changed:`. After mapping, implement the subtract helper in calculator.py, cover it with tests, update README.md with a short subtract example, run pytest -q, and finish with verification plus review status. The transcript must include the exact explorer headings before implementation.",
   "success_criteria": [
     "A subtract helper is implemented in the calculator fixture",
     "Tests are added or updated and run successfully",

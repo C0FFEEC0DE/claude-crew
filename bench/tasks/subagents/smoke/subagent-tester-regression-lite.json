@@ -8,7 +8,7 @@
   "review_required": false,
   "docs_required": true,
   "verification_required": true,
-  "prompt": "Start by using @t for this tiny verification-first task. Add one regression test covering add() with a negative operand, update README.md with a one-line note that pytest -q covers additive regression, keep runtime code unchanged, run pytest -q, and finish with the required footer.",
+  "prompt": "Start by using @t for this tiny verification-first task. The tester MUST produce output with exact headings: `Task: Testing`, `Gaps:`, `Outcome:`, and `Changed files:` or `No files changed:`. Add one regression test covering add() with a negative operand, update README.md with a one-line note that pytest -q covers additive regression, keep runtime code unchanged, run pytest -q, and finish with the required footer.",
   "success_criteria": [
     "A new regression test is added for add()",
     "pytest -q is run successfully",

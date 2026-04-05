@@ -8,7 +8,7 @@
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @m to coordinate this tiny docs-only task without waiting for more user input. Update README.md with a short maintenance note that points readers to calculator.py for arithmetic helpers and test_calculator.py for regression coverage. Keep it docs-only and finish with the required footer.",
+  "prompt": "Start by using @m to coordinate this tiny docs-only task. The manager MUST produce output with exact headings: `Plan:`, `Task: Docs`, `Outcome:`, and `Changed files:` or `No files changed:`. Update README.md with a short maintenance note that points readers to calculator.py for arithmetic helpers and test_calculator.py for regression coverage. Keep it docs-only and finish with the required footer.",
   "success_criteria": [
     "README.md is updated with a short maintenance or code-map note",
     "The run stays docs-only",
