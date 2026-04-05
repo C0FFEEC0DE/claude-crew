@@ -1195,6 +1195,7 @@ def infer_used_agent_aliases_from_result_text(result_text: str) -> list[str]:
     patterns = (
         r"(?im)^\s*[-*]\s*(?:\*\*)?@([A-Za-z0-9_-]+)(?:\*\*)?\b",
         r"(?im)\b(?:handoff|handoffs|launch|launched|delegate|delegated|delegation)\b[^@\n]*@([A-Za-z0-9_-]+)\b",
+        r"(?im)\B@([A-Za-z0-9_-]+)\b\s+(?:reviewed|verified|implemented|fixed|documented|analyzed|mapped|confirmed|approved|identified)\b",
     )
     for pattern in patterns:
         for raw_label in re.findall(pattern, text):

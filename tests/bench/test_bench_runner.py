@@ -418,6 +418,22 @@ def test_synthesize_required_transcript_lines_supports_standalone_next_step(tmp_
     assert "Next step: carry the verified handoff forward to the next required specialist." in lines
 
 
+def test_extract_used_agent_aliases_counts_action_phrases_in_final_result_text(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+
+    aliases = runner.extract_used_agent_aliases(
+        "",
+        None,
+        result_text=(
+            "Verification status: passed - pytest -q completed with 3 tests passing.\n"
+            "Review outcome: done - @cr reviewed and approved the changes.\n"
+            "Remaining risks: none.\n"
+        ),
+    )
+
+    assert "cr" in aliases
+
+
 def test_forbidden_transcript_patterns_catch_footer_repair_meta_chatter(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
     transcript_path = tmp_path / "session.jsonl"
