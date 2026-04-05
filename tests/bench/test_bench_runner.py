@@ -166,6 +166,27 @@ def test_build_prompt_includes_required_agent_and_transcript_contract(tmp_path, 
     assert "Changed files: or No files changed:" in prompt
 
 
+def test_build_prompt_requires_real_ordered_handoffs_for_manager_workflows(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    task = {
+        "id": "manager-explorer-reviewer-code-map",
+        "category": "review",
+        "review_required": True,
+        "docs_required": True,
+        "verification_required": False,
+        "prompt": "Start with @m and send @e before @cr.",
+        "success_criteria": ["Use @m, @e, and @cr in order."],
+        "must_not": [],
+        "required_used_agents": ["m", "e", "cr"],
+        "required_transcript_patterns": [],
+    }
+
+    prompt = runner.build_prompt(task, "verification")
+
+    assert "Every required role must be launched as a real handoff in this order: @m -> @e -> @cr" in prompt
+    assert "For this manager-led run, launch @m first. Then the manager must launch the remaining required roles in order: @e -> @cr." in prompt
+
+
 def test_required_transcript_patterns_ignore_user_only_mentions(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
     transcript_path = tmp_path / "session.jsonl"

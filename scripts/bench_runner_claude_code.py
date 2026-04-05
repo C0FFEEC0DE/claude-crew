@@ -213,16 +213,27 @@ def build_prompt(task: dict, verification_label: str) -> str:
         "Implementation and file edits are in scope when the task asks for them. "
         "Do not reinterpret this as a review task just because the final summary must include review outcome."
     )
-    required_used_agents = ", ".join(f"@{alias}" for alias in task.get("required_used_agents", []) if isinstance(alias, str))
+    required_used_agent_list = [alias for alias in task.get("required_used_agents", []) if isinstance(alias, str)]
+    required_used_agents = ", ".join(f"@{alias}" for alias in required_used_agent_list)
     required_transcript_hints = transcript_contract_hints(task)
     required_used_agent_note = ""
     if required_used_agents:
+        sequence_note = ""
+        if len(required_used_agent_list) > 1:
+            ordered = " -> ".join(f"@{alias}" for alias in required_used_agent_list)
+            sequence_note = f"""
+- Every required role must be launched as a real handoff in this order: {ordered}
+- A prose summary that claims a handoff happened does not count as the handoff itself."""
+            if required_used_agent_list[0] == "m" and len(required_used_agent_list) > 1:
+                downstream = " -> ".join(f"@{alias}" for alias in required_used_agent_list[1:])
+                sequence_note += f"""
+- For this manager-led run, launch @m first. Then the manager must launch the remaining required roles in order: {downstream}."""
         required_used_agent_note = f"""
 
 Required specialist handoff:
 - This run is scored on a real specialist launch, not a prose mention.
 - Start with an actual handoff to: {required_used_agents}
-- Make that handoff before doing the substantive work yourself."""
+- Make that handoff before doing the substantive work yourself.{sequence_note}"""
     transcript_contract_note = ""
     if required_transcript_hints:
         transcript_contract_note = """
