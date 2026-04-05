@@ -23,7 +23,7 @@
     "Perform release or deploy work"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Veles",
+    "Task:\\s*Housekeeping",
     "Outcome:",
     "Changed files:|No files changed:",
     "Verification status:",

@@ -1272,7 +1272,7 @@ def transcript_contract_hints(task: dict) -> list[str]:
         (r"Task:\\s*Explore", "Task: Explore"),
         (r"Task:\\s*Testing", "Task: Testing"),
         (r"Task:\\s*Refactor", "Task: Refactor"),
-        (r"Task:\\s*Veles", "Task: Veles"),
+        (r"Task:\\s*Housekeeping", "Task: Housekeeping"),
         ("Coverage:", "Coverage:"),
         ("Findings:|Investigation", "Findings: or Investigation:"),
         ("Outcome:|Fix:", "Outcome: or Fix:"),
@@ -1375,8 +1375,8 @@ def synthesize_required_transcript_lines(
             lines.append("Task: Testing — benchmark handoff")
         elif r"Task:\s*Refactor" in pattern:
             lines.append("Task: Refactor — benchmark handoff")
-        elif r"Task:\s*Veles" in pattern:
-            lines.append("Task: Veles — bounded cleanup")
+        elif r"Task:\s*Housekeeping" in pattern:
+            lines.append("Task: Housekeeping — bounded cleanup")
         elif "Coverage:" in pattern:
             target = ", ".join(changed_files) if changed_files else "the requested documentation surface"
             lines.append(f"Coverage: updated {target}.")

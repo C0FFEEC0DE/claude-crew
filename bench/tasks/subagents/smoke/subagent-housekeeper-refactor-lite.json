@@ -3,7 +3,9 @@
   "suite": "subagents_smoke",
   "agent_alias": "hk",
   "category": "refactor",
-  "related_agents": ["hk"],
+  "related_agents": [
+    "hk"
+  ],
   "fixture": "text-report",
   "review_required": true,
   "docs_required": false,
@@ -13,7 +15,7 @@
     "Duplication between render_title() and render_subtitle() is reduced",
     "Behavior stays unchanged",
     "pytest -q is run successfully",
-    "The transcript shows Veles-style warning or cleanup output",
+    "The transcript shows Housekeeper-style warning or cleanup output",
     "The final response includes verification and review status"
   ],
   "must_not": [
@@ -34,7 +36,7 @@
     "my formatting is breaking"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Veles",
+    "Task:\\s*Housekeeping",
     "Warnings:",
     "Outcome:",
     "Changed files:|No files changed:",
