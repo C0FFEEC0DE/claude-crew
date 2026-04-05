@@ -187,6 +187,8 @@ def test_build_prompt_requires_real_ordered_handoffs_for_manager_workflows(tmp_p
     assert "For this manager-led run, launch @m first. Then the manager must launch the remaining required roles in order: @e -> @cr." in prompt
     assert "Keep the run terse and execution-first." in prompt
     assert "Preserve the existing fixture layout." in prompt
+    assert "If @cr is the final required role, reserve time for it" in prompt
+    assert "Keep the @cr review terse and findings-only" in prompt
 
 
 def test_required_transcript_patterns_ignore_user_only_mentions(tmp_path, monkeypatch):

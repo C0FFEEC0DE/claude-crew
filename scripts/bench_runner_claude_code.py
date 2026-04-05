@@ -228,6 +228,7 @@ def build_prompt(task: dict, verification_label: str) -> str:
     required_transcript_hints = transcript_contract_hints(task)
     required_used_agent_note = ""
     if required_used_agents:
+        completion_discipline_note = ""
         sequence_note = ""
         if len(required_used_agent_list) > 1:
             ordered = " -> ".join(f"@{alias}" for alias in required_used_agent_list)
@@ -238,12 +239,17 @@ def build_prompt(task: dict, verification_label: str) -> str:
                 downstream = " -> ".join(f"@{alias}" for alias in required_used_agent_list[1:])
                 sequence_note += f"""
 - For this manager-led run, launch @m first. Then the manager must launch the remaining required roles in order: {downstream}."""
+        if required_used_agent_list[-1] == "cr":
+            completion_discipline_note = """
+- If @cr is the final required role, reserve time for it: once verification and docs are ready, launch @cr immediately.
+- Keep the @cr review terse and findings-only so the required review handoff lands before timeout.
+- Do not spend the final turns polishing prose or making optional edits before the required @cr handoff."""
         required_used_agent_note = f"""
 
 Required specialist handoff:
 - This run is scored on a real specialist launch, not a prose mention.
 - Start with an actual handoff to: {required_used_agents}
-- Make that handoff before doing the substantive work yourself.{sequence_note}"""
+- Make that handoff before doing the substantive work yourself.{sequence_note}{completion_discipline_note}"""
     transcript_contract_note = ""
     if required_transcript_hints:
         transcript_contract_note = """
