@@ -1167,7 +1167,32 @@ def infer_used_agent_aliases_from_transcript(payload: dict | None) -> list[str]:
     return aliases
 
 
-def extract_used_agent_aliases(debug_log_text: str, payload: dict | None = None) -> list[str]:
+def infer_used_agent_aliases_from_result_text(result_text: str) -> list[str]:
+    text = result_text.strip()
+    if not text:
+        return []
+
+    aliases: list[str] = []
+    seen: set[str] = set()
+    patterns = (
+        r"(?im)^\s*[-*]\s*(?:\*\*)?@([A-Za-z0-9_-]+)(?:\*\*)?\b",
+        r"(?im)\b(?:handoff|handoffs|launch|launched|delegate|delegated|delegation)\b[^@\n]*@([A-Za-z0-9_-]+)\b",
+    )
+    for pattern in patterns:
+        for raw_label in re.findall(pattern, text):
+            alias = canonicalize_subagent_label(raw_label)
+            if alias and alias not in seen:
+                seen.add(alias)
+                aliases.append(alias)
+    return aliases
+
+
+def extract_used_agent_aliases(
+    debug_log_text: str,
+    payload: dict | None = None,
+    *,
+    result_text: str = "",
+) -> list[str]:
     aliases: list[str] = []
     seen: set[str] = set()
     patterns = (
@@ -1181,6 +1206,10 @@ def extract_used_agent_aliases(debug_log_text: str, payload: dict | None = None)
                 seen.add(alias)
                 aliases.append(alias)
     for alias in infer_used_agent_aliases_from_transcript(payload):
+        if alias not in seen:
+            seen.add(alias)
+            aliases.append(alias)
+    for alias in infer_used_agent_aliases_from_result_text(result_text):
         if alias not in seen:
             seen.add(alias)
             aliases.append(alias)
@@ -1750,7 +1779,11 @@ def main() -> int:
         payload,
         result_text=result_text,
     )
-    used_agent_aliases = extract_used_agent_aliases(debug_log_text, payload)
+    used_agent_aliases = extract_used_agent_aliases(
+        debug_log_text,
+        payload,
+        result_text=result_text,
+    )
     missing_required_used_agents = required_used_agent_misses(task, used_agent_aliases)
     missing_required_used_agent_groups = required_used_agent_group_misses(task, used_agent_aliases)
 

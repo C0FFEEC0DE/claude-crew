@@ -590,6 +590,18 @@ def test_extract_used_agent_aliases_falls_back_to_transcript_roles(tmp_path, mon
     assert runner.extract_used_agent_aliases("", payload) == ["cr", "e"]
 
 
+def test_extract_used_agent_aliases_falls_back_to_result_text_handoff_bullets(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+    result_text = """
+All required agent handoffs are now complete:
+- **@m** (Manager) - coordinated workflow
+- **@e** (Explorer) - mapped reporter.py and README.md
+- **@cr** (Code Reviewer) - reviewed the mapped files
+"""
+
+    assert runner.extract_used_agent_aliases("", result_text=result_text) == ["m", "e", "cr"]
+
+
 def test_required_used_agent_misses_report_missing_roles(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
     task = {
