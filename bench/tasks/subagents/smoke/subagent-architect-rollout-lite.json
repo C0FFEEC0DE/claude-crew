@@ -3,7 +3,10 @@
   "suite": "subagents_smoke",
   "agent_alias": "a",
   "category": "docs",
-  "related_agents": ["a", "doc"],
+  "related_agents": [
+    "a",
+    "doc"
+  ],
   "fixture": "text-report",
   "review_required": false,
   "docs_required": true,
@@ -33,11 +36,14 @@
     "my formatting is breaking"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Docs",
+    "Task:\\s*Design",
     "Plan:",
     "Outcome:",
     "Changed files:|No files changed:",
-    "Verification status:|Next step:"
+    "Verification status:",
+    "Remaining risks:|Next step:"
   ],
-  "required_used_agents": ["a"]
+  "required_used_agents": [
+    "a"
+  ]
 }

@@ -3,7 +3,9 @@
   "suite": "subagents_golden",
   "agent_alias": "hk",
   "category": "refactor",
-  "related_agents": ["hk"],
+  "related_agents": [
+    "hk"
+  ],
   "fixture": "text-report",
   "review_required": true,
   "docs_required": false,
@@ -21,7 +23,7 @@
     "Perform release or deploy work"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Refactor",
+    "Task:\\s*Veles",
     "Outcome:",
     "Changed files:|No files changed:",
     "Verification status:",

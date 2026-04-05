@@ -49,3 +49,8 @@ Invokes @housekeeper (Veles) who will:
 3. Ensure verification still passes
 4. Leave code cleaner than found
 5. Report what was changed
+
+## Constraints
+- **Never ask the user for confirmation.** Proceed directly with bounded refactoring changes.
+- Keep changes focused and limited in scope.
+- Do not perform release or deploy work.

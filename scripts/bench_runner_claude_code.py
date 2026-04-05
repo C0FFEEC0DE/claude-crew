@@ -83,6 +83,8 @@ CLAUDE_TIMEOUT_SECONDS = int(env_or_default("CLAUDE_TIMEOUT_SECONDS", "300"))
 CLAUDE_CODE_MAX_OUTPUT_TOKENS = env_or_default("CLAUDE_CODE_MAX_OUTPUT_TOKENS", "")
 OUTPUT_TOKEN_BUDGET_RETRIES = 3
 PROVIDER_ERROR_RETRIES = 2
+OLLAMA_429_MAX_RETRIES = 4
+OLLAMA_429_BASE_DELAY = 8
 SUMMARY_REPAIR_MAX_RETRIES = 5
 SUMMARY_REPAIR_MAX_TURNS = "4"
 REQUIRED_SUMMARY_PREFIXES = (
@@ -306,6 +308,14 @@ Remaining risks: none
 """
 
 
+def _is_ollama_429(text: str) -> bool:
+    """Return True if text indicates an Ollama rate-limit 429 response."""
+    if not text:
+        return False
+    lowered = text.lower()
+    return "429" in lowered or ("rate" in lowered and "limit" in lowered)
+
+
 def run_claude(
     prompt: str,
     debug_log_path: pathlib.Path,
@@ -332,15 +342,26 @@ def run_claude(
     effective_max_output_tokens = (max_output_tokens or "").strip()
     if effective_max_output_tokens:
         env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = effective_max_output_tokens
-    completed = subprocess.run(
-        command,
-        cwd=WORKDIR,
-        capture_output=True,
-        text=True,
-        timeout=CLAUDE_TIMEOUT_SECONDS,
-        env=env,
-    )
-    write_text(stderr_log_path, completed.stderr)
+
+    for attempt in range(1, OLLAMA_429_MAX_RETRIES + 1):
+        completed = subprocess.run(
+            command,
+            cwd=WORKDIR,
+            capture_output=True,
+            text=True,
+            timeout=CLAUDE_TIMEOUT_SECONDS,
+            env=env,
+        )
+        write_text(stderr_log_path, completed.stderr)
+        # Retry on Ollama 429 rate-limit errors with exponential backoff.
+        if completed.returncode != 0 and _is_ollama_429(completed.stderr):
+            if attempt < OLLAMA_429_MAX_RETRIES:
+                delay = OLLAMA_429_BASE_DELAY * (2 ** (attempt - 1))
+                time.sleep(delay)
+                continue
+            # Last attempt: proceed with the error response as-is.
+        break
+
     return completed.returncode, completed.stdout, completed.stderr
 
 
@@ -384,6 +405,8 @@ def is_retryable_provider_error(text: str) -> bool:
     lowered = text.lower()
     if "api error: 403" in lowered and "daily limit" in lowered:
         return False
+    if "429" in lowered or "rate limit" in lowered:
+        return True
     retryable_markers = (
         "provider returned error",
         "internalerror.algo.invalidparameter",

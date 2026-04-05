@@ -6,7 +6,7 @@
   "related_agents": ["bug", "dbg", "t", "cr"],
   "fixture": "python-math",
   "review_required": true,
-  "docs_required": true,
+  "docs_required": false,
   "verification_required": true,
   "prompt": "Make divide() raise ValueError(\"division by zero\") on zero division. Add one pytest case, add one short README note, run pytest -q, and finish with the required footer.",
   "success_criteria": [

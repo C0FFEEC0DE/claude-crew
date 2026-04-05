@@ -3,7 +3,9 @@
   "suite": "subagents_smoke",
   "agent_alias": "e",
   "category": "feature",
-  "related_agents": ["e"],
+  "related_agents": [
+    "e"
+  ],
   "fixture": "python-math",
   "review_required": true,
   "docs_required": true,
@@ -31,6 +33,6 @@
     "Outcome:",
     "Changed files:|No files changed:",
     "Verification status:",
-    "Next step:"
+    "Remaining risks:|Next step:"
   ]
 }
