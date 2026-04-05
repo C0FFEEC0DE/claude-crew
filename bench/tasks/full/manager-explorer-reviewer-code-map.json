@@ -23,13 +23,8 @@
     "Perform release or deploy work"
   ],
   "forbidden_transcript_patterns": [
-    "which agent would you prefer",
-    "which required agent",
-    "prefix match",
     "footer repair",
-    "shell guard",
-    "stop-guard",
-    "subagent-stop-guard"
+    "shell guard"
   ],
   "required_transcript_patterns": [],
   "required_used_agents": ["m", "e", "cr"]

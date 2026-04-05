@@ -32,6 +32,12 @@
     "exact line prefixes",
     "my formatting is breaking"
   ],
-  "required_transcript_patterns": [],
+  "required_transcript_patterns": [
+    "Task:\\s*Docs",
+    "Plan:",
+    "Outcome:",
+    "Changed files:|No files changed:",
+    "Verification status:|Next step:"
+  ],
   "required_used_agents": ["a"]
 }
