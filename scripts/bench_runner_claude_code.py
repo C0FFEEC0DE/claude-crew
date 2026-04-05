@@ -213,6 +213,16 @@ def build_prompt(task: dict, verification_label: str) -> str:
         "Implementation and file edits are in scope when the task asks for them. "
         "Do not reinterpret this as a review task just because the final summary must include review outcome."
     )
+    execution_discipline_note = (
+        "Keep the run terse and execution-first. "
+        "Start the first required handoff immediately, avoid filler planning prose, and spend turns on edits, tests, and required specialist handoffs."
+    )
+    fixture_layout_note = (
+        "Preserve the existing fixture layout. "
+        "Modify existing files in place when they already exist. "
+        "Do not rename, relocate, or duplicate source or test files unless the task explicitly requires it. "
+        "If the fixture already contains a test file, update that file instead of creating a second copy under a new path."
+    )
     required_used_agent_list = [alias for alias in task.get("required_used_agents", []) if isinstance(alias, str)]
     required_used_agents = ", ".join(f"@{alias}" for alias in required_used_agent_list)
     required_transcript_hints = transcript_contract_hints(task)
@@ -249,6 +259,8 @@ Complete the task in the current working directory using the installed Claude Co
 Use tools normally. Make only the changes needed for this task. Do not do release or deploy work.
 If behavior changes, update docs. {verification_hint}
 Leave the workspace changes in place for artifact collection.
+{execution_discipline_note}
+{fixture_layout_note}
 
 {workflow_override}
 
@@ -1362,6 +1374,16 @@ def synthesize_required_transcript_lines(
             lines.append(verification_status_line(verification_required, tests_run, tests_passed, verification_label))
         elif "Review outcome:" in pattern:
             lines.append(review_outcome_line(review_required, review_present))
+        elif pattern.strip() == "Next step:":
+            lines.append(
+                closure_line(
+                    pattern,
+                    verification_required=verification_required,
+                    tests_run=tests_run,
+                    tests_passed=tests_passed,
+                    review_required=review_required,
+                )
+            )
         elif "Remaining risks:|Next step:" in pattern:
             lines.append(
                 closure_line(

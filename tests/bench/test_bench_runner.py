@@ -185,6 +185,8 @@ def test_build_prompt_requires_real_ordered_handoffs_for_manager_workflows(tmp_p
 
     assert "Every required role must be launched as a real handoff in this order: @m -> @e -> @cr" in prompt
     assert "For this manager-led run, launch @m first. Then the manager must launch the remaining required roles in order: @e -> @cr." in prompt
+    assert "Keep the run terse and execution-first." in prompt
+    assert "Preserve the existing fixture layout." in prompt
 
 
 def test_required_transcript_patterns_ignore_user_only_mentions(tmp_path, monkeypatch):
@@ -384,6 +386,34 @@ def test_synthesize_required_transcript_lines_covers_docwriter_footer_shape(tmp_
     assert "Coverage: updated README.md." in lines
     assert "Changed files: README.md" in lines
     assert any(line.startswith("Outcome:") for line in lines)
+
+
+def test_synthesize_required_transcript_lines_supports_standalone_next_step(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+
+    lines = runner.synthesize_required_transcript_lines(
+        {
+            "id": "subagent-explorer-feature-handoff-lite",
+            "agent_alias": "e",
+            "required_transcript_patterns": [
+                r"Task:\s*Explore",
+                "Locations:",
+                "Outcome:",
+                "Changed files:|No files changed:",
+                "Verification status:",
+                "Next step:",
+            ],
+        },
+        changed_files=["README.md", "calculator.py", "test_calculator.py"],
+        verification_required=True,
+        tests_run=True,
+        tests_passed=True,
+        verification_label="pytest -q",
+        review_required=True,
+        review_present=True,
+    )
+
+    assert "Next step: carry the verified handoff forward to the next required specialist." in lines
 
 
 def test_forbidden_transcript_patterns_catch_footer_repair_meta_chatter(tmp_path, monkeypatch):
