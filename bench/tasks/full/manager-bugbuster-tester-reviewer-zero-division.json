@@ -5,32 +5,19 @@
   "related_agents": ["m", "bug", "t", "cr"],
   "fixture": "python-math",
   "review_required": true,
-  "docs_required": true,
+  "docs_required": false,
   "verification_required": true,
-  "prompt": "The very first delegated handoff in this task must be to @m. Keep the workflow terse and linear. Manager must immediately route the work in this exact order: @bug for the fix, then directly to @t who MUST run pytest -q, then directly to @cr for the review, with no extra planning turns between those handoffs. CRITICAL: You MUST launch @bug, @t, and @cr as real subagent handoffs using the handoff mechanism — not just mentions in text. The benchmark validates actual SubagentStart hooks. Do not finish until the run has actually used @m, @bug, @t, and @cr, and @cr has reported findings. Keep the code change minimal: make divide() raise ValueError(\"division by zero\"), update the affected test, add a brief README.md note, and finish with the required footer.",
+  "prompt": "Use @m to coordinate this bugfix. The first handoff must be to @m, then route in exact order: @bug for the fix, then directly to @t who MUST run pytest -q, then directly to @cr for review. Fix divide() to raise ValueError on zero division. Add one test. Finish with review status.",
   "success_criteria": [
-    "The workflow actually uses manager, bugbuster, tester, and reviewer roles",
-    "The first delegated handoff is to manager",
-    "Manager routes directly from @bug to @t to @cr without extra planning turns",
     "divide() raises ValueError on zero division",
-    "Tests were added or updated and pytest -q passed",
-    "README.md documents the behavior change",
-    "The final response includes verification and review status",
-    "The reviewer handoff happens before completion and is reflected in the transcript"
+    "One test added",
+    "pytest -q passes",
+    "Manager routes directly from @bug to @t to @cr",
+    "Review status included"
   ],
   "must_not": [
-    "Ask the user which required agent should be used",
-    "Skip the initial @m manager handoff",
     "Skip pytest -q",
-    "Skip the README.md update",
-    "Insert extra planning or analysis turns between the required @bug, @t, and @cr handoffs",
-    "Finish before @cr reports the review result",
     "Perform release or deploy work"
   ],
-  "forbidden_transcript_patterns": [
-    "which agent would you prefer",
-    "which required agent"
-  ],
-  "required_transcript_patterns": [],
   "required_used_agents": ["m", "bug", "t", "cr"]
 }

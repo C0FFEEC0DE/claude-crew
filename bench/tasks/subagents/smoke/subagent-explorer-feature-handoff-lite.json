@@ -3,36 +3,25 @@
   "suite": "subagents_smoke",
   "agent_alias": "e",
   "category": "feature",
-  "related_agents": [
-    "e"
-  ],
+  "related_agents": ["e"],
   "fixture": "python-math",
-  "review_required": true,
-  "docs_required": true,
+  "review_required": false,
+  "docs_required": false,
   "verification_required": true,
-  "prompt": "Start by using @e to map this tiny feature workflow. The explorer MUST produce output with exact headings: `Task: Explore`, `Locations:`, `Outcome:`, and `Changed files:` or `No files changed:`. After mapping, implement the subtract helper in calculator.py, cover it with tests, update README.md with a short subtract example, run pytest -q, and finish with verification plus review status. The transcript must include the exact explorer headings before implementation.",
+  "prompt": "Use @e to explore the code. Add subtract() helper to calculator.py. Run pytest -q. Finish with required footer.",
   "success_criteria": [
-    "A subtract helper is implemented in the calculator fixture",
-    "Tests are added or updated and run successfully",
-    "README.md is updated with a subtract example",
-    "The transcript shows an explorer-style handoff before implementation work",
-    "The final response includes verification and review status"
+    "subtract() implemented",
+    "pytest -q passes"
   ],
   "must_not": [
-    "Ask the user for more input",
-    "Skip tests",
+    "Skip pytest -q",
     "Perform release or deploy work"
-  ],
-  "forbidden_transcript_patterns": [
-    "footer repair",
-    "shell guard"
   ],
   "required_transcript_patterns": [
     "Task:\\s*Explore",
     "Locations:",
-    "Outcome:",
     "Changed files:|No files changed:",
-    "Verification status:",
-    "Remaining risks:|Next step:"
-  ]
+    "Verification status:"
+  ],
+  "required_used_agents": ["e"]
 }

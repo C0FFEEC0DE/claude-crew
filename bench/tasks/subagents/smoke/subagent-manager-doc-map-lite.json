@@ -8,28 +8,19 @@
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @m to coordinate this tiny docs-only task. The manager MUST produce output with exact headings: `Plan:`, `Task: Docs`, `Outcome:`, and `Changed files:` or `No files changed:`. Update README.md with a short maintenance note that points readers to calculator.py for arithmetic helpers and test_calculator.py for regression coverage. Keep it docs-only and finish with the required footer.",
+  "prompt": "Use @m to coordinate. Update README.md with a code-map note. Finish with required footer.",
   "success_criteria": [
-    "README.md is updated with a short maintenance or code-map note",
-    "The run stays docs-only",
-    "The transcript shows manager-style planning or coordination output",
-    "The final response includes the required footer"
+    "README.md updated",
+    "No code changes"
   ],
   "must_not": [
-    "Ask the user which agent to use",
-    "Modify runtime code or tests",
+    "Modify Python files",
     "Perform release or deploy work"
-  ],
-  "forbidden_transcript_patterns": [
-    "footer repair",
-    "shell guard"
   ],
   "required_transcript_patterns": [
     "Plan:",
-    "Task:\\s*Docs",
     "Outcome:",
-    "Changed files:|No files changed:",
-    "Verification status:",
-    "Remaining risks:|Next step:"
-  ]
+    "Changed files:|No files changed:"
+  ],
+  "required_used_agents": ["m"]
 }

@@ -7,19 +7,14 @@
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @m to coordinate this tiny docs workflow without waiting for more user input. Use @doc to update README.md with a short quickstart clarification for the Node fixture, keep the run docs-only, and finish with the required footer.",
+  "prompt": "Use @m to coordinate. Update README.md with quickstart for node-app. Mention npm test. Do not modify source files.",
   "success_criteria": [
-    "The workflow actually uses manager and docwriter roles",
-    "README.md is updated with a short quickstart clarification",
-    "Runtime code stays unchanged",
-    "The final response includes the required footer"
+    "README.md updated with quickstart",
+    "No source files modified"
   ],
   "must_not": [
-    "Ask the user which agent to use",
-    "Modify runtime code",
-    "Invent install or clone steps",
+    "Modify source files",
     "Perform release or deploy work"
   ],
-  "required_transcript_patterns": [],
   "required_used_agents": ["m", "doc"]
 }

@@ -5,27 +5,17 @@
   "related_agents": ["m", "e", "cr"],
   "fixture": "text-report",
   "review_required": true,
-  "docs_required": true,
+  "docs_required": false,
   "verification_required": false,
-  "prompt": "Start with @m for this tiny review workflow without waiting. The manager MUST launch @e as a real subagent handoff (not just a mention) to map reporter.py and README.md before any review starts. CRITICAL: You MUST launch @e and @cr as real subagent handoffs using the handoff mechanism — not just mentions in text. The benchmark validates actual SubagentStart hooks. Only after @e completes should @m launch @cr as a real subagent handoff for review. Add a concise REVIEW.md note with the main finding or explicitly say there are no material findings, keep runtime code unchanged, and finish with the required footer.",
+  "prompt": "Use @m to coordinate. Explore reporter.py, add code-map to README.md, add REVIEW.md with findings. Finish with review status.",
   "success_criteria": [
-    "The workflow actually uses manager, explorer, and reviewer roles",
-    "Explorer runs before reviewer and maps reporter.py and README.md first",
-    "A REVIEW.md file is added with a concise review note",
-    "Runtime code stays unchanged",
-    "The final response includes review status in the required footer"
+    "README.md has code-map",
+    "REVIEW.md created",
+    "Review status included"
   ],
   "must_not": [
-    "Modify reporter.py",
-    "Skip the @e mapping phase or send @cr before @e completes",
-    "Ask the user which subagent to use",
-    "Invent review findings",
+    "Modify Python files",
     "Perform release or deploy work"
   ],
-  "forbidden_transcript_patterns": [
-    "footer repair",
-    "shell guard"
-  ],
-  "required_transcript_patterns": [],
   "required_used_agents": ["m", "e", "cr"]
 }

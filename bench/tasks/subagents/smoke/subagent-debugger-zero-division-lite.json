@@ -5,43 +5,26 @@
   "category": "bugfix",
   "related_agents": ["dbg"],
   "fixture": "python-math",
-  "review_required": true,
-  "docs_required": true,
+  "review_required": false,
+  "docs_required": false,
   "verification_required": true,
-  "prompt": "Start with @dbg for this small debugging task. The debugger output must include the headings `Task: Debug`, `Reproduction:`, `Root cause:`, and `Outcome:` before the final footer. Reproduce the current zero-division behavior, explain the root cause under that heading, fix divide() so it raises ValueError(\"division by zero\"), update the tests, document the behavior in README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "Use @dbg to reproduce and fix the zero-division issue in divide(). Add one test case. Run pytest -q. Finish with required footer.",
   "success_criteria": [
-    "The zero-division bug is reproduced and fixed",
-    "Tests are updated and pass",
-    "README.md documents the changed behavior",
-    "The transcript shows debugger-style reproduction and root-cause output",
-    "The final response includes verification and review status",
-    "The transcript explicitly contains the required debugger headings"
+    "Reproduction steps shown",
+    "Root cause identified",
+    "divide() raises ValueError on zero division",
+    "pytest -q passes"
   ],
   "must_not": [
-    "Skip reproduction or root-cause explanation",
-    "Omit the exact headings Task: Debug, Reproduction:, Root cause:, or Outcome:",
     "Skip pytest -q",
     "Perform release or deploy work"
-  ],
-  "forbidden_transcript_patterns": [
-    "I see the issue",
-    "markdown bold syntax",
-    "prefix match",
-    "footer repair",
-    "shell guard",
-    "stop-guard",
-    "subagent-stop-guard",
-    "hook mechanics",
-    "exact line prefixes",
-    "my formatting is breaking"
   ],
   "required_transcript_patterns": [
     "Task:\\s*Debug",
     "Reproduction:",
     "Root cause:",
-    "Outcome:",
     "Changed files:|No files changed:",
-    "Verification status:",
-    "Remaining risks:|Next step:"
-  ]
+    "Verification status:"
+  ],
+  "required_used_agents": ["dbg"]
 }

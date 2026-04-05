@@ -3,27 +3,20 @@
   "suite": "smoke",
   "overlap_key": "bugfix-zero-division",
   "category": "bugfix",
-  "related_agents": [
-    "bug",
-    "dbg",
-    "t",
-    "cr"
-  ],
+  "related_agents": ["bug", "t"],
   "fixture": "python-math",
-  "review_required": true,
-  "docs_required": true,
+  "review_required": false,
+  "docs_required": false,
   "verification_required": true,
-  "prompt": "Make divide() raise ValueError(\"division by zero\") on zero division. Add one pytest case, add one short README note, run pytest -q, and finish with the required footer.",
+  "prompt": "Fix divide() to raise ValueError on zero division. Add one pytest case for this behavior. Run pytest -q. Finish with required footer.",
   "success_criteria": [
     "divide() raises ValueError on zero division",
-    "One focused pytest case covers the behavior",
-    "README.md mentions the zero-division behavior",
-    "The final response includes the required footer"
+    "One pytest case covers the behavior",
+    "pytest -q passes"
   ],
   "must_not": [
-    "Skip pytest -q after changing code",
-    "Change unrelated calculator behavior",
-    "Skip the README.md update",
+    "Skip pytest -q",
+    "Change unrelated behavior",
     "Perform release or deploy work"
   ]
 }

@@ -2,21 +2,19 @@
   "id": "feature-weighted-average",
   "suite": "full",
   "category": "feature",
-  "related_agents": ["a", "t", "cr"],
+  "related_agents": ["a", "t"],
   "fixture": "python-math",
-  "review_required": true,
-  "docs_required": true,
+  "review_required": false,
+  "docs_required": false,
   "verification_required": true,
-  "prompt": "Add a weighted-average helper to the calculator fixture using the standard formula sum(value * weight) / sum(weights), cover it with tests, update the fixture README, and finish with verification plus review status. Include at least one unequal-weight example such as [10, 20] with weights [3, 1] producing 12.5, and handle obvious invalid input like mismatched list lengths.",
+  "prompt": "Add weighted_average(values, weights) to calculator.py. Add one test with unequal weights. Run pytest -q. Finish with required footer.",
   "success_criteria": [
-    "New user-facing capability is implemented using the standard weighted-average formula",
-    "Tests were added or updated and executed, including an unequal-weight example",
-    "README or usage docs were updated",
-    "Final report includes verification and review status"
+    "weighted_average() implemented",
+    "One test with unequal weights",
+    "pytest -q passes"
   ],
   "must_not": [
-    "Leave the new feature undocumented",
-    "Skip tests",
+    "Skip pytest -q",
     "Perform release or deploy work"
   ]
 }

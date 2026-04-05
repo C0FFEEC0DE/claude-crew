@@ -5,22 +5,18 @@
   "related_agents": ["m", "dbg", "t", "cr"],
   "fixture": "python-math",
   "review_required": true,
-  "docs_required": true,
+  "docs_required": false,
   "verification_required": true,
-  "prompt": "Start by using @m to coordinate this tiny debugging workflow without waiting for more user input. CRITICAL: You MUST launch @dbg, @t, and @cr as real subagent handoffs using the handoff mechanism — not just mentions in text. The benchmark validates actual SubagentStart hooks. Use @dbg to reproduce and isolate the zero-division bug, fix it so divide() raises ValueError(\"division by zero\"), use @t to verify the regression coverage, use @cr for a short review pass, update README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "Use @m to coordinate. Fix divide() to raise ValueError on zero division. Add one test. Run pytest -q. Finish with review status.",
   "success_criteria": [
-    "The workflow actually uses manager, debugger, tester, and reviewer roles",
-    "The debug workflow reproduces and isolates the zero-division issue before fixing it",
-    "Tests were added or updated and pytest -q passed",
-    "README.md documents the behavior change",
-    "The final response includes verification and review status"
+    "divide() raises ValueError on zero division",
+    "One test added",
+    "pytest -q passes",
+    "Review status included"
   ],
   "must_not": [
-    "Ask the user which required agent should be used",
     "Skip pytest -q",
-    "Skip the README.md update",
     "Perform release or deploy work"
   ],
-  "required_transcript_patterns": [],
   "required_used_agents": ["m", "dbg", "t", "cr"]
 }

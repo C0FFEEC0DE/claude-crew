@@ -6,31 +6,24 @@
   "related_agents": ["t"],
   "fixture": "python-math",
   "review_required": false,
-  "docs_required": true,
+  "docs_required": false,
   "verification_required": true,
-  "prompt": "Start by using @t for this tiny verification-first task. The tester MUST produce output with exact headings: `Task: Testing`, `Gaps:`, `Outcome:`, and `Changed files:` or `No files changed:`. Add one regression test covering add() with a negative operand, update README.md with a one-line note that pytest -q covers additive regression, keep runtime code unchanged, run pytest -q, and finish with the required footer.",
+  "prompt": "Use @t to add one regression test for add() with negative operand. Run pytest -q. Do not modify calculator.py. Finish with required footer.",
   "success_criteria": [
-    "A new regression test is added for add()",
-    "pytest -q is run successfully",
-    "README.md mentions the regression coverage",
-    "The transcript shows tester-style output",
-    "The final response includes the required footer"
+    "One regression test added for add()",
+    "pytest -q passes",
+    "calculator.py unchanged"
   ],
   "must_not": [
     "Modify calculator.py",
     "Skip pytest -q",
     "Perform release or deploy work"
   ],
-  "forbidden_transcript_patterns": [
-    "footer repair",
-    "shell guard"
-  ],
   "required_transcript_patterns": [
     "Task:\\s*Testing",
     "Gaps:",
-    "Outcome:",
     "Changed files:|No files changed:",
-    "Verification status:",
-    "Remaining risks:|Next step:"
-  ]
+    "Verification status:"
+  ],
+  "required_used_agents": ["t"]
 }

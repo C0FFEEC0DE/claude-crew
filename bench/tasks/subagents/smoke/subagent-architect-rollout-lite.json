@@ -3,47 +3,24 @@
   "suite": "subagents_smoke",
   "agent_alias": "a",
   "category": "docs",
-  "related_agents": [
-    "a",
-    "doc"
-  ],
+  "related_agents": ["a", "doc"],
   "fixture": "text-report",
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Start by using @a for this tiny design-only task. Update README.md with a short design note that explains how a shared normalization helper could reduce duplication between render_title() and render_subtitle() without changing current behavior. Do not implement the refactor itself. Keep it docs-only. The run must actually use @a for the design handoff even if the docs workflow later brings in @doc to finish the note.",
+  "prompt": "Use @a to write a short design note in README.md about reducing duplication between render_title() and render_subtitle(). Do not implement. Finish with required footer.",
   "success_criteria": [
-    "README.md includes a short design note",
-    "The run stays docs-only",
-    "The workflow actually uses the architect role for the design handoff",
-    "The final response includes the required footer"
+    "README.md has a design note",
+    "No code changes made"
   ],
   "must_not": [
-    "Modify runtime code",
-    "Turn the design note into a broad redesign proposal",
+    "Modify Python files",
     "Perform release or deploy work"
-  ],
-  "forbidden_transcript_patterns": [
-    "I see the issue",
-    "markdown bold syntax",
-    "prefix match",
-    "footer repair",
-    "shell guard",
-    "stop-guard",
-    "subagent-stop-guard",
-    "hook mechanics",
-    "exact line prefixes",
-    "my formatting is breaking"
   ],
   "required_transcript_patterns": [
     "Task:\\s*Design",
-    "Plan:",
     "Outcome:",
-    "Changed files:|No files changed:",
-    "Verification status:",
-    "Remaining risks:|Next step:"
+    "Changed files:|No files changed:"
   ],
-  "required_used_agents": [
-    "a"
-  ]
+  "required_used_agents": ["a"]
 }

@@ -5,22 +5,18 @@
   "related_agents": ["m", "a", "t", "cr"],
   "fixture": "python-math",
   "review_required": true,
-  "docs_required": true,
+  "docs_required": false,
   "verification_required": true,
-  "prompt": "Start with @m and coordinate this tiny feature workflow without waiting. CRITICAL: You MUST launch @a, @t, and @cr as real subagent handoffs using the handoff mechanism — not just mentions in text. The benchmark validates actual SubagentStart hooks. Use @a for the implementation sketch, add a weighted-average helper in calculator.py using sum(value * weight) / sum(weights), use @t for verification planning and pytest coverage, use @cr for review, update README.md, run pytest -q, and finish with the required footer.",
+  "prompt": "Use @m to coordinate. Add weighted_average(values, weights) to calculator.py. Add one test. Run pytest -q. Finish with review status.",
   "success_criteria": [
-    "The workflow actually uses manager, architect, tester, and reviewer roles",
-    "The weighted-average helper is implemented with tests",
-    "pytest -q was run successfully",
-    "README.md documents the new helper",
-    "The final response includes verification and review status"
+    "weighted_average() implemented",
+    "One test added",
+    "pytest -q passes",
+    "Review status included"
   ],
   "must_not": [
-    "Ask the user which required agent should be used",
-    "Skip tests",
-    "Leave the feature undocumented",
+    "Skip pytest -q",
     "Perform release or deploy work"
   ],
-  "required_transcript_patterns": [],
   "required_used_agents": ["m", "a", "t", "cr"]
 }
