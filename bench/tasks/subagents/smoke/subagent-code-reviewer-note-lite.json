@@ -30,9 +30,6 @@
     "Task:\\s*Code Review",
     "Findings:",
     "Review outcome:",
-    "Outcome:",
-    "Changed files:|No files changed:",
-    "Verification status:",
-    "Remaining risks:|Next step:"
+    "Changed files:|No files changed:"
   ]
 }
