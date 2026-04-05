@@ -46,7 +46,7 @@ on:
       max_turns:
         description: "Maximum Claude Code turns per task"
         required: false
-        default: "6"
+        default: "8"
         type: string
       timeout_seconds:
         description: "Per-task Claude timeout in seconds"
