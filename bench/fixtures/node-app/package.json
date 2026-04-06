@@ -1,8 +1,0 @@
-{
-  "name": "node-app-fixture",
-  "private": true,
-  "type": "commonjs",
-  "scripts": {
-    "test": "node --test"
-  }
-}

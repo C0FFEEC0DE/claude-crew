@@ -91,7 +91,7 @@ def test_benchmark_workflow_change_still_selects_full_suite():
 
     assert reasons == ["global_behavior_change"]
     assert "manager-explorer-reviewer-code-map" in selected_ids
-    assert "feature-node-app-multiply" in selected_ids
+    assert "feature-weighted-average" in selected_ids
 
 
 def test_agent_change_selects_related_full_workflow_tasks():
@@ -105,7 +105,7 @@ def test_agent_change_selects_related_full_workflow_tasks():
     assert "agent_or_skill_change" in reasons
     assert "manager-bugbuster-tester-reviewer-zero-division" in selected_ids
     assert "bugfix-zero-division" in selected_ids
-    assert "feature-node-app-multiply" not in selected_ids
+    assert "feature-weighted-average" not in selected_ids
 
 
 def test_full_name_agent_change_selects_related_full_workflow_tasks():
@@ -127,14 +127,17 @@ def test_fixture_change_selects_tasks_for_that_fixture_only():
     selected_ids, reasons = select_ids(
         selector,
         "full",
-        ["bench/fixtures/node-app/src/calculator.js"],
+        ["bench/fixtures/python-math/calculator.py"],
     )
 
     assert "fixture_change" in reasons
     assert selected_ids == {
-        "docs-node-app-quickstart",
-        "feature-node-app-multiply",
-        "manager-docwriter-node-quickstart",
+        "bugfix-zero-division",
+        "feature-weighted-average",
+        "feature-manager-no-agent-choice",
+        "manager-architect-tester-reviewer-weighted-average",
+        "manager-bugbuster-tester-reviewer-zero-division",
+        "manager-debugger-tester-reviewer-zero-division",
     }
 
 
@@ -216,7 +219,6 @@ def test_docwriter_change_also_selects_architect_doc_tasks():
     assert "subagent-docwriter-quickstart-lite" in smoke_ids
     assert "subagent-architect-rollout-lite" in smoke_ids
     assert golden_reasons == ["agent_or_skill_change"]
-    assert "subagent-docwriter-fixture-accuracy" in golden_ids
     assert "subagent-architect-design-note" in golden_ids
 
 
@@ -348,12 +350,12 @@ def test_full_pr_priority_profile_limits_global_change_to_six_tasks():
     assert "global_behavior_change" in reasons
     assert "task_limit:6" in reasons
     assert selected_ids == {
-        "docs-node-app-quickstart",
         "feature-weighted-average",
         "feature-report-summary-line",
+        "feature-manager-no-agent-choice",
         "manager-bugbuster-tester-reviewer-zero-division",
         "manager-explorer-reviewer-code-map",
-        "manager-docwriter-node-quickstart",
+        "manager-architect-tester-reviewer-weighted-average",
     }
     assert len(selected_ids) == 6
 

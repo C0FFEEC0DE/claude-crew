@@ -141,8 +141,8 @@ class TestTaskFixtureAlignment:
             if not fixture_name:
                 continue
 
-            # Check common source files
-            for source_file in ["calculator.py", "src/calculator.js", "reporter.py"]:
+            # Check common source files (Python only)
+            for source_file in ["calculator.py", "reporter.py"]:
                 source = get_fixture_source(fixture_name, source_file)
                 if not source:
                     continue
@@ -150,16 +150,14 @@ class TestTaskFixtureAlignment:
                 prompt = task.get("prompt", "").lower()
                 task_id = task["id"]
 
-                # Extract function definitions from source
-                # For JS: function name(...) { ... }
-                # For Python: def name(...): ...
+                # Extract Python function definitions
                 import re
-                func_pattern = r"(?:function\s+(\w+)|def\s+(\w+))\s*\([^)]*\)\s*\{?([^{}]*(?:\{[^{}]*\}[^{}]*)*)"
+                func_pattern = r"def\s+(\w+)\s*\([^)]*\)\s*:([^\"']*(?:\"[^\"]*\"|'[^']*'[^\"']*)*)"
                 matches = re.findall(func_pattern, source, re.DOTALL)
 
                 for match in matches:
-                    func_name = match[0] or match[1]
-                    func_body = match[2] if len(match) > 2 else ""
+                    func_name = match[0]
+                    func_body = match[1] if len(match) > 1 else ""
 
                     # Check if task explicitly asks to implement/add this function
                     # Look for patterns like "add X helper", "implement X", "create X"
@@ -206,8 +204,8 @@ class TestTaskFixtureAlignment:
             if not fixture_name:
                 continue
 
-            # Check common source files
-            for source_file in ["calculator.py", "src/calculator.js"]:
+            # Check Python source files
+            for source_file in ["calculator.py"]:
                 source = get_fixture_source(fixture_name, source_file)
                 if not source:
                     continue
