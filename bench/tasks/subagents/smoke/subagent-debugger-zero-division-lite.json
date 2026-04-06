@@ -24,9 +24,6 @@
     "shell guard"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Debug",
-    "Reproduction:",
-    "Root cause:",
     "Outcome:",
     "Changed files:|No files changed:",
     "Verification status:",

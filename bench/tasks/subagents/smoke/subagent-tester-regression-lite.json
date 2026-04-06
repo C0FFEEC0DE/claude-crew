@@ -24,8 +24,6 @@
     "shell guard"
   ],
   "required_transcript_patterns": [
-    "Task:\\s*Testing",
-    "Gaps:",
     "Outcome:",
     "Changed files:|No files changed:",
     "Verification status:",

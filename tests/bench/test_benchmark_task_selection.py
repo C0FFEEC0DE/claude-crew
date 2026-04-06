@@ -387,10 +387,18 @@ def test_bugbuster_tasks_use_role_assertion_and_relaxed_findings_patterns():
         ).read_text(encoding="utf-8")
     )
 
+    # Both smoke and golden tasks should rely on required_used_agents for role assertion
     assert smoke_task["required_used_agents"] == ["bug"]
     assert golden_task["required_used_agents"] == ["bug"]
-    assert "Findings:|Investigation" in smoke_task["required_transcript_patterns"]
-    assert "Outcome:|Fix:" in smoke_task["required_transcript_patterns"]
+
+    # Smoke task uses simplified patterns (model-independent footer markers only)
+    assert "Outcome:" in smoke_task["required_transcript_patterns"]
+    assert "Changed files:|No files changed:" in smoke_task["required_transcript_patterns"]
+    assert "Verification status:" in smoke_task["required_transcript_patterns"]
+    # Smoke task should NOT have model-dependent patterns
+    assert not any("Task:" in p for p in smoke_task["required_transcript_patterns"])
+
+    # Golden task keeps stricter patterns for regression testing
     assert "Findings:|Investigation" in golden_task["required_transcript_patterns"]
     assert "Outcome:|Fix:" in golden_task["required_transcript_patterns"]
 
