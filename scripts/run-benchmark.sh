@@ -4,7 +4,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTPUT_DIR=""
-TASK_GLOB="bench/tasks/smoke/*.json"
+TASK_GLOB="bench/tasks/subagents/smoke/*.json"
 TASK_LIST_FILE=""
 TASK_LABEL=""
 MODE="${BENCH_MODE:-}"
@@ -83,7 +83,7 @@ fi
 
 mkdir -p "$HOME/.claude" "$HOME/.claude/state" "$HOME/.claude/logs"
 
-if [ -n "$TASK_LIST_FILE" ] && [ -n "$TASK_GLOB" ] && [ "$TASK_GLOB" != "bench/tasks/smoke/*.json" ]; then
+if [ -n "$TASK_LIST_FILE" ] && [ -n "$TASK_GLOB" ] && [ "$TASK_GLOB" != "bench/tasks/subagents/smoke/*.json" ]; then
     usage
 fi
 

@@ -391,25 +391,6 @@ else
     report_error "Behavior Benchmark Smoke workflow must keep installer-trigger coverage, smart selection precheck, working manual changed-file collection, and markdown benchmark tables"
 fi
 
-if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q -- '--suite full' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q -- '--exclude-overlap-with-suite smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q -- '--exclude-overlap-with-suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q -- '--priority-profile pr_full --max-tasks 6' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q "'install.sh'" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q "'claudecfg/install.sh'" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml" \
-    && ! grep -Fq -- "[ \"\${{ github.event_name }}\" = \"schedule\" ]" "$REPO_ROOT/.github/workflows/behavior-benchmark-full.yml"; then
-    echo "OK: Behavior Benchmark Full schedule and selector"
-else
-    report_error "Behavior Benchmark Full workflow must keep installer-trigger coverage, run nightly, stay change-gated by default, exclude smoke-covered overlap on PRs, and publish markdown benchmark tables"
-fi
-
 if grep -q -- '--suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'pull_request:' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
@@ -422,20 +403,6 @@ if grep -q -- '--suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-b
     echo "OK: Behavior Benchmark Subagents Smoke PR selector"
 else
     report_error "Behavior Benchmark Subagents Smoke workflow must keep installer-trigger coverage, support manual changed-file collection, and publish markdown benchmark tables"
-fi
-
-if grep -q 'cron: '\''30 1 \* \* \*'\''' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -q -- '--suite subagents_golden' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -q 'selection_mode="changed"' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -q 'INPUT_SELECTION_MODE:-all' "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/benchmark-nightly.yml" \
-    && ! grep -Fq -- "[ \"\${{ github.event_name }}\" = \"schedule\" ]" "$REPO_ROOT/.github/workflows/benchmark-nightly.yml"; then
-    echo "OK: Behavior Benchmark Subagents Golden schedule and selector"
-else
-    report_error "Behavior Benchmark Subagents Golden workflow must run nightly, stay change-gated by default, keep manual all-task selection, and publish markdown benchmark tables"
 fi
 
 echo ""
@@ -536,7 +503,6 @@ echo "--- Checking benchmark tasks ---"
 TASK_IDS=()
 EXPECTED_SUBAGENT_ALIASES=(m e a bug dbg t cr doc hk)
 SUBAGENT_SMOKE_ALIASES_SEEN=()
-SUBAGENT_GOLDEN_ALIASES_SEEN=()
 SUBAGENT_REQUIRED_FOOTER_REGEXES=(
     "Outcome:"
     "Changed files:|No files changed:"
@@ -601,9 +567,6 @@ while IFS= read -r task_file; do
             if [[ "$task_file" == *"/bench/tasks/subagents/smoke/"* ]]; then
                 SUBAGENT_SMOKE_ALIASES_SEEN+=("$agent_alias")
             fi
-            if [[ "$task_file" == *"/bench/tasks/subagents/golden/"* ]]; then
-                SUBAGENT_GOLDEN_ALIASES_SEEN+=("$agent_alias")
-            fi
         fi
 
         if jq -e '(.required_transcript_patterns // []) | length > 0' "$task_file" >/dev/null; then
@@ -625,12 +588,6 @@ while IFS= read -r task_file; do
         fi
     fi
 
-    if [[ "$task_file" == *"/bench/tasks/full/manager-"* ]]; then
-        if ! jq -e '(.required_used_agents // []) | type == "array" and length > 0' "$task_file" >/dev/null; then
-            report_error "Manager-led full benchmark task must declare required_used_agents so orchestration coverage is role-based: $task_file"
-        fi
-    fi
-
     if printf '%s\n' "${TASK_IDS[@]}" | grep -Fxq "$task_id"; then
         report_error "Duplicate benchmark task id: $task_id"
     else
@@ -644,9 +601,6 @@ shopt -u nullglob
 for expected_alias in "${EXPECTED_SUBAGENT_ALIASES[@]}"; do
     if ! printf '%s\n' "${SUBAGENT_SMOKE_ALIASES_SEEN[@]}" | grep -Fxq "$expected_alias"; then
         report_error "Missing subagent smoke benchmark coverage for agent alias: $expected_alias"
-    fi
-    if ! printf '%s\n' "${SUBAGENT_GOLDEN_ALIASES_SEEN[@]}" | grep -Fxq "$expected_alias"; then
-        report_error "Missing golden subagent benchmark coverage for agent alias: $expected_alias"
     fi
 done
 echo ""

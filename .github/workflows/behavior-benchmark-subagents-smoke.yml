@@ -13,9 +13,7 @@ on:
       - main
     paths:
       - '.github/workflows/behavior-benchmark.yml'
-      - '.github/workflows/behavior-benchmark-full.yml'
       - '.github/workflows/behavior-benchmark-subagents-smoke.yml'
-      - '.github/workflows/benchmark-nightly.yml'
       - 'bench/**'
       - 'claudecfg/**'
       - 'scripts/assert-benchmark-summary.sh'

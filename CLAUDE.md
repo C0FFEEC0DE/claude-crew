@@ -62,15 +62,13 @@ Repository CI includes:
 - status badges in `README.md`
 - `Validate`, `Hook Tests`, and `Security Scan` on every push and PR
 - `Behavior Benchmark Smoke` on benchmark-related PRs (matrix shards, max 2 parallel)
-- `Behavior Benchmark Full` as a smart-selected workflow-combination suite on PRs plus manual/nightly runs
 - `Behavior Benchmark Subagents Smoke` on benchmark-related PRs with per-role task selection
-- `Behavior Benchmark Subagents Golden` as a smart-selected nightly/manual golden agent suite
 
-Concurrent benchmark runs are limited by a **two-slot gate** (`scripts/wait-for-benchmark-slot.py`) that prevents CI overload when multiple cron jobs or workflow dispatches fire simultaneously. The gate polls a GitHub API endpoint, waits with fixed-interval retry, and handles HTTP 403 rate-limit errors by reading the `Retry-After` header before retrying.
+Concurrent benchmark runs are limited by a **two-slot gate** (`scripts/wait-for-benchmark-slot.py`) that prevents CI overload when multiple workflow dispatches fire simultaneously. The gate polls a GitHub API endpoint, waits with fixed-interval retry, and handles HTTP 403 rate-limit errors by reading the `Retry-After` header before retrying.
 
 All benchmark workflows opt into **Node.js 24** via `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` to prepare for the September 2026 Node.js 20 runner deprecation.
 
-Agent-level regressions are covered by the smoke and golden suites under `bench/tasks/subagents/`. The repository validator enforces shared subagent footer markers inside golden benchmark tasks so prompt, benchmark, and hook contracts cannot silently drift apart.
+Agent-level regressions are covered by the smoke suite under `bench/tasks/subagents/smoke/` (9 tasks, one per agent). The repository validator enforces shared subagent footer markers inside benchmark tasks so prompt, benchmark, and hook contracts cannot silently drift apart.
 
 OpenRouter-backed Claude Code is configured via repository secrets/variables. See `docs/benchmarking.md`.
 

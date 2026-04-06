@@ -339,23 +339,18 @@ Repository-level checks are separate from the local Claude profile:
 - `.github/workflows/validate.yml` — structural validation on every push and PR
 - `.github/workflows/hooks-test.yml` — deterministic hook behavior tests on every push and PR
 - `.github/workflows/behavior-benchmark.yml` — fast behavioral smoke coverage for benchmark-relevant PR changes
-- `.github/workflows/behavior-benchmark-full.yml` — smart-selected workflow-combination suite for PRs, manual runs, and nightly schedule
-- `.github/workflows/behavior-benchmark-subagents-smoke.yml` — smart-selected subagent smoke coverage for benchmark-relevant PR changes
-- `.github/workflows/benchmark-nightly.yml` — smart-selected golden subagent suite, runnable manually and on nightly schedule
+- `.github/workflows/behavior-benchmark-subagents-smoke.yml` — per-agent coverage for benchmark-relevant PR changes
 - `.github/workflows/security-scan.yml` — repository secret scan on every push and PR, plus weekly schedule
 
-Behavior benchmark recovery metrics are always reported in `summary.json` and the GitHub step summary. By default they are informational only; strict recovery caps are enabled only when `BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS` or `BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS` are set explicitly, or when matching `workflow_dispatch` inputs are provided. The live workflow defaults to a `300` second per-task timeout and can optionally use a dedicated `BEHAVIOR_BENCHMARK_MODEL` variable before falling back to the repository-wide `OLLAMA_MODEL`.
+Behavior benchmark recovery metrics are always reported in `summary.json` and the GitHub step summary. By default they are informational only; strict recovery caps are enabled only when `BEHAVIOR_BENCHMARK_MAX_RECOVERED_TASKS` or `BEHAVIOR_BENCHMARK_MAX_SUMMARY_REPAIRED_TASKS` are set explicitly, or when matching `workflow_dispatch` inputs are provided. The live workflow defaults to a `400` second per-task timeout and can optionally use a dedicated `BEHAVIOR_BENCHMARK_MODEL` variable before falling back to the repository-wide `OLLAMA_MODEL`.
 
 Benchmark support files:
 
 - `tests/hooks/` — hook fixtures and assertions
 - `bench/tasks/` — benchmark task definitions
-- `bench/tasks/smoke/` — cheap end-to-end PR smoke tasks
-- `bench/tasks/full/` — broader workflow-combination tasks
-- `bench/tasks/subagents/smoke/` — one short canary task per specialist agent
-- `bench/tasks/subagents/golden/` — stricter per-agent regression tasks
+- `bench/tasks/subagents/smoke/` — one canary task per specialist agent (9 tasks total)
 - `bench/fixtures/` — benchmark fixture repositories
 - `docs/agent-contracts.md` — agent contract matrix and how the hook/benchmark layers fit together
 - `docs/benchmarking.md` — runner contract and GitHub setup
 
-Each canonical agent alias must have at least one focused task in both `bench/tasks/subagents/smoke/` and `bench/tasks/subagents/golden/` with non-empty `required_transcript_patterns` and `forbidden_transcript_patterns`. This keeps role regressions catchable in both cheap PR coverage and stricter scheduled coverage.
+Each canonical agent alias must have at least one focused task in `bench/tasks/subagents/smoke/` with non-empty `forbidden_transcript_patterns` and at least one required-behavior assertion via `required_transcript_patterns`, `required_used_agents`, or `required_used_agent_groups`. This keeps role regressions catchable in PR coverage.

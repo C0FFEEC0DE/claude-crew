@@ -7,7 +7,7 @@ It has five layers:
 1. `Hook-level contract` — shell hooks enforce workflow gates, summary fields, and completion safety
 2. `Benchmark task contract` — each agent has at least one focused benchmark task with file/doc/test scope rules
 3. `Bench runner assertions` — transcript patterns, used-agent signals, and changed-file checks validate actual behavior, not just exit codes
-4. `Role benchmark suites` — `bench/tasks/subagents/smoke/*.json` provides cheap PR canaries and `bench/tasks/subagents/golden/*.json` provides stricter scheduled regressions
+4. `Role benchmark suite` — `bench/tasks/subagents/smoke/*.json` provides per-agent coverage for PRs
 5. `Agent contract matrix` — the table below maps every agent to its expected handoff signal and benchmark coverage
 
 ## Hook-Level Contract
@@ -46,16 +46,15 @@ Relevant files:
 - [`tests/bench/test_bench_runner.py`](../tests/bench/test_bench_runner.py)
 - [`bench/patterns/forbidden-meta-chatter.json`](../bench/patterns/forbidden-meta-chatter.json)
 
-## Role Benchmark Suites
+## Role Benchmark Suite
 
-The per-agent suites live in:
+The per-agent suite lives in:
 
 - [`bench/tasks/subagents/smoke/`](../bench/tasks/subagents/smoke)
-- [`bench/tasks/subagents/golden/`](../bench/tasks/subagents/golden)
 
 Repository validation now requires:
 
-- every canonical agent alias has at least one smoke task and one golden task
+- every canonical agent alias has at least one smoke task
 - every subagent benchmark task declares `agent_alias`
 - every subagent benchmark task has non-empty `forbidden_transcript_patterns`
 - every subagent benchmark task has at least one required-behavior assertion via `required_transcript_patterns`, `required_used_agents`, or `required_used_agent_groups`
@@ -66,17 +65,17 @@ This is enforced by:
 
 ## Matrix
 
-| Agent | Alias | Smoke task | Golden task | Required signal | Forbidden transcript focus | Benchmark task contract |
-| --- | --- | --- | --- | --- | --- | --- |
-| Manager | `m` | [`subagent-manager-doc-map-lite.json`](../bench/tasks/subagents/smoke/subagent-manager-doc-map-lite.json) | [`subagent-manager-workflow-routing.json`](../bench/tasks/subagents/golden/subagent-manager-workflow-routing.json) | `Plan:`, role handoff markers, plus stop-safe footer markers `Outcome:`, `Changed files:`/`No files changed:`, `Verification status:`, and `Remaining risks:`/`Next step:` | no agent-choice prompts, no hook/footer repair chatter | coordination without asking the user which required agent to use |
-| Explorer | `e` | [`subagent-explorer-code-map-lite.json`](../bench/tasks/subagents/smoke/subagent-explorer-code-map-lite.json) | [`subagent-explorer-implementation-handoff.json`](../bench/tasks/subagents/golden/subagent-explorer-implementation-handoff.json) | `Task:\s*Explore`, `Locations:`, plus stop-safe footer markers | no meta chatter about prefix matching or shell guards | map the target area before change work |
-| Architect | `a` | [`subagent-architect-rollout-lite.json`](../bench/tasks/subagents/smoke/subagent-architect-rollout-lite.json) | [`subagent-architect-design-note.json`](../bench/tasks/subagents/golden/subagent-architect-design-note.json) | actual use of `@a` via `required_used_agents`, plus docs-only scope and README note content | no footer-repair chatter | docs-only design note, no implementation drift even if docs workflow later adds `@doc` |
-| Bugbuster | `bug` | [`subagent-bugbuster-zero-division-lite.json`](../bench/tasks/subagents/smoke/subagent-bugbuster-zero-division-lite.json) | [`subagent-bugbuster-findings-regression.json`](../bench/tasks/subagents/golden/subagent-bugbuster-findings-regression.json) | `Task:\s*Bug Scan`, `Findings:`, plus stop-safe footer markers | no footer-repair chatter | bugfix with findings, tests, docs update, and review |
-| Debugger | `dbg` | [`subagent-debugger-zero-division-lite.json`](../bench/tasks/subagents/smoke/subagent-debugger-zero-division-lite.json) | [`subagent-debugger-root-cause-regression.json`](../bench/tasks/subagents/golden/subagent-debugger-root-cause-regression.json) | `Task:\s*Debug`, `Reproduction:`, `Root cause:`, plus stop-safe footer markers | no footer-repair chatter | reproduce, isolate, fix, test, and document |
-| Tester | `t` | [`subagent-tester-regression-lite.json`](../bench/tasks/subagents/smoke/subagent-tester-regression-lite.json) | [`subagent-tester-verification-discipline.json`](../bench/tasks/subagents/golden/subagent-tester-verification-discipline.json) | `Task:\s*Testing`, `Gaps:`, plus stop-safe footer markers | no footer-repair chatter | verification-first task with real `pytest -q` evidence |
-| Code Reviewer | `cr` | [`subagent-code-reviewer-note-lite.json`](../bench/tasks/subagents/smoke/subagent-code-reviewer-note-lite.json) | [`subagent-code-reviewer-findings-discipline.json`](../bench/tasks/subagents/golden/subagent-code-reviewer-findings-discipline.json) | `Task:\s*Code Review`, `Findings:`, `Review outcome:`, plus stop-safe footer markers | no invented findings, no hook/footer repair chatter | review-only task that must not modify source code |
-| Docwriter | `doc` | [`subagent-docwriter-quickstart-lite.json`](../bench/tasks/subagents/smoke/subagent-docwriter-quickstart-lite.json) | [`subagent-docwriter-fixture-accuracy.json`](../bench/tasks/subagents/golden/subagent-docwriter-fixture-accuracy.json) | `Task:\s*Docs`, `Coverage:`, plus stop-safe footer markers | no invented install/clone steps, no footer-repair chatter | docs-only task with forbidden doc hallucination patterns |
-| Housekeeper | `hk` | [`subagent-housekeeper-refactor-lite.json`](../bench/tasks/subagents/smoke/subagent-housekeeper-refactor-lite.json) | [`subagent-housekeeper-bounded-refactor.json`](../bench/tasks/subagents/golden/subagent-housekeeper-bounded-refactor.json) | `Task:\s*Refactor`, review/verification markers, plus stop-safe footer markers | no footer-repair chatter | bounded refactor with verification and no behavior drift |
+| Agent | Alias | Smoke task | Required signal | Forbidden transcript focus | Benchmark task contract |
+| --- | --- | --- | --- | --- | --- |
+| Manager | `m` | [`subagent-manager-doc-map-lite.json`](../bench/tasks/subagents/smoke/subagent-manager-doc-map-lite.json) | `Plan:`, role handoff markers, plus stop-safe footer markers `Outcome:`, `Changed files:`/`No files changed:`, `Verification status:`, and `Remaining risks:`/`Next step:` | no agent-choice prompts, no hook/footer repair chatter | coordination without asking the user which required agent to use |
+| Explorer | `e` | [`subagent-explorer-code-map-lite.json`](../bench/tasks/subagents/smoke/subagent-explorer-code-map-lite.json) | `Task:\s*Explore`, `Locations:`, plus stop-safe footer markers | no meta chatter about prefix matching or shell guards | map the target area before change work |
+| Architect | `a` | [`subagent-architect-rollout-lite.json`](../bench/tasks/subagents/smoke/subagent-architect-rollout-lite.json) | actual use of `@a` via `required_used_agents`, plus docs-only scope and README note content | no footer-repair chatter | docs-only design note, no implementation drift even if docs workflow later adds `@doc` |
+| Bugbuster | `bug` | [`subagent-bugbuster-zero-division-lite.json`](../bench/tasks/subagents/smoke/subagent-bugbuster-zero-division-lite.json) | `Task:\s*Bug Scan`, `Findings:`, plus stop-safe footer markers | no footer-repair chatter | bugfix with findings, tests, docs update, and review |
+| Debugger | `dbg` | [`subagent-debugger-zero-division-lite.json`](../bench/tasks/subagents/smoke/subagent-debugger-zero-division-lite.json) | `Task:\s*Debug`, `Reproduction:`, `Root cause:`, plus stop-safe footer markers | no footer-repair chatter | reproduce, isolate, fix, test, and document |
+| Tester | `t` | [`subagent-tester-regression-lite.json`](../bench/tasks/subagents/smoke/subagent-tester-regression-lite.json) | `Task:\s*Testing`, `Gaps:`, plus stop-safe footer markers | no footer-repair chatter | verification-first task with real `pytest -q` evidence |
+| Code Reviewer | `cr` | [`subagent-code-reviewer-note-lite.json`](../bench/tasks/subagents/smoke/subagent-code-reviewer-note-lite.json) | `Task:\s*Code Review`, `Findings:`, `Review outcome:`, plus stop-safe footer markers | no invented findings, no hook/footer repair chatter | review-only task that must not modify source code |
+| Docwriter | `doc` | [`subagent-docwriter-quickstart-lite.json`](../bench/tasks/subagents/smoke/subagent-docwriter-quickstart-lite.json) | `Task:\s*Docs`, `Coverage:`, plus stop-safe footer markers | no invented install/clone steps, no footer-repair chatter | docs-only task with forbidden doc hallucination patterns |
+| Housekeeper | `hk` | [`subagent-housekeeper-refactor-lite.json`](../bench/tasks/subagents/smoke/subagent-housekeeper-refactor-lite.json) | `Task:\s*Refactor`, review/verification markers, plus stop-safe footer markers | no footer-repair chatter | bounded refactor with verification and no behavior drift |
 
 ## How To Extend
 
@@ -84,13 +83,12 @@ When adding a new agent or tightening an existing one:
 
 1. Add or update the agent prompt in `claudecfg/agents/`
 2. Add a focused smoke task in `bench/tasks/subagents/smoke/`
-3. Add a stricter golden task in `bench/tasks/subagents/golden/`
-4. Set `agent_alias`
-5. Add at least one required-behavior assertion:
+3. Set `agent_alias`
+4. Add at least one required-behavior assertion:
    `required_transcript_patterns`, `required_used_agents`, or `required_used_agent_groups`
-6. Add non-empty `forbidden_transcript_patterns`
-7. Update this matrix
-8. Run:
+5. Add non-empty `forbidden_transcript_patterns`
+6. Update this matrix
+7. Run:
    - `pytest -q tests/bench/test_bench_runner.py`
    - `bash scripts/validate.sh`
    - `bash scripts/test-hooks.sh`
