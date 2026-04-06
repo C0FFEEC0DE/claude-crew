@@ -1771,7 +1771,8 @@ def main() -> int:
 
     after = snapshot_files(WORKDIR)
     changed_files = sorted(path for path in set(before) | set(after) if before.get(path) != after.get(path))
-    completed = len(changed_files) > 0
+    expect_changes = bool(task.get("expect_changes", True))
+    completed = len(changed_files) > 0 or not expect_changes
     patch_text = build_patch(before, after)
     write_text(OUTPUT_DIR / "workspace.patch", patch_text)
     write_text(OUTPUT_DIR / "changed-files.json", json.dumps(changed_files, ensure_ascii=False, indent=2) + "\n")

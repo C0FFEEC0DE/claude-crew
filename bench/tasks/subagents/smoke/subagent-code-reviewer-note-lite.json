@@ -3,7 +3,9 @@
   "suite": "subagents_smoke",
   "agent_alias": "cr",
   "category": "review",
-  "related_agents": ["cr"],
+  "related_agents": [
+    "cr"
+  ],
   "fixture": "python-math",
   "review_required": false,
   "docs_required": false,
@@ -30,5 +32,8 @@
     "Verification status:",
     "Remaining risks:|Next step:"
   ],
-  "required_used_agents": ["cr"]
+  "required_used_agents": [
+    "cr"
+  ],
+  "expect_changes": false
 }
