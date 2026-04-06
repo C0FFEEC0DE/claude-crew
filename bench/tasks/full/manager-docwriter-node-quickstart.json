@@ -7,7 +7,7 @@
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Use @m to coordinate. Update README.md with quickstart for node-app. Mention npm test. Do not modify source files.",
+  "prompt": "Use @m to coordinate. CRITICAL: You MUST launch @doc as a real subagent handoff using the Agent tool — not just a mention in text. The benchmark validates actual SubagentStart hooks. After @m analyzes the task, launch @doc for documentation. Update README.md with quickstart for node-app. Mention npm test. Do not modify source files.",
   "success_criteria": [
     "README.md updated with quickstart",
     "No source files modified"

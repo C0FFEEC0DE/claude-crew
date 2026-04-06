@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": false,
   "verification_required": true,
-  "prompt": "Use @m to coordinate this bugfix. The first handoff must be to @m, then route in exact order: @bug for the fix, then directly to @t who MUST run pytest -q, then directly to @cr for review. Fix divide() to raise ValueError on zero division. Add one test. Finish with review status.",
+  "prompt": "Use @m to coordinate this bugfix. CRITICAL: You MUST launch @bug, @t, and @cr as real subagent handoffs using the Agent tool — not just mentions in text. The benchmark validates actual SubagentStart hooks. The first handoff must be to @m, then route in exact order: @bug for the fix, then directly to @t who MUST run pytest -q, then directly to @cr for review. Fix divide() to raise ValueError on zero division. Add one test. Finish with review status.",
   "success_criteria": [
     "divide() raises ValueError on zero division",
     "One test added",

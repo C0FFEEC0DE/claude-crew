@@ -7,7 +7,7 @@
   "review_required": true,
   "docs_required": false,
   "verification_required": true,
-  "prompt": "Use @m to coordinate. Remove duplication in render_title() and render_subtitle(). Run pytest -q. Finish with review status.",
+  "prompt": "Use @m to coordinate. CRITICAL: You MUST launch @hk, @t, and @cr as real subagent handoffs using the Agent tool — not just mentions in text. The benchmark validates actual SubagentStart hooks. After @m analyzes the task, launch @hk for cleanup, then @t for testing, then @cr for review. Remove duplication in render_title() and render_subtitle(). Run pytest -q. Finish with review status.",
   "success_criteria": [
     "Duplication reduced",
     "pytest -q passes",
