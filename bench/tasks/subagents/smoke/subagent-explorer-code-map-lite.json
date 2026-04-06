@@ -8,7 +8,7 @@
   ],
   "fixture": "text-report",
   "review_required": false,
-  "docs_required": true,
+  "docs_required": false,
   "verification_required": false,
   "prompt": "CRITICAL: You MUST launch @e as a real subagent handoff using the Agent tool — not just a mention in text. The benchmark validates actual SubagentStart hooks. Explore the codebase and produce a code map for the reporter module. Output the code map in your response. Do not modify any files. Include Changed files: or No files changed: in your footer. Finish with required footer.",
   "success_criteria": [
