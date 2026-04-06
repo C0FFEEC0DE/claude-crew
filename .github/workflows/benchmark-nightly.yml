@@ -113,6 +113,11 @@ jobs:
             echo "- Will run golden subagent suite: \`${{ steps.select.outputs.should_run }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Validate task/fixture alignment
+        shell: bash
+        run: |
+          python3 -m pytest tests/bench/test_task_fixture_alignment.py -v
+
   nightly-benchmark:
     name: Behavior Benchmark Subagents Golden
     needs: precheck

@@ -158,6 +158,11 @@ jobs:
             echo "- Will run full suite: \`${{ steps.select.outputs.should_run }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Validate task/fixture alignment
+        shell: bash
+        run: |
+          python3 -m pytest tests/bench/test_task_fixture_alignment.py -v
+
       - name: Build full-suite shard matrix
         id: matrix
         shell: bash
