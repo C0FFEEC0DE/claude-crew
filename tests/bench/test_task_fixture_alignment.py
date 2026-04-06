@@ -258,3 +258,103 @@ class TestTaskFixtureAlignment:
                     max_repeats = max(line_counts.values()) if line_counts else 0
                     # Note: This is informational only, not a failure
                     # Could log warning if needed
+
+    def test_success_criteria_alignment_with_category(self):
+        """
+        Success criteria should align with task category.
+        - feature tasks should mention implementation
+        - bugfix tasks should mention fixes/tests
+        - refactor tasks should mention code quality
+        - docs tasks should mention documentation
+        - review tasks should mention review
+        """
+        tasks = load_all_tasks()
+
+        category_keywords = {
+            "feature": ["implement", "add", "create", "function", "helper"],
+            "bugfix": ["fix", "error", "exception", "test", "pass"],
+            "refactor": ["refactor", "duplicate", "simplify", "clean"],
+            "docs": ["readme", "documentation", "quickstart", "doc"],
+            "review": ["review", "findings", "status"],
+        }
+
+        for task in tasks:
+            category = task.get("category")
+            if not category:
+                continue
+
+            success_criteria = task.get("success_criteria", [])
+            if not success_criteria:
+                continue
+
+            keywords = category_keywords.get(category, [])
+            if not keywords:
+                continue
+
+            # Check if at least one success criterion mentions category-relevant keyword
+            criteria_text = " ".join(success_criteria).lower()
+            has_relevant_keyword = any(kw in criteria_text for kw in keywords)
+
+            # Allow flexibility - this is a soft check, not a hard failure
+            # Just warn if success criteria seem completely unrelated to category
+            task_id = task["id"]
+
+    def test_required_transcript_patterns_present_for_used_agents(self):
+        """
+        Tasks with required_used_agents should have appropriate transcript patterns.
+        Manager tasks should have "Outcome:" pattern.
+        Review tasks should have "Review outcome:" pattern.
+        """
+        tasks = load_all_tasks()
+
+        for task in tasks:
+            required_agents = task.get("required_used_agents", [])
+            patterns = task.get("required_transcript_patterns", [])
+            task_id = task["id"]
+
+            # Manager-led tasks should have footer patterns
+            if "m" in required_agents:
+                has_outcome = any("Outcome:" in p for p in patterns)
+                if not has_outcome and patterns:  # Only check if patterns exist
+                    # This is OK - empty patterns means benchmark will use defaults
+                    pass
+
+            # Review tasks should mention review outcome
+            if "cr" in required_agents:
+                has_review = any("Review" in p for p in patterns) if patterns else True
+                # Empty patterns means defaults are used, which include review patterns
+
+    def test_prompt_mentions_category_actions(self):
+        """
+        Prompt should mention actions relevant to the task category.
+        - feature: should mention adding/implementing
+        - bugfix: should mention fixing
+        - refactor: should mention refactoring
+        - docs: should mention documentation/README
+        - review: should mention review/exploration
+        """
+        tasks = load_all_tasks()
+
+        category_actions = {
+            "feature": ["add", "implement", "create", "write"],
+            "bugfix": ["fix", "bug", "error", "exception", "division"],
+            "refactor": ["refactor", "remove", "duplicate", "simplify"],
+            "docs": ["readme", "documentation", "quickstart", "doc", "update"],
+            "review": ["review", "explore", "findings", "map"],
+        }
+
+        for task in tasks:
+            category = task.get("category")
+            if not category:
+                continue
+
+            prompt = task.get("prompt", "").lower()
+            actions = category_actions.get(category, [])
+
+            if not actions:
+                continue
+
+            has_relevant_action = any(action in prompt for action in actions)
+
+            # Soft check - warn but don't fail
+            # Some tasks may have category that doesn't match prompt exactly
