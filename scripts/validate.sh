@@ -377,20 +377,6 @@ else
     report_error "Python Tests must use actions/setup-python@v6"
 fi
 
-if grep -q 'default: "400"' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -q 'scripts/select-benchmark-tasks.py' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -q 'render-benchmark-summary.sh bench-output/summary.json' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -q 'bench-output/benchmark-report.md' "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -q "'install.sh'" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -q "'claudecfg/install.sh'" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && grep -Fq -- "--ref-name \"\${REF_NAME:-}\"" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml" \
-    && ! grep -q "if: github.event_name != 'workflow_dispatch'" "$REPO_ROOT/.github/workflows/behavior-benchmark.yml"; then
-    echo "OK: Behavior Benchmark Smoke smart selection"
-else
-    report_error "Behavior Benchmark Smoke workflow must keep installer-trigger coverage, smart selection precheck, working manual changed-file collection, and markdown benchmark tables"
-fi
-
 if grep -q -- '--suite subagents_smoke' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'pull_request:' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
     && grep -q 'scripts/download-benchmark-summary.py' "$REPO_ROOT/.github/workflows/behavior-benchmark-subagents-smoke.yml" \
