@@ -34,10 +34,15 @@ on:
   workflow_dispatch:
     inputs:
       selection_mode:
-        description: "Use all subagent smoke tasks, only changed tasks, or resume unresolved tasks from a previous run"
+        description: "Task selection mode: all, changed, resume, or auto_resume (finds last failed run automatically)"
         required: false
-        default: "all"
-        type: string
+        default: "changed"
+        type: choice
+        options:
+          - changed
+          - all
+          - resume
+          - auto_resume
       resume_run_id:
         description: "Previous subagent smoke workflow run id to resume when selection_mode=resume"
         required: false
@@ -104,7 +109,7 @@ jobs:
           selection_mode="changed"
           resume_args=()
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            selection_mode="${INPUT_SELECTION_MODE:-all}"
+            selection_mode="${INPUT_SELECTION_MODE:-changed}"
             if [ "$selection_mode" = "resume" ]; then
               if [ -z "${INPUT_RESUME_RUN_ID:-}" ]; then
                 echo "resume_run_id input is required when selection_mode=resume" >&2
@@ -117,6 +122,33 @@ jobs:
                 --output .bench-previous-summary.json
               resume_args+=(--previous-summary-file .bench-previous-summary.json)
               echo "resume_run_id=${INPUT_RESUME_RUN_ID}" >> "$GITHUB_OUTPUT"
+            elif [ "$selection_mode" = "auto_resume" ]; then
+              # Find the last failed run automatically
+              python3 scripts/find-failed-benchmark-run.py \
+                --workflow "Behavior Benchmark Subagents Smoke" \
+                --max-age-hours 72 \
+                --status failed
+              # Check if a failed run was found by reading GITHUB_OUTPUT
+              if grep -q "^found=true$" "$GITHUB_OUTPUT" 2>/dev/null; then
+                run_id=$(grep "^run_id=" "$GITHUB_OUTPUT" 2>/dev/null | cut -d= -f2)
+                if [ -n "$run_id" ]; then
+                  echo "Found failed run: ${run_id}"
+                  python3 scripts/download-benchmark-summary.py \
+                    --repo "${GITHUB_REPOSITORY}" \
+                    --run-id "${run_id}" \
+                    --artifact-name "behavior-benchmark-subagents-smoke-${run_id}" \
+                    --output .bench-previous-summary.json
+                  resume_args+=(--previous-summary-file .bench-previous-summary.json)
+                  echo "resume_run_id=${run_id}" >> "$GITHUB_OUTPUT"
+                  selection_mode="resume"
+                else
+                  echo "No failed run found in last 72 hours, falling back to changed mode"
+                  selection_mode="changed"
+                fi
+              else
+                echo "No failed run found in last 72 hours, falling back to changed mode"
+                selection_mode="changed"
+              fi
             fi
           fi
           python3 scripts/select-benchmark-tasks.py \
