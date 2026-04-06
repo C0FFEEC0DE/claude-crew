@@ -24,6 +24,7 @@
     "shell guard"
   ],
   "required_transcript_patterns": [
+    "Outcome:",
     "Review outcome:",
     "Changed files:|No files changed:",
     "Verification status:",
