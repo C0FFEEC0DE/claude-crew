@@ -8,23 +8,27 @@
   "review_required": false,
   "docs_required": false,
   "verification_required": true,
-  "prompt": "Use @dbg to reproduce and fix the zero-division issue in divide(). Add one test case. Run pytest -q. Finish with required footer.",
+  "prompt": "Use @dbg to diagnose the division by zero in calculator.py. Identify root cause. Do not fix. Finish with required footer.",
   "success_criteria": [
-    "Reproduction steps shown",
     "Root cause identified",
-    "divide() raises ValueError on zero division",
-    "pytest -q passes"
+    "No code changes"
   ],
   "must_not": [
-    "Skip pytest -q",
+    "Modify Python files",
     "Perform release or deploy work"
+  ],
+  "forbidden_transcript_patterns": [
+    "footer repair",
+    "shell guard"
   ],
   "required_transcript_patterns": [
     "Task:\\s*Debug",
     "Reproduction:",
     "Root cause:",
+    "Outcome:",
     "Changed files:|No files changed:",
-    "Verification status:"
+    "Verification status:",
+    "Remaining risks:|Next step:"
   ],
   "required_used_agents": ["dbg"]
 }

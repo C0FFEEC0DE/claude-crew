@@ -19,10 +19,16 @@
     "Skip pytest -q",
     "Perform release or deploy work"
   ],
+  "forbidden_transcript_patterns": [
+    "footer repair",
+    "shell guard"
+  ],
   "required_transcript_patterns": [
     "Task:\\s*Housekeeping",
+    "Outcome:",
     "Changed files:|No files changed:",
-    "Verification status:"
+    "Verification status:",
+    "Remaining risks:|Next step:"
   ],
   "required_used_agents": ["hk"]
 }

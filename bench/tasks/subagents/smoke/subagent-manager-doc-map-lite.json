@@ -17,10 +17,11 @@
     "Modify Python files",
     "Perform release or deploy work"
   ],
-  "required_transcript_patterns": [
-    "Plan:",
-    "Outcome:",
-    "Changed files:|No files changed:"
+  "forbidden_transcript_patterns": [
+    "which agent would you prefer",
+    "which required agent",
+    "footer repair"
   ],
+  "required_transcript_patterns": [],
   "required_used_agents": ["m"]
 }

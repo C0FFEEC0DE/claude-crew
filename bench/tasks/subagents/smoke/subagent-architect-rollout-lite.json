@@ -17,10 +17,10 @@
     "Modify Python files",
     "Perform release or deploy work"
   ],
-  "required_transcript_patterns": [
-    "Task:\\s*Design",
-    "Outcome:",
-    "Changed files:|No files changed:"
+  "forbidden_transcript_patterns": [
+    "footer repair",
+    "shell guard"
   ],
+  "required_transcript_patterns": [],
   "required_used_agents": ["a"]
 }

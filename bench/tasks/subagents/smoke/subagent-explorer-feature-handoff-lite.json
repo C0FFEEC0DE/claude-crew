@@ -8,20 +8,27 @@
   "review_required": false,
   "docs_required": false,
   "verification_required": true,
-  "prompt": "Use @e to explore the code. Add subtract() helper to calculator.py. Run pytest -q. Finish with required footer.",
+  "prompt": "Use @e to explore the calculator fixture and identify the function to extend. Report findings. Do not implement. Finish with required footer.",
   "success_criteria": [
-    "subtract() implemented",
-    "pytest -q passes"
+    "Exploration complete",
+    "Findings reported",
+    "No code changes"
   ],
   "must_not": [
-    "Skip pytest -q",
+    "Modify Python files",
     "Perform release or deploy work"
+  ],
+  "forbidden_transcript_patterns": [
+    "footer repair",
+    "shell guard"
   ],
   "required_transcript_patterns": [
     "Task:\\s*Explore",
     "Locations:",
+    "Outcome:",
     "Changed files:|No files changed:",
-    "Verification status:"
+    "Verification status:",
+    "Remaining risks:|Next step:"
   ],
   "required_used_agents": ["e"]
 }
