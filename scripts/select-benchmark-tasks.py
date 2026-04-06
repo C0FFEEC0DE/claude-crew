@@ -12,22 +12,10 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 TASKS_ROOT = REPO_ROOT / "bench" / "tasks"
 
 SUITE_DEFAULTS = {
-    "smoke": "bench/tasks/smoke/*.json",
-    "full": "bench/tasks/full/*.json",
     "subagents_smoke": "bench/tasks/subagents/smoke/*.json",
-    "subagents_golden": "bench/tasks/subagents/golden/*.json",
 }
 
-PRIORITY_PROFILES = {
-    "pr_full": (
-        "docs-node-app-quickstart",
-        "feature-weighted-average",
-        "feature-report-summary-line",
-        "manager-bugbuster-tester-reviewer-zero-division",
-        "manager-explorer-reviewer-code-map",
-        "manager-docwriter-node-quickstart",
-    ),
-}
+PRIORITY_PROFILES = {}
 
 GLOBAL_BEHAVIOR_PREFIXES = (
     "claudecfg/hooks/",

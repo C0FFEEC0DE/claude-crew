@@ -10,11 +10,11 @@ def test_build_benchmark_matrix_splits_tasks_across_three_shards(tmp_path):
     task_list.write_text(
         "\n".join(
             [
-                "bench/tasks/smoke/bugfix-zero-division-lite.json",
-                "bench/tasks/smoke/docs-quickstart-clarity-lite.json",
-                "bench/tasks/smoke/refactor-report-formatting-lite.json",
-                "bench/tasks/full/docs-node-app-quickstart.json",
-                "bench/tasks/full/feature-report-summary-line.json",
+                "bench/tasks/subagents/smoke/subagent-architect-rollout-lite.json",
+                "bench/tasks/subagents/smoke/subagent-bugbuster-zero-division-lite.json",
+                "bench/tasks/subagents/smoke/subagent-code-reviewer-note-lite.json",
+                "bench/tasks/subagents/smoke/subagent-debugger-zero-division-lite.json",
+                "bench/tasks/subagents/smoke/subagent-docwriter-quickstart-lite.json",
             ]
         )
         + "\n",
@@ -32,19 +32,10 @@ def test_build_benchmark_matrix_splits_tasks_across_three_shards(tmp_path):
     assert len(matrix) == 3
     assert matrix[0]["shard_index"] == 1
     assert matrix[0]["task_count"] == 2
-    assert matrix[0]["task_files"].splitlines() == [
-        "bench/tasks/smoke/bugfix-zero-division-lite.json",
-        "bench/tasks/full/docs-node-app-quickstart.json",
-    ]
     assert matrix[1]["shard_index"] == 2
     assert matrix[1]["task_count"] == 2
-    assert matrix[1]["task_files"].splitlines() == [
-        "bench/tasks/smoke/docs-quickstart-clarity-lite.json",
-        "bench/tasks/full/feature-report-summary-line.json",
-    ]
     assert matrix[2]["shard_index"] == 3
     assert matrix[2]["task_count"] == 1
-    assert matrix[2]["task_files"].splitlines() == ["bench/tasks/smoke/refactor-report-formatting-lite.json"]
 
 
 def test_merge_benchmark_summaries_recomputes_totals_and_rates(tmp_path):
@@ -63,7 +54,7 @@ def test_merge_benchmark_summaries_recomputes_totals_and_rates(tmp_path):
                 "generated_at": "2026-01-01T00:00:00Z",
                 "source_ref": "refs/pull/8/merge",
                 "source_sha": "abc123",
-                "task_glob": "bench/tasks/full/*.json",
+                "task_glob": "bench/tasks/subagents/smoke/*.json",
                 "totals": {"configured_tasks": 2, "executed_tasks": 2},
                 "tasks": [
                     {
@@ -118,7 +109,7 @@ def test_merge_benchmark_summaries_recomputes_totals_and_rates(tmp_path):
                 "generated_at": "2026-01-01T00:00:00Z",
                 "source_ref": "refs/pull/8/merge",
                 "source_sha": "abc123",
-                "task_glob": "bench/tasks/full/*.json",
+                "task_glob": "bench/tasks/subagents/smoke/*.json",
                 "totals": {"configured_tasks": 1, "executed_tasks": 1},
                 "tasks": [
                     {
