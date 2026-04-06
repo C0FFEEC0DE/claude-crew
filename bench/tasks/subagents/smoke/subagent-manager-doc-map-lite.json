@@ -8,7 +8,7 @@
   "review_required": false,
   "docs_required": true,
   "verification_required": false,
-  "prompt": "Use @m to coordinate. Update README.md with a code-map note. Finish with required footer.",
+  "prompt": "CRITICAL: You MUST launch @m as a real subagent handoff using the Agent tool — not just a mention in text. The benchmark validates actual SubagentStart hooks. Coordinate documentation. Update README.md with a code-map note. Finish with required footer.",
   "success_criteria": [
     "README.md updated",
     "No code changes"
