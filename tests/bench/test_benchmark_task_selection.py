@@ -493,3 +493,59 @@ def test_dedupe_tasks_removes_duplicates():
     result = selector.dedupe_tasks([task_a, task_b, task_a_dup])
     assert len(result) == 2
     assert {t["id"] for t in result} == {"task-a", "task-b"}
+
+
+def test_docs_tasks_have_minimal_fixture_readmes():
+    """
+    Validate that docs_required tasks have fixtures where README.md needs updating.
+    This catches task/fixture misalignment where fixture already has quickstart content.
+    """
+    repo_root = Path(__file__).resolve().parents[2]
+
+    # Quickstart content patterns that indicate fixture already has docs
+    quickstart_patterns = [
+        "npm test",
+        "pytest -q",
+        "quickstart",
+        "## Usage",
+        "## Getting Started",
+    ]
+
+    # Check all docs_required tasks
+    for task_path in repo_root.glob("bench/tasks/**/*.json"):
+        task = json.loads(task_path.read_text(encoding="utf-8"))
+
+        if not task.get("docs_required", False):
+            continue
+
+        fixture_name = task.get("fixture")
+        if not fixture_name:
+            continue
+
+        fixture_readme = repo_root / "bench" / "fixtures" / fixture_name / "README.md"
+        if not fixture_readme.exists():
+            continue
+
+        readme_content = fixture_readme.read_text(encoding="utf-8")
+
+        # Task ID for error messages
+        task_id = task.get("id", str(task_path))
+
+        # Check if fixture README already has quickstart content
+        for pattern in quickstart_patterns:
+            if pattern.lower() in readme_content.lower():
+                # Allow if task is about adding something different
+                # Check if task prompt mentions the existing content
+                prompt = task.get("prompt", "")
+                if pattern.lower() in prompt.lower():
+                    # Task explicitly mentions this content, it's OK
+                    continue
+
+                # Check if this is a quickstart addition task
+                if "quickstart" in prompt.lower() or "npm test" in prompt.lower():
+                    raise AssertionError(
+                        f"Task/fixture misalignment: {task_id}\n"
+                        f"Task requires docs update but fixture README already contains '{pattern}'\n"
+                        f"Fixture: {fixture_readme}\n"
+                        f"Fix: Reset fixture README to minimal state or change task"
+                    )
