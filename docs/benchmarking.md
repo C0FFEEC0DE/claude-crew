@@ -72,32 +72,24 @@ Use cases for edge payloads, null/empty field handling, and single-hook contract
 
 ## GitHub Workflow
 
-The behavioral benchmark workflows are:
+The behavioral benchmark workflow is:
 
-- `.github/workflows/behavior-benchmark.yml`
 - `.github/workflows/behavior-benchmark-subagents-smoke.yml`
 
-`behavior-benchmark.yml`:
+This workflow:
 
 1. installs the Claude Code CLI
 2. runs `./install.sh` so CI uses the same repo installer as local setup
 3. copies the repository `.claude/` directory into each isolated fixture workdir so project-local config is exercised during the benchmark
 4. collects the PR diff and maps it to affected agents, fixtures, task files, and shared workflow logic
-5. selects the impacted tasks from `bench/tasks/smoke/*.json` (if present)
+5. selects the impacted tasks from `bench/tasks/subagents/smoke/*.json` (9 tasks, one per agent)
 6. runs `scripts/run-benchmark.sh` in `command` mode with the selected task list
 7. uses `scripts/bench_runner_claude_code.py` as the per-task runner
 8. uploads per-task Claude artifacts plus `summary.json`
 9. fails the workflow unless every selected benchmark task passes
 
-It only runs on PRs when benchmark-relevant files changed, which keeps the live smoke path from re-running on unrelated pushes.
+It only runs on PRs when benchmark-relevant files changed, which keeps the benchmark from re-running on unrelated pushes.
 Agent and slash-skill changes are mapped through the frontmatter declared in `claudecfg/agents/*.md` and `claudecfg/skills/*.md`, so full-name files like `manager.md` and skill files like `review.md` stay aligned with the canonical role aliases used by the task metadata.
-
-`behavior-benchmark-subagents-smoke.yml`:
-
-1. runs on PRs when benchmark-relevant files changed
-2. maps changed agent, skill, fixture, and workflow files to the affected subagent canaries
-3. runs the selected tasks from `bench/tasks/subagents/smoke/*.json` (9 tasks, one per agent)
-4. supports manual `workflow_dispatch` for on-demand checks
 
 ## Slot-Gate Mechanism
 
