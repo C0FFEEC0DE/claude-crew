@@ -158,6 +158,11 @@ jobs:
             echo "- Will run full suite: \`${{ steps.select.outputs.should_run }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Install pytest for validation
+        shell: bash
+        run: |
+          pip install pytest --quiet
+
       - name: Validate task/fixture alignment
         shell: bash
         run: |
