@@ -37,10 +37,10 @@ if [ "$code_changed" = "true" ] && message_reports_no_changes "$last_message"; t
     exit 0
 fi
 
-# Only enforce verification status, review outcome, changed files, and remaining risks
-# for implementation workflows (feature, bugfix, refactor, review, docs).
-# For informational tasks (task_type=other), these are not required.
-if [ "$code_changed" = "true" ] && [ "$task_type" != "other" ]; then
+# Only enforce verification status, review outcome, changed files, and remaining
+# risks for implementation workflows. Advisory/support tasks do not require the
+# implementation footer even when the assistant discussed troubleshooting steps.
+if [ "$code_changed" = "true" ] && task_type_requires_implementation_summary "$task_type"; then
     if ! message_mentions_verification_status "$last_message"; then
         emit_loop_aware_block "stop" "Final response must mention verification status after code or config changes.$(stop_safe_no_change_footer_hint)" "$last_message"
         exit 0

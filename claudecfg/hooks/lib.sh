@@ -164,6 +164,8 @@ ensure_state() {
             stop_block_count: 0,
             stop_block_reason: "",
             stop_block_message: "",
+            stalled_by_policy: false,
+            policy_stall_reason: "",
             subagent_stop_block_count: 0,
             subagent_stop_block_reason: "",
             subagent_stop_block_message: "",
@@ -256,7 +258,9 @@ clear_loop_block() {
         --arg message_key "$message_key" \
         '.[$count_key] = 0
         | .[$reason_key] = ""
-        | .[$message_key] = ""' "$(state_file)" > "$tmp"
+        | .[$message_key] = ""
+        | .stalled_by_policy = false
+        | .policy_stall_reason = ""' "$(state_file)" > "$tmp"
     mv "$tmp" "$(state_file)"
 }
 
@@ -283,22 +287,62 @@ emit_loop_aware_block() {
     local prefix="$1"
     local reason="$2"
     local message="$3"
-    local count final_reason checklist_output
+    local count final_reason checklist_output hard_stop file tmp
 
     record_loop_block "$prefix" "$reason" "$message"
     count="$(loop_block_count "$prefix")"
     final_reason="$reason"
+    hard_stop="false"
     if [ "$count" -ge 3 ]; then
         final_reason="Repeated stop-block loop detected (${count}x): ${reason} Do not retry the same final response again; change the summary or perform the required action first."
+        hard_stop="true"
+    fi
+
+    if [ "$prefix" = "stop" ]; then
+        file="$(state_file)"
+        tmp="$(mktemp)"
+        jq \
+            --arg reason "$final_reason" \
+            --argjson hard_stop "$hard_stop" \
+            '.stalled_by_policy = $hard_stop
+            | .policy_stall_reason = (if $hard_stop then $reason else "" end)' "$file" > "$tmp"
+        mv "$tmp" "$file"
     fi
 
     checklist_output="$(build_block_checklist "$prefix" "$final_reason" "$message")"
 
-    jq -n --arg checklist "$checklist_output" --arg reason "$final_reason" '{
+    jq -n --arg checklist "$checklist_output" --arg reason "$final_reason" --argjson hard_stop "$hard_stop" '{
         decision: "block",
         reason: $reason,
-        errorDetails: $checklist
+        errorDetails: $checklist,
+        hardStop: $hard_stop
     }'
+}
+
+task_type_requires_implementation_summary() {
+    local task_type="${1:-}"
+
+    case "$task_type" in
+        feature|bugfix|refactor|review|docs)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+task_type_requires_specialist_handoffs() {
+    local task_type="${1:-}"
+
+    case "$task_type" in
+        feature|bugfix|refactor|review|docs)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 append_jsonl() {
@@ -921,7 +965,7 @@ block_checklist_summary_requirements() {
     printf "### Requirement Checklist\n\n"
 
     if [ "$prefix" = "stop" ]; then
-        if [ "$code_changed" != "true" ] || [ "$task_type" = "other" ]; then
+        if [ "$code_changed" != "true" ] || ! task_type_requires_implementation_summary "$task_type"; then
             checklist_status_line "SKIP" "Implementation summary lines" "Not required for this stop event."
             return 0
         fi
@@ -1015,21 +1059,17 @@ block_checklist_gate_requirements() {
         checklist_status_line "SKIP" "Verification gate" "No code/config changes recorded."
     fi
 
-    case "$task_type" in
-        feature|bugfix|refactor|review|docs)
-            handoff_reason="$(session_agent_enforcement_reason || true)"
-            if [ -n "$handoff_reason" ]; then
-                checklist_status_line "FAIL" "Required specialist handoffs" "$handoff_reason"
-            else
-                checklist_status_line "PASS" "Required specialist handoffs" "All required roles for this workflow are satisfied."
-            fi
-            ;;
-        *)
-            checklist_status_line "SKIP" "Required specialist handoffs" "No workflow-specific handoff requirement for this task type."
-            ;;
-    esac
+    if task_type_requires_specialist_handoffs "$task_type"; then
+        handoff_reason="$(session_agent_enforcement_reason || true)"
+        if [ -n "$handoff_reason" ]; then
+            checklist_status_line "FAIL" "Required specialist handoffs" "$handoff_reason"
+        else
+            checklist_status_line "PASS" "Required specialist handoffs" "All required roles for this workflow are satisfied."
+        fi
+    else
+        checklist_status_line "SKIP" "Required specialist handoffs" "No workflow-specific handoff requirement for this task type."
+    fi
 }
-
 block_checklist_fix_template() {
     local prefix="$1"
 
