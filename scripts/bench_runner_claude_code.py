@@ -1015,6 +1015,12 @@ def payload_string(payload: dict | None, key: str) -> str:
     return value if isinstance(value, str) else str(value or "")
 
 
+def payload_bool(payload: dict | None, key: str) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    return payload.get(key) is True
+
+
 def payload_permission_denials(payload: dict | None) -> list[dict]:
     if not isinstance(payload, dict):
         return []
@@ -1499,6 +1505,7 @@ def build_task_summary(
     payload: dict | None,
     payload_subtype: str,
     payload_stop_reason: str,
+    payload_hard_stop: bool,
     permission_denials: list[dict],
     result_text: str,
     verification_output: str,
@@ -1526,6 +1533,7 @@ def build_task_summary(
         f"Claude payload keys: {payload_keys(payload)}",
         f"Claude subtype: {payload_subtype or '<missing>'}",
         f"Claude stop reason: {payload_stop_reason or '<missing>'}",
+        f"Claude hard stop: {'true' if payload_hard_stop else 'false'}",
         f"Permission denials: {len(permission_denials)}",
         f"First permission denial: {first_permission_denial_summary(permission_denials)}",
         f"Transcript scanned: {transcript_scanned}",
@@ -1681,6 +1689,7 @@ def main() -> int:
     )
     payload_subtype = payload_string(payload, "subtype")
     payload_stop_reason = payload_string(payload, "stop_reason")
+    payload_hard_stop = payload_bool(payload, "hardStop")
     permission_denials = payload_permission_denials(payload)
     if raw_stderr.strip():
         write_text(OUTPUT_DIR / "claude-stderr-tail.txt", "\n".join(raw_stderr.splitlines()[-200:]) + "\n")
@@ -1899,6 +1908,8 @@ def main() -> int:
         failures.append("required_used_agents_missing")
     if missing_required_used_agent_groups:
         failures.append("required_used_agent_groups_missing")
+    if payload_hard_stop:
+        failures.append("hard_stop_triggered")
 
     if failures:
         status = "failed"
@@ -1917,6 +1928,7 @@ def main() -> int:
         f"Verification command: {verification_label}. "
         f"Timeout recovered: {timeout_recovered}. "
         f"Max-turns recovered: {max_turns_recovered}. "
+        f"Claude hard stop: {payload_hard_stop}. "
         f"Transcript scanned: {transcript_scanned}. "
         f"Forbidden transcript hits: {'; '.join(transcript_pattern_hits) if transcript_pattern_hits else 'none'}. "
         f"Required assistant transcript scanned: {required_transcript_scanned}. "
@@ -1953,6 +1965,7 @@ def main() -> int:
         "claude_exit_code": exit_code,
         "claude_subtype": payload_subtype,
         "claude_stop_reason": payload_stop_reason,
+        "claude_hard_stop": payload_hard_stop,
         "timeout_recovered": timeout_recovered,
         "max_turns_recovered": max_turns_recovered,
         "recovered_nonzero_exit": recovered_nonzero_exit,
@@ -1986,6 +1999,7 @@ def main() -> int:
             payload=payload,
             payload_subtype=payload_subtype,
             payload_stop_reason=payload_stop_reason,
+            payload_hard_stop=payload_hard_stop,
             permission_denials=permission_denials,
             result_text=result_text,
             verification_output=verification_output,
