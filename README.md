@@ -31,7 +31,7 @@ In project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`), ag
 
 ## What's Included
 
-### Agents (9)
+### Agents (8)
 
 | Alias | Agent | Character | Purpose |
 |-------|-------|-----------|---------|
@@ -43,8 +43,6 @@ In project folders (`~/projects/**`, `~/code/**`, `~/repos/**`, `~/work/**`), ag
 | `@bug` | Bugbuster | Cyber Detective | Bug hunting |
 | `@dbg` | Debugger | Bug Hunter | Debugging issues |
 | `@doc` | Docwriter | Wiki-Wiki | Documentation |
-| `@hk` | Veles | Veles | Cleanup + bounded refactor hygiene |
-
 Full names also work: `@manager`, `@code-reviewer`, etc.
 
 ### Slash Commands
@@ -57,7 +55,7 @@ Slash commands that invoke specialized agents. The hooks still enforce the actua
 - `/debug` — debugging session
 - `/test` — testing session (invokes @tester)
 - `/design` — design session (invokes @architect)
-- `/refactor` — refactoring session (invokes @housekeeper, Veles)
+- `/refactor` — refactoring session (invokes @architect)
 - `/review` — code review (invokes @code-reviewer)
 - `/docs` — documentation session (invokes @docwriter)
 
@@ -76,7 +74,7 @@ For `feature`, `bugfix`, `refactor`, `review`, and `docs` work, the profile is n
 Required handoffs by workflow:
 - `feature` -> successful verification or `@t`, plus `@cr` and one of `@e|@a`
 - `bugfix` -> successful verification or `@t`, plus `@cr` and one of `@bug|@e|@dbg`
-- `refactor` -> successful verification or `@t`, plus `@cr` and one of `@a|@e|@hk`
+- `refactor` -> successful verification or `@t`, plus `@cr` and one of `@a|@e`
 - `review` -> `@cr`
 - `docs` -> `@doc`
 
@@ -217,7 +215,7 @@ That workflow:
 
 This is the fast real Claude Code PR gate in the repository.
 
-The per-agent suite lives under `bench/tasks/subagents/smoke/` with one canary task per role (9 tasks total). Tasks that care about exact handoff shape use transcript regexes; tasks that mainly care about real role activation assert the actual `SubagentStart`/recorded handoff aliases captured in the debug log.
+The per-agent suite lives under `bench/tasks/subagents/smoke/` with focused canary tasks for each canonical specialist role, plus a few extra workflow-shape tasks. Tasks that care about exact handoff shape use transcript regexes; tasks that mainly care about real role activation assert the actual `SubagentStart`/recorded handoff aliases captured in the debug log.
 
 Each benchmark run also writes `bench-output/benchmark-report.md` inside the artifact bundle, with a markdown table for every executed task.
 

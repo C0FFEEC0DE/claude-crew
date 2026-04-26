@@ -579,9 +579,6 @@ canonicalize_subagent_label() {
         doc|docwriter|wiki-wiki|documentation-writer|docs-writer)
             printf "doc"
             ;;
-        hk|housekeeper|the-cleaner|cleaner)
-            printf "hk"
-            ;;
         m|manager|big-boss)
             printf "m"
             ;;
@@ -633,7 +630,7 @@ infer_started_roles_from_transcript() {
     fi
 
     matches="$(
-        grep -Eio 'skill\(/manager\)|skill\(/review\)|skill\(/test\)|skill\(/explore\)|skill\(/design\)|skill\(/bug\)|skill\(/debug\)|skill\(/docs\)|skill\(/refactor\)|manager\(|code reviewer\(|tester\(|explorer\(|architect\(|bugbuster\(|debugger\(|docwriter\(|housekeeper\(|veles\(' "$transcript_path" \
+        grep -Eio 'skill\(/manager\)|skill\(/review\)|skill\(/test\)|skill\(/explore\)|skill\(/design\)|skill\(/bug\)|skill\(/debug\)|skill\(/docs\)|skill\(/refactor\)|manager\(|code reviewer\(|tester\(|explorer\(|architect\(|bugbuster\(|debugger\(|docwriter\(' "$transcript_path" \
             || true
     )"
     [ -z "$matches" ] && return 0
@@ -652,7 +649,7 @@ infer_started_roles_from_transcript() {
             skill\(/explore\)|explorer\()
                 roles="${roles}"$'\n''e'
                 ;;
-            skill\(/design\)|architect\()
+            skill\(/design\)|skill\(/refactor\)|architect\()
                 roles="${roles}"$'\n''a'
                 ;;
             skill\(/bug\)|bugbuster\()
@@ -663,9 +660,6 @@ infer_started_roles_from_transcript() {
                 ;;
             skill\(/docs\)|docwriter\()
                 roles="${roles}"$'\n''doc'
-                ;;
-            skill\(/refactor\)|housekeeper\(|veles\()
-                roles="${roles}"$'\n''hk'
                 ;;
         esac
     done <<<"$matches"

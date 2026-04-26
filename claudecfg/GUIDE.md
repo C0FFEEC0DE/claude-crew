@@ -42,7 +42,7 @@ The hooks enforce the actual handoff and stop gates; the commands below are the 
 - `/debug` — debugging session
 - `/test` — testing session (invokes @tester)
 - `/design` — design session (invokes @architect)
-- `/refactor` — refactoring session (invokes @housekeeper, Veles)
+- `/refactor` — refactoring session (invokes @architect)
 - `/review` — code review (invokes @code-reviewer)
 - `/docs` — documentation session (invokes @docwriter)
 
@@ -58,8 +58,6 @@ The hooks enforce the actual handoff and stop gates; the commands below are the 
 | `@bug` | Bugbuster | Bug hunting |
 | `@dbg` | Debugger | Debugging issues |
 | `@doc` | Docwriter | Documentation |
-| `@hk` | Veles | Cleanup + bounded refactor hygiene |
-
 Also works: `@manager`, `@code-reviewer`, etc.
 
 ### Slash command examples
@@ -112,7 +110,7 @@ If a later reply in the same session makes no additional changes after earlier c
 Required handoffs:
 - `feature` -> successful verification or `@t`, plus `@cr` and one of `@e|@a`
 - `bugfix` -> successful verification or `@t`, plus `@cr` and one of `@bug|@e|@dbg`
-- `refactor` -> successful verification or `@t`, plus `@cr` and one of `@a|@e|@hk`
+- `refactor` -> successful verification or `@t`, plus `@cr` and one of `@a|@e`
 - `review` -> `@cr`
 - `docs` -> `@doc`
 
@@ -213,7 +211,7 @@ Benchmark support files:
 
 - `tests/hooks/` — hook fixtures and assertions
 - `bench/tasks/` — benchmark task definitions
-- `bench/tasks/subagents/smoke/` — one canary task per specialist agent (9 tasks total)
+- `bench/tasks/subagents/smoke/` — focused canary tasks for each canonical specialist role plus extra workflow-shape coverage
 - `bench/fixtures/` — benchmark fixture repositories
 - `docs/agent-contracts.md` — agent contract matrix and how the hook/benchmark layers fit together
 - `docs/benchmarking.md` — runner contract and GitHub setup

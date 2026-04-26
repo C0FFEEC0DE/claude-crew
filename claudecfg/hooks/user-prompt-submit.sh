@@ -102,7 +102,7 @@ case "$task_type" in
     refactor)
         if [ "$manager_mode" != "plan_only" ]; then
             required_subagents="$(jq -cn --argjson existing "$required_subagents" '$existing + ["t","cr"] | unique')"
-            required_subagent_any_of='[["a","e","hk"]]'
+            required_subagent_any_of='[["a","e"]]'
         fi
         context_message="Treat this as a refactor workflow."
         ;;
@@ -145,11 +145,11 @@ if [ -n "$context_message" ]; then
             ;;
         refactor)
             if [ "$manager_mode" = "orchestrate" ]; then
-                context_message="${context_message} Manager-led orchestration is active. Required before completion: successful verification or @t, plus @cr and one of @a/@e/@hk. Start the first required specialist handoff early instead of spending multiple turns in manager-only exploration. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and decide whether docs need updates.${stop_safe_hint}"
+                context_message="${context_message} Manager-led orchestration is active. Required before completion: successful verification or @t, plus @cr and one of @a/@e. Start the first required specialist handoff early instead of spending multiple turns in manager-only exploration. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and decide whether docs need updates.${stop_safe_hint}"
             elif [ "$manager_mode" = "plan_only" ]; then
                 context_message="${context_message} Plan-only manager mode is active. Return a concrete refactor plan without continuing implementation or specialist handoffs in this session."
             else
-                context_message="${context_message} Required before completion: successful verification or @t, plus @cr and one of @a/@e/@hk. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and summarize risks plus changed files before stopping.${stop_safe_hint}"
+                context_message="${context_message} Required before completion: successful verification or @t, plus @cr and one of @a/@e. Keep scope to structure and maintainability, preserve behavior, run verification after changes, and summarize risks plus changed files before stopping.${stop_safe_hint}"
             fi
             ;;
         review)

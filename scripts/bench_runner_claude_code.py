@@ -57,10 +57,6 @@ EXTRA_AGENT_LABELS = {
     "documentation-writer": "doc",
     "docs-writer": "doc",
     "docs": "doc",
-    "hk": "hk",
-    "housekeeper": "hk",
-    "the-cleaner": "hk",
-    "cleaner": "hk",
     "m": "m",
     "manager": "m",
     "big-boss": "m",
@@ -1202,7 +1198,7 @@ def infer_used_agent_aliases_from_transcript(payload: dict | None) -> list[str]:
         ("bug", r"skill\(/bug\)"),
         ("dbg", r"skill\(/debug\)"),
         ("doc", r"skill\(/docs\)"),
-        ("hk", r"skill\(/refactor\)"),
+        ("a", r"skill\(/refactor\)"),
         ("m", r"(^|[\s])manager\("),
         ("cr", r"(^|[\s])code reviewer\("),
         ("t", r"(^|[\s])tester\("),
@@ -1211,7 +1207,6 @@ def infer_used_agent_aliases_from_transcript(payload: dict | None) -> list[str]:
         ("bug", r"(^|[\s])bugbuster\("),
         ("dbg", r"(^|[\s])debugger\("),
         ("doc", r"(^|[\s])docwriter\("),
-        ("hk", r"(^|[\s])(housekeeper|veles)\("),
     )
 
     aliases: list[str] = []
@@ -1337,8 +1332,6 @@ def synthesized_outcome_line(task: dict, changed_files: list[str]) -> str:
         return "Outcome: mapped the requested code paths and recorded the relevant locations."
     if alias == "t":
         return "Outcome: verified the scoped behavior and captured the remaining gaps."
-    if alias == "hk":
-        return "Outcome: completed the bounded cleanup while preserving behavior."
     return "Outcome: completed the scoped benchmark task."
 
 

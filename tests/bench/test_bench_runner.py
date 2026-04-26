@@ -715,7 +715,7 @@ def test_required_used_agent_misses_report_missing_roles(tmp_path, monkeypatch):
 
 def test_required_used_agent_groups_accept_any_alias_in_group(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
-    task = {"required_used_agent_groups": [["e", "a", "t"], ["doc", "hk"]]}
+    task = {"required_used_agent_groups": [["e", "a", "t"], ["doc", "cr"]]}
 
     assert runner.required_used_agent_group_misses(task, ["a", "doc"]) == []
 
