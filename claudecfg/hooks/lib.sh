@@ -27,13 +27,18 @@ resolve_transcript_path() {
     printf "%s" "$path"
 }
 
-extract_last_assistant_message_from_transcript() {
+tail_jsonl_lines() {
     local transcript_path="$1"
+    local lines="${2:-200}"
 
     if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
         return 0
     fi
 
+    tail -n "$lines" "$transcript_path" 2>/dev/null || cat "$transcript_path"
+}
+
+extract_last_assistant_message_from_jsonl_stream() {
     jq -s -r '
         def flattened_text:
             if type == "array" then
@@ -53,12 +58,13 @@ extract_last_assistant_message_from_transcript() {
 
         def assistant_text:
             [
-                .last_assistant_message?,
-                .result?,
-                .message?.content? | flattened_text,
-                .content? | flattened_text,
-                .message?.text?,
-                .text?
+                (.last_assistant_message?),
+                (.assistant_message?),
+                (.result?),
+                ((.message?.content? // empty) | flattened_text),
+                ((.content? // empty) | flattened_text),
+                (.message?.text?),
+                (.text?)
             ]
             | map(select(type == "string" and (gsub("\\s+"; " ") | length) > 0))
             | .[0] // "";
@@ -74,7 +80,26 @@ extract_last_assistant_message_from_transcript() {
             | assistant_text
             | select(length > 0)
         ][0] // ""
-    ' "$transcript_path" 2>/dev/null || true
+    ' 2>/dev/null || true
+}
+
+extract_last_assistant_message_from_transcript() {
+    local transcript_path="$1"
+    local message=""
+
+    if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
+        return 0
+    fi
+
+    # The newest assistant entry is normally near the end of the JSONL transcript.
+    # Tail-first avoids slurping the entire file on every subagent/stop guard event.
+    message="$(tail_jsonl_lines "$transcript_path" 200 | extract_last_assistant_message_from_jsonl_stream)"
+    if [ -n "$message" ]; then
+        printf "%s" "$message"
+        return 0
+    fi
+
+    extract_last_assistant_message_from_jsonl_stream < "$transcript_path"
 }
 
 resolved_last_assistant_message() {
@@ -584,94 +609,66 @@ sorted_unique_lines() {
     awk 'NF { seen[$0] = 1 } END { for (line in seen) print line }' | sort
 }
 
-transcript_text_content() {
-    local transcript_path="$1"
-
-    if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
-        return 0
-    fi
-
-    jq -Rr 'fromjson? | .. | strings?' "$transcript_path" 2>/dev/null || true
-}
-
 transcript_indicates_backgrounded_agent() {
-    local transcript_path text
+    local transcript_path
 
     transcript_path="$(resolve_transcript_path)"
     if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
         return 1
     fi
 
-    text="$(transcript_text_content "$transcript_path" | tr '[:upper:]' '[:lower:]')"
-    grep -Fq 'backgrounded agent' <<<"$text"
+    if tail_jsonl_lines "$transcript_path" 400 | grep -Fiq 'backgrounded agent'; then
+        return 0
+    fi
+
+    grep -Fiq 'backgrounded agent' "$transcript_path"
 }
 
 infer_started_roles_from_transcript() {
-    local transcript_path text roles=""
+    local transcript_path matches match roles=""
 
     transcript_path="$(resolve_transcript_path)"
     if [ -z "$transcript_path" ] || [ ! -f "$transcript_path" ]; then
         return 0
     fi
 
-    text="$(transcript_text_content "$transcript_path" | tr '[:upper:]' '[:lower:]')"
-    [ -z "$text" ] && return 0
+    matches="$(
+        grep -Eio 'skill\(/manager\)|skill\(/review\)|skill\(/test\)|skill\(/explore\)|skill\(/design\)|skill\(/bug\)|skill\(/debug\)|skill\(/docs\)|skill\(/refactor\)|manager\(|code reviewer\(|tester\(|explorer\(|architect\(|bugbuster\(|debugger\(|docwriter\(|housekeeper\(|veles\(' "$transcript_path" \
+            || true
+    )"
+    [ -z "$matches" ] && return 0
 
-    if grep -Fq 'skill(/manager)' <<<"$text"; then
-        roles="${roles}"$'\n''m'
-    fi
-    if grep -Fq 'skill(/review)' <<<"$text"; then
-        roles="${roles}"$'\n''cr'
-    fi
-    if grep -Fq 'skill(/test)' <<<"$text"; then
-        roles="${roles}"$'\n''t'
-    fi
-    if grep -Fq 'skill(/explore)' <<<"$text"; then
-        roles="${roles}"$'\n''e'
-    fi
-    if grep -Fq 'skill(/design)' <<<"$text"; then
-        roles="${roles}"$'\n''a'
-    fi
-    if grep -Fq 'skill(/bug)' <<<"$text"; then
-        roles="${roles}"$'\n''bug'
-    fi
-    if grep -Fq 'skill(/debug)' <<<"$text"; then
-        roles="${roles}"$'\n''dbg'
-    fi
-    if grep -Fq 'skill(/docs)' <<<"$text"; then
-        roles="${roles}"$'\n''doc'
-    fi
-    if grep -Fq 'skill(/refactor)' <<<"$text"; then
-        roles="${roles}"$'\n''hk'
-    fi
-
-    if grep -Eq '(^|[[:space:]])manager\(' <<<"$text"; then
-        roles="${roles}"$'\n''m'
-    fi
-    if grep -Eq '(^|[[:space:]])code reviewer\(' <<<"$text"; then
-        roles="${roles}"$'\n''cr'
-    fi
-    if grep -Eq '(^|[[:space:]])tester\(' <<<"$text"; then
-        roles="${roles}"$'\n''t'
-    fi
-    if grep -Eq '(^|[[:space:]])explorer\(' <<<"$text"; then
-        roles="${roles}"$'\n''e'
-    fi
-    if grep -Eq '(^|[[:space:]])architect\(' <<<"$text"; then
-        roles="${roles}"$'\n''a'
-    fi
-    if grep -Eq '(^|[[:space:]])bugbuster\(' <<<"$text"; then
-        roles="${roles}"$'\n''bug'
-    fi
-    if grep -Eq '(^|[[:space:]])debugger\(' <<<"$text"; then
-        roles="${roles}"$'\n''dbg'
-    fi
-    if grep -Eq '(^|[[:space:]])docwriter\(' <<<"$text"; then
-        roles="${roles}"$'\n''doc'
-    fi
-    if grep -Eq '(^|[[:space:]])(housekeeper|veles)\(' <<<"$text"; then
-        roles="${roles}"$'\n''hk'
-    fi
+    while IFS= read -r match; do
+        case "$(printf "%s" "$match" | tr '[:upper:]' '[:lower:]')" in
+            skill\(/manager\)|manager\()
+                roles="${roles}"$'\n''m'
+                ;;
+            skill\(/review\)|code\ reviewer\()
+                roles="${roles}"$'\n''cr'
+                ;;
+            skill\(/test\)|tester\()
+                roles="${roles}"$'\n''t'
+                ;;
+            skill\(/explore\)|explorer\()
+                roles="${roles}"$'\n''e'
+                ;;
+            skill\(/design\)|architect\()
+                roles="${roles}"$'\n''a'
+                ;;
+            skill\(/bug\)|bugbuster\()
+                roles="${roles}"$'\n''bug'
+                ;;
+            skill\(/debug\)|debugger\()
+                roles="${roles}"$'\n''dbg'
+                ;;
+            skill\(/docs\)|docwriter\()
+                roles="${roles}"$'\n''doc'
+                ;;
+            skill\(/refactor\)|housekeeper\(|veles\()
+                roles="${roles}"$'\n''hk'
+                ;;
+        esac
+    done <<<"$matches"
 
     printf "%s\n" "$roles" | sorted_unique_lines
 }
