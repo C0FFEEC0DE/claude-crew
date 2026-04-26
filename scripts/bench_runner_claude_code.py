@@ -232,6 +232,7 @@ def build_prompt(task: dict, verification_label: str) -> str:
     if required_used_agents:
         completion_discipline_note = ""
         sequence_note = ""
+        ownership_note = ""
         if len(required_used_agent_list) > 1:
             ordered = " -> ".join(f"@{alias}" for alias in required_used_agent_list)
             sequence_note = f"""
@@ -246,12 +247,17 @@ def build_prompt(task: dict, verification_label: str) -> str:
 - If @cr is the final required role, reserve time for it: once verification and docs are ready, launch @cr immediately.
 - Keep the @cr review terse and findings-only so the required review handoff lands before timeout.
 - Do not spend the final turns polishing prose or making optional edits before the required @cr handoff."""
+        if len(required_used_agent_list) == 1:
+            required_alias = f"@{required_used_agent_list[0]}"
+            ownership_note = f"""
+- This task has a single required specialist. Launch {required_alias} first and let that specialist own the core task.
+- Do not make the substantive edit or analysis yourself before {required_alias} is launched; that still fails the run even if tests pass."""
         required_used_agent_note = f"""
 
 Required specialist handoff:
 - This run is scored on a real specialist launch, not a prose mention.
 - Start with an actual handoff to: {required_used_agents}
-- Make that handoff before doing the substantive work yourself.{sequence_note}{completion_discipline_note}"""
+- Make that handoff before doing the substantive work yourself.{sequence_note}{ownership_note}{completion_discipline_note}"""
         required_used_agent_note += """
 - Prefer direct alias handoffs like @doc, @a, or @cr instead of slash skills such as /docs, /design, or /review unless the task explicitly asks for the slash command.
 - Do not burn turns probing avoidable skill path/tool restrictions before the required alias handoff lands."""
