@@ -221,12 +221,12 @@ Each benchmark run also writes `bench-output/benchmark-report.md` inside the art
 
 ### Behavior Benchmark Subagents Smoke
 
-`.github/workflows/behavior-benchmark-subagents-smoke.yml` runs the per-agent coverage suite on PRs and via manual dispatch.
+`.github/workflows/behavior-benchmark-subagents-smoke.yml` runs the subagent coverage suite on PRs and via manual dispatch.
 
 That workflow:
 
 - runs on PRs when benchmark-relevant files changed
-- runs `bench/tasks/subagents/smoke/*.json` (9 tasks, one per agent)
+- runs `bench/tasks/subagents/smoke/*.json` with focused canary tasks for each canonical specialist role plus a few workflow-shape tasks
 - uses smart task selection so a change in one agent only re-runs that role's task unless shared workflow logic changed
 - supports manual `workflow_dispatch` for on-demand checks on `main`
 
