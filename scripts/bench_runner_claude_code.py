@@ -1408,6 +1408,10 @@ def synthesize_required_transcript_lines(
             lines.append(synthesized_outcome_line(task, changed_files))
         elif "Changed files:|No files changed:" in pattern:
             lines.append(changed_files_line(changed_files))
+        elif pattern.strip() == "Changed files:" and changed_files:
+            lines.append(changed_files_line(changed_files))
+        elif pattern.strip() == "No files changed:" and not changed_files:
+            lines.append(changed_files_line(changed_files))
         elif "Verification status:" in pattern:
             lines.append(verification_status_line(verification_required, tests_run, tests_passed, verification_label))
         elif "Review outcome:" in pattern:

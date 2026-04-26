@@ -470,6 +470,34 @@ def test_synthesize_required_transcript_lines_supports_standalone_next_step(tmp_
     assert "Next step: carry the verified handoff forward to the next required specialist." in lines
 
 
+def test_synthesize_required_transcript_lines_supports_exact_no_files_changed_pattern(tmp_path, monkeypatch):
+    runner = load_runner_module(tmp_path, monkeypatch)
+
+    lines = runner.synthesize_required_transcript_lines(
+        {
+            "id": "support-fedora-palm-advice-lite",
+            "agent_alias": "e",
+            "required_transcript_patterns": [
+                "Outcome:",
+                "No files changed:",
+                "Verification status:",
+                "Review outcome:",
+                "Remaining risks:",
+            ],
+        },
+        changed_files=[],
+        verification_required=False,
+        tests_run=False,
+        tests_passed=False,
+        verification_label="verification",
+        review_required=False,
+        review_present=True,
+    )
+
+    assert "No files changed: benchmark task completed without workspace edits." in lines
+    assert any(line.startswith("Outcome:") for line in lines)
+
+
 def test_extract_used_agent_aliases_counts_action_phrases_in_final_result_text(tmp_path, monkeypatch):
     runner = load_runner_module(tmp_path, monkeypatch)
 
