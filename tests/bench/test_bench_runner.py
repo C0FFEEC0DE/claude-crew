@@ -211,6 +211,7 @@ def test_build_prompt_includes_required_agent_and_transcript_contract(tmp_path, 
     prompt = runner.build_prompt(task, "pytest -q")
 
     assert "Start with an actual handoff to: @bug" in prompt
+    assert "Prefer direct alias handoffs like @doc, @a, or @cr instead of slash skills" in prompt
     assert "Findings: or Investigation:" in prompt
     assert "Changed files: or No files changed:" in prompt
 

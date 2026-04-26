@@ -252,6 +252,9 @@ Required specialist handoff:
 - This run is scored on a real specialist launch, not a prose mention.
 - Start with an actual handoff to: {required_used_agents}
 - Make that handoff before doing the substantive work yourself.{sequence_note}{completion_discipline_note}"""
+        required_used_agent_note += """
+- Prefer direct alias handoffs like @doc, @a, or @cr instead of slash skills such as /docs, /design, or /review unless the task explicitly asks for the slash command.
+- Do not burn turns probing avoidable skill path/tool restrictions before the required alias handoff lands."""
     transcript_contract_note = ""
     if required_transcript_hints:
         transcript_contract_note = """
