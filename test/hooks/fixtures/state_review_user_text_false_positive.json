@@ -31,8 +31,5 @@
   "stop_block_count": 0,
   "stop_block_reason": "",
   "stop_block_message": "",
-  "subagent_stop_block_count": 0,
-  "subagent_stop_block_reason": "",
-  "subagent_stop_block_message": "",
   "files": []
 }

@@ -18,11 +18,12 @@ import { resolveDataRoot, resolveSessionId, resolveLogRoot, resolveProjectDir } 
 import { statePaths, appendEvent, loadState } from './state.mjs';
 import {
   classifyPrompt, userPromptResetPatch, sessionBackgroundManagerPending,
-  clearLoopBlockPatch, taskTypeRequiresImplementationSummary,
+  clearLoopBlockPatch, agentLoopKey, hasPriorStopBlock, taskTypeRequiresImplementationSummary,
 } from './workflow.mjs';
 import { commandClass, verificationOutcome, detectTestCmd, detectLintCmd, detectBuildCmd } from './verification.mjs';
 import {
   extractSubagentLabel, extractSubagentScope, loadAliases, effectiveStartedRoles,
+  shouldEnforceSubagentFooter, isGenericType, isAliasesLoaded,
 } from './agents.mjs';
 import {
   resolvedLastAssistantMessage, transcriptIndicatesBackgroundedAgent,
@@ -51,6 +52,10 @@ import {
 const here = dirname(fileURLToPath(import.meta.url));
 const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT || join(here, '..');
 const ALIASES = loadAliases(pluginRoot);
+// The alias map is immutable for the process lifetime; precompute its
+// loaded-ness once so shouldEnforceSubagentFooter avoids a per-SubagentStop
+// Object.keys allocation on the hot path.
+const ALIASES_LOADED = isAliasesLoaded(ALIASES);
 
 // UserPromptSubmit: classify the prompt, persist the task type / manager mode /
 // required roles / docs flag plus the stop-loop reset to session state, and
@@ -59,6 +64,12 @@ const ALIASES = loadAliases(pluginRoot);
 function handleUserPromptSubmit(parsed) {
   const prompt = parsed.data?.prompt ?? '';
   const cls = classifyPrompt(prompt);
+  // ADR-0002 amendment: the turn reset is split — scalar stop-loop fields go
+  // through one set_many, while per-agent maps are cleared via map_clear events
+  // so no scalar set_many overloads a map field (model consistency: all
+  // subagent_stop_blocks mutations flow through map_* events). The clear is a
+  // deliberate whole-map reset for a new turn, not a per-key race fix.
+  const reset = userPromptResetPatch();
   const fields = {
     session_id: parsed.sessionId ?? '',
     cwd: parsed.cwd ?? '',
@@ -69,9 +80,15 @@ function handleUserPromptSubmit(parsed) {
     required_subagents: cls.requiredSubagents,
     required_subagent_any_of: cls.requiredSubagentAnyOf,
     dispatch_contract_mode: cls.dispatchContractMode,
-    ...userPromptResetPatch(),
+    ...reset.scalar,
   };
-  persistPatch(parsed, fields);
+  // Resolve the session paths once and reuse for the scalar set_many and the
+  // per-map map_clear events (persistPatch would resolve them again internally).
+  const paths = statePathsFor(parsed);
+  safeAppend(paths, 'set_many', { fields });
+  for (const mapField of reset.mapClears) {
+    safeAppend(paths, 'map_clear', { mapField });
+  }
   if (cls.contextMessage) return additionalContext(cls.contextMessage, 'UserPromptSubmit');
   return passthrough();
 }
@@ -211,16 +228,34 @@ function handlePostToolUseFailure(parsed) {
   return additionalContext(outcome.message, 'PostToolUseFailure');
 }
 
-function persistPatch(parsed, patch) {
-  const sid = resolveSessionId(parsed.sessionId);
-  const paths = statePaths(resolveDataRoot(), sid);
-  try { appendEvent(paths, 'set_many', { fields: patch }); } catch (e) {
+// Append an event record, swallowing write failures to stderr so a state-write
+// fault never blocks the hook runtime. Shared by every state-mutation call site
+// (set_many patches, per-key map_set/map_delete events, the SubagentStart batch).
+function safeAppend(paths, type, payload) {
+  try { appendEvent(paths, type, payload); } catch (e) {
     process.stderr.write(`hook-dispatcher: state write failed: ${e?.message ?? e}\n`);
   }
 }
 
+// Persist a state patch as a set_many event for the parsed input's session.
+function persistPatch(parsed, patch) {
+  safeAppend(statePathsFor(parsed), 'set_many', { fields: patch });
+}
+
 function statePathsFor(parsed) {
   return statePaths(resolveDataRoot(), resolveSessionId(parsed.sessionId));
+}
+
+// ADR-0002 race fix: append a per-key map mutation (map_set/map_delete) instead
+// of a full-map set_many. A full-map snapshot written via set_many is a shallow
+// Object.assign, so the reducer applies it last-writer-wins and a concurrently
+// written sibling agent's entry is clobbered. Per-key events touch one key, so
+// concurrent SubagentStop writers for different agents survive each other.
+function appendMapSet(parsed, mapField, key, value) {
+  safeAppend(statePathsFor(parsed), 'map_set', { mapField, key, value });
+}
+function appendMapDelete(parsed, mapField, key) {
+  safeAppend(statePathsFor(parsed), 'map_delete', { mapField, key });
 }
 
 // SubagentStart: record the handoff — increment the start counter, add the role
@@ -241,9 +276,7 @@ function handleSubagentStart(parsed) {
     events.push({ type: 'role_increment', payload: { mapField: 'subagent_instance_count_by_role', key: label, by: 1 } });
   }
   for (const ev of events) {
-    try { appendEvent(paths, ev.type, ev.payload); } catch (e) {
-      process.stderr.write(`hook-dispatcher: state write failed: ${e?.message ?? e}\n`);
-    }
+    safeAppend(paths, ev.type, ev.payload);
   }
   const message = label
     ? `Recorded subagent handoff: @${label}. Parallel same-role handoffs are allowed when they have distinct scopes. Return outcome, changed files or 'no changes', verification status, and remaining risks or next step. If you edit code, run or request verification before stopping.`
@@ -265,10 +298,28 @@ function loadStateFor(parsed) {
 
 // Persist a loop-aware block: record the block + policy-stall patch, then emit
 // the block/terminal output. Mirrors emit_loop_aware_block + the stop-guard
-// call sites.
-function emitBlock(parsed, state, prefix, reason, message) {
-  const { patch, output } = emitLoopAwareBlock(state, prefix, reason, message);
-  persistPatch(parsed, patch);
+// call sites. `agentId` keys the per-agent loop-block counter (ADR 0002); the
+// session-global `stop` prefix keeps it null.
+//
+// The write path is routed by the loop-block model, not a prefix string-literal:
+// a per-agent prefix (loopBlockFields(prefix).perAgent) writes only its changed
+// map key via map_set, so concurrent writers for different agents survive each
+// other (ADR-0002 race fix); a session-global prefix writes the scalar patch via
+// set_many. Adding or renaming a per-agent prefix only needs loopBlockFields to
+// change — the dispatcher follows the model and cannot silently diverge.
+//
+// ADR 0005: emitLoopAwareBlock carries the changed entry explicitly in `perKey`
+// ({ mapKey, key, entry } for a per-agent prefix, null for a session-global
+// prefix), so the dispatcher emits map_set straight from it instead of
+// re-reading the full-map patch. The entry is guaranteed by recordLoopBlock for
+// a per-agent prefix, so there is no defensive missing-entry branch here.
+function emitBlock(parsed, state, prefix, reason, message, agentId = null) {
+  const { patch, output, perKey } = emitLoopAwareBlock(state, prefix, reason, message, agentId);
+  if (perKey) {
+    appendMapSet(parsed, perKey.mapKey, perKey.key, perKey.entry);
+  } else {
+    persistPatch(parsed, patch);
+  }
   return output;
 }
 
@@ -279,6 +330,23 @@ function emitBlock(parsed, state, prefix, reason, message) {
 function handleStop(parsed) {
   const state = loadStateFor(parsed);
   if (!state) return passthrough();
+  // ADR 0003: when the runtime signals stop_hook_active, it is re-invoking the
+  // Stop hook after our own previous block — yield (clear loop state and pass
+  // through) instead of re-blocking, honoring the standard loop-prevention
+  // contract. Checked before the policy-stall repeat so even a stalled session
+  // yields when the runtime asks it to.
+  //
+  // Hardening: only yield when there is evidence of a prior block this session
+  // (a non-zero stop_block_count or a terminal policy stall). A conformant
+  // runtime sets stop_hook_active only on a re-invocation, so a prior block is
+  // always present then; gating on it means a runtime that erroneously sets
+  // stop_hook_active on a FIRST Stop invocation cannot silently disable all
+  // enforcement (verification gate, agent handoffs, footer checks) for the
+  // session — normal blocking proceeds instead.
+  if (parsed.stopHookActive === true && hasPriorStopBlock(state)) {
+    persistPatch(parsed, clearLoopBlockPatch('stop'));
+    return passthrough();
+  }
   if (state.stalled_by_policy === true) {
     const reason = state.policy_stall_reason || 'Stop hook policy stalled the session.';
     return terminalCancel(reason, { hardStop: true });
@@ -337,28 +405,46 @@ function handleStop(parsed) {
 }
 
 // SubagentStop: enforce the subagent handoff contract. Mirrors
-// subagent-stop-guard.sh.
+// subagent-stop-guard.sh. ADR 0001: the footer contract applies only to
+// recognized AgntHive specialist roles; generic dispatch types
+// (general-purpose, workflow-subagent) and unidentified subagents pass through
+// without footer enforcement, so structured output is not corrupted. ADR 0002:
+// the loop-block counter is keyed per agent_id via the agentId thread.
 function handleSubagentStop(parsed) {
   const state = loadStateFor(parsed);
   if (!state) return passthrough();
+  // ADR-0001: scope footer enforcement to AgntHive specialists. Generic dispatch
+  // types are always exempt — shouldEnforceSubagentFooter below returns false for
+  // them — and a missing/corrupt alias map degrades to enforcing on all
+  // non-generic subagents rather than silently disabling the contract. The
+  // isGenericType short-circuit is a behavior-neutral optimization: it only
+  // skips the extractSubagentLabel LABEL_PATHS walk for generic types, which
+  // passthrough regardless; removing it does not change behavior.
+  if (isGenericType(parsed.agentType)) return passthrough();
+  const label = extractSubagentLabel(parsed.data, ALIASES);
+  if (!shouldEnforceSubagentFooter(label, parsed.agentType, ALIASES, ALIASES_LOADED)) return passthrough();
   const transcriptPath = parsed.transcriptPath ?? state.transcript_path ?? '';
   const lastMessage = resolvedLastAssistantMessage(parsed.data ?? {}, transcriptPath);
   if (!lastMessage) {
-    return emitBlock(parsed, state, 'subagent_stop', 'No assistant summary message was found for this subagent stop event.', lastMessage);
+    return emitBlock(parsed, state, 'subagent_stop', 'No assistant summary message was found for this subagent stop event.', lastMessage, parsed.agentId);
   }
   if (!messageMentionsConcreteOutcome(lastMessage)) {
-    return emitBlock(parsed, state, 'subagent_stop', 'Subagent output must include a concrete outcome line (e.g. Outcome: <result>).', lastMessage);
+    return emitBlock(parsed, state, 'subagent_stop', 'Subagent output must include a concrete outcome line (e.g. Outcome: <result>).', lastMessage, parsed.agentId);
   }
   if (!messageMentionsChangedFiles(lastMessage)) {
-    return emitBlock(parsed, state, 'subagent_stop', 'Subagent output must include a Changed files: or No files changed: line.', lastMessage);
+    return emitBlock(parsed, state, 'subagent_stop', 'Subagent output must include a Changed files: or No files changed: line.', lastMessage, parsed.agentId);
   }
   if (!messageMentionsVerificationStatus(lastMessage)) {
-    return emitBlock(parsed, state, 'subagent_stop', 'Subagent output must include a Verification status: line.', lastMessage);
+    return emitBlock(parsed, state, 'subagent_stop', 'Subagent output must include a Verification status: line.', lastMessage, parsed.agentId);
   }
   if (!messageMentionsRemainingRisks(lastMessage) && !messageMentionsNextStep(lastMessage)) {
-    return emitBlock(parsed, state, 'subagent_stop', 'Subagent output must include a Remaining risks: or Next step: line.', lastMessage);
+    return emitBlock(parsed, state, 'subagent_stop', 'Subagent output must include a Remaining risks: or Next step: line.', lastMessage, parsed.agentId);
   }
-  persistPatch(parsed, clearLoopBlockPatch('subagent_stop'));
+  // ADR-0002 race fix: clear only this agent's map key via a per-key delete
+  // event, not a full-map set_many snapshot that could clobber a concurrently
+  // written sibling agent's entry. ADR 0006: the per-agent key (with the
+  // `_session` fallback when agent_id is absent) comes from the shared helper.
+  appendMapDelete(parsed, 'subagent_stop_blocks', agentLoopKey(parsed.agentId));
   return passthrough();
 }
 

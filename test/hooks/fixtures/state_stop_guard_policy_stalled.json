@@ -25,9 +25,6 @@
   "stop_block_message": "Verification status: node --test passed.\nChanged files: src/app.py.\nRemaining risks: none.",
   "stalled_by_policy": true,
   "policy_stall_reason": "Repeated stop-block loop detected (3x): Final response must include a Review outcome: line after code or config changes. Do not retry the same final response again; change the summary or perform the required action first.",
-  "subagent_stop_block_count": 0,
-  "subagent_stop_block_reason": "",
-  "subagent_stop_block_message": "",
   "files": [
     "src/app.py"
   ]

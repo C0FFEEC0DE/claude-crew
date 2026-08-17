@@ -5,7 +5,8 @@ import { dirname, join } from 'node:path';
 import {
   loadAliases, canonicalizeSubagentLabel, extractSubagentLabel, extractSubagentScope,
   inferStartedRolesFromTranscript, effectiveStartedRoles, formatSubagentList,
-  formatSubagentGroup, GENERIC_TYPES,
+  formatSubagentGroup, GENERIC_TYPES, isAgntHiveSpecialistRole,
+  shouldEnforceSubagentFooter, isGenericType, isAliasesLoaded,
 } from '../../plugins/agnthive/modules/agents.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -41,6 +42,23 @@ const CANON_CASES = [
   ['  @Code_Reviewer  ', 'cr'],
   ['', ''],
   [null, ''],
+  // ADR 0004: strip a leading namespace: prefix before normalizing.
+  ['agnthive:Explorer', 'e'],
+  ['agnthive:Code Reviewer', 'cr'],
+  ['agnthive:architect', 'a'],
+  ['AGNTHIVE:Tester', 't'],
+  ['@agnthive:Manager', 'm'],
+  // Bare labels (no colon) are unchanged — general-purpose/workflow-subagent
+  // are generic dispatch types, not canonical roles.
+  ['workflow-subagent', 'workflow-subagent'],
+  // ADR-0004 over-match guard: a foreign namespace prefix must NOT be stripped.
+  // mcp:tester -> 'mcp-tester' (kept whole), NOT 'tester' -> 't'.
+  // workflow:docs -> 'workflow-docs', NOT 'docs' -> 'doc'. Only the plugin's own
+  // 'agnthive:' prefix is stripped; anything else is left intact and so is not
+  // misrecognized as an AgntHive specialist.
+  ['mcp:tester', 'mcp-tester'],
+  ['workflow:docs', 'workflow-docs'],
+  ['mcp:Code Reviewer', 'mcp-code-reviewer'],
 ];
 for (const [raw, expected] of CANON_CASES) {
   test(`canonicalizeSubagentLabel(${JSON.stringify(raw)}) -> ${expected}`, () => {
@@ -128,4 +146,81 @@ test('formatSubagentList / formatSubagentGroup', () => {
   assert.equal(formatSubagentList([]), 'none');
   assert.equal(formatSubagentGroup(['e', 'a']), '@e/@a');
   assert.equal(formatSubagentGroup([]), '');
+});
+
+// --- isAgntHiveSpecialistRole (ADR 0001) -----------------------------------
+
+test('isAgntHiveSpecialistRole: true for recognized canonical roles', () => {
+  for (const role of ['a', 'e', 'bug', 'dbg', 't', 'cr', 'doc', 'm']) {
+    assert.equal(isAgntHiveSpecialistRole(role, aliases), true, `expected ${role} to be recognized`);
+  }
+});
+
+test('isAgntHiveSpecialistRole: false for generic dispatch types and unrecognized labels', () => {
+  for (const label of ['general-purpose', 'workflow-subagent', 'agnthive-explorer', 'explorer', '', null, undefined, 42]) {
+    assert.equal(isAgntHiveSpecialistRole(label, aliases), false, `expected ${JSON.stringify(label)} to not be recognized`);
+  }
+});
+
+test('isAgntHiveSpecialistRole: false when aliases is empty', () => {
+  assert.equal(isAgntHiveSpecialistRole('cr', {}), false);
+});
+
+test('isAgntHiveSpecialistRole: only own-property keys count, not inherited', () => {
+  const proto = { cr: ['cr'] };
+  const child = Object.create(proto);
+  assert.equal(isAgntHiveSpecialistRole('cr', child), false);
+});
+
+// --- shouldEnforceSubagentFooter (ADR-0001 hardened scope) -----------------
+// Guards the two regressions the adversarial review caught: (1) generic dispatch
+// types are always exempt even when the alias map is missing, and (2) a missing
+// alias map degrades to enforcing on all non-generic subagents (safe floor),
+// never to silently disabling the footer contract.
+
+test('isAliasesLoaded: shared predicate for alias-map loaded-ness', () => {
+  assert.equal(isAliasesLoaded({ cr: 'Code Reviewer' }), true);
+  assert.equal(isAliasesLoaded({}), false, 'an empty map is not loaded');
+  assert.equal(isAliasesLoaded(null), false);
+  assert.equal(isAliasesLoaded(undefined), false);
+  assert.equal(isAliasesLoaded('not-an-object'), false);
+  // The alias map is always a JSON object in practice; the predicate (shared
+  // with shouldEnforceSubagentFooter's fallback, behavior-preserving) treats any
+  // non-empty object as loaded, so a non-empty array reads as loaded too.
+  assert.equal(isAliasesLoaded(['x']), true);
+});
+
+test('shouldEnforceSubagentFooter: generic types are exempt even with an empty alias map', () => {
+  for (const label of GENERIC_TYPES) {
+    assert.equal(shouldEnforceSubagentFooter(label, label, {}), false, `${label} must pass through with no aliases`);
+    assert.equal(shouldEnforceSubagentFooter(label, null, {}), false, `${label} must pass through via label`);
+  }
+});
+
+test('shouldEnforceSubagentFooter: raw agent_type also exempts generics', () => {
+  assert.equal(shouldEnforceSubagentFooter('cr', 'general-purpose', aliases), false);
+  assert.equal(shouldEnforceSubagentFooter('cr', 'workflow-subagent', aliases), false);
+});
+
+test('shouldEnforceSubagentFooter: recognized specialists are enforced when aliases loaded', () => {
+  for (const role of ['a', 'e', 'bug', 'dbg', 't', 'cr', 'doc', 'm']) {
+    assert.equal(shouldEnforceSubagentFooter(role, role, aliases), true, `${role} should be enforced`);
+  }
+});
+
+test('shouldEnforceSubagentFooter: unrecognized non-generic labels pass through when aliases loaded', () => {
+  for (const label of ['agnthive-explorer', 'explorer', 'mcp-tester', 'workflow-docs']) {
+    assert.equal(shouldEnforceSubagentFooter(label, label, aliases), false, `${label} should pass through`);
+  }
+});
+
+test('shouldEnforceSubagentFooter: safe floor — missing alias map enforces on all non-generic', () => {
+  // loadAliases swallowed an error and returned {}: specialists must still be
+  // enforced (not silently passed through), and unidentified non-generic labels
+  // too. Only generic types and blank labels are exempt.
+  assert.equal(shouldEnforceSubagentFooter('cr', 'cr', {}), true);
+  assert.equal(shouldEnforceSubagentFooter('some-other-agent', 'some-other-agent', {}), true);
+  assert.equal(shouldEnforceSubagentFooter('', '', {}), false);
+  assert.equal(shouldEnforceSubagentFooter(null, null, {}), false);
+  assert.equal(shouldEnforceSubagentFooter('general-purpose', 'general-purpose', {}), false);
 });

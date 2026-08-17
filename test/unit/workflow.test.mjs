@@ -8,6 +8,7 @@ import {
   taskTypeRequiresSpecialistHandoffs, loopBlockFields, loopBlockCount,
   recordLoopBlock, clearLoopBlockPatch, userPromptResetPatch,
   sessionBackgroundManagerPending, STOP_SAFE_HINT, parseDispatchContractMarker,
+  agentLoopKey, hasPriorStopBlock,
 } from '../../plugins/agnthive/modules/workflow.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -125,9 +126,16 @@ test('taskTypeRequiresSpecialistHandoffs', () => {
 
 // --- loop-block accounting -------------------------------------------------
 
+test('agentLoopKey returns the agent id or the shared _session fallback (ADR 0006)', () => {
+  assert.equal(agentLoopKey('agent-a'), 'agent-a');
+  assert.equal(agentLoopKey(undefined), '_session');
+  assert.equal(agentLoopKey(''), '_session');
+  assert.equal(agentLoopKey(null), '_session');
+});
+
 test('loopBlockFields maps stop and subagent_stop, rejects others', () => {
-  assert.deepEqual(loopBlockFields('stop'), { countKey: 'stop_block_count', reasonKey: 'stop_block_reason', messageKey: 'stop_block_message' });
-  assert.deepEqual(loopBlockFields('subagent_stop'), { countKey: 'subagent_stop_block_count', reasonKey: 'subagent_stop_block_reason', messageKey: 'subagent_stop_block_message' });
+  assert.deepEqual(loopBlockFields('stop'), { countKey: 'stop_block_count', reasonKey: 'stop_block_reason', messageKey: 'stop_block_message', perAgent: false });
+  assert.deepEqual(loopBlockFields('subagent_stop'), { mapKey: 'subagent_stop_blocks', perAgent: true });
   assert.equal(loopBlockFields('nope'), null);
 });
 
@@ -138,29 +146,79 @@ test('recordLoopBlock increments on matching reason+message, resets otherwise', 
   assert.equal(recordLoopBlock(s, 'bad', 'r', 'm'), null);
 });
 
+test('recordLoopBlock: subagent_stop is per-agent (increment/reset per agent key)', () => {
+  const s = { subagent_stop_blocks: { 'agent-a': { count: 2, reason: 'r', message: 'm' } } };
+  // ADR-0005: the per-agent return is { mapKey, key, entry } — the single
+  // changed key plus its new entry, no full-map snapshot.
+  // same agent, same reason+message -> increment
+  assert.deepEqual(recordLoopBlock(s, 'subagent_stop', 'r', 'm', 'agent-a'), {
+    mapKey: 'subagent_stop_blocks', key: 'agent-a', entry: { count: 3, reason: 'r', message: 'm' },
+  });
+  // same agent, new reason -> reset to 1
+  assert.deepEqual(recordLoopBlock(s, 'subagent_stop', 'r2', 'm', 'agent-a'), {
+    mapKey: 'subagent_stop_blocks', key: 'agent-a', entry: { count: 1, reason: 'r2', message: 'm' },
+  });
+  // different agent starts at 1 even with the same reason+message as agent-a
+  assert.deepEqual(recordLoopBlock(s, 'subagent_stop', 'r', 'm', 'agent-b'), {
+    mapKey: 'subagent_stop_blocks', key: 'agent-b', entry: { count: 1, reason: 'r', message: 'm' },
+  });
+  // absent agent_id falls back to the shared _session key
+  assert.deepEqual(recordLoopBlock({}, 'subagent_stop', 'r', 'm'), {
+    mapKey: 'subagent_stop_blocks', key: '_session', entry: { count: 1, reason: 'r', message: 'm' },
+  });
+  assert.equal(recordLoopBlock(s, 'bad', 'r', 'm', 'agent-a'), null);
+});
+
 test('loopBlockCount reads defensively', () => {
   assert.equal(loopBlockCount({ stop_block_count: 5 }, 'stop'), 5);
   assert.equal(loopBlockCount({}, 'stop'), 0);
-  assert.equal(loopBlockCount({ subagent_stop_block_count: 3 }, 'subagent_stop'), 3);
+  assert.equal(loopBlockCount({ subagent_stop_blocks: { 'agent-a': { count: 3 } } }, 'subagent_stop', 'agent-a'), 3);
+  // different agent -> 0 (per-agent isolation)
+  assert.equal(loopBlockCount({ subagent_stop_blocks: { 'agent-a': { count: 3 } } }, 'subagent_stop', 'agent-b'), 0);
+  // absent agent_id falls back to _session
+  assert.equal(loopBlockCount({ subagent_stop_blocks: { _session: { count: 2 } } }, 'subagent_stop'), 2);
+  assert.equal(loopBlockCount({}, 'subagent_stop', 'agent-a'), 0);
+  assert.equal(loopBlockCount({}, 'subagent_stop'), 0);
   assert.equal(loopBlockCount({}, 'bad'), 0);
 });
 
-test('clearLoopBlockPatch zeroes fields and policy-stall state', () => {
+// ADR-0003 amendment: the stop_hook_active yield is gated on this predicate so
+// a runtime that erroneously sets the flag on a first Stop invocation cannot
+// silently disable enforcement. It reads the count through loopBlockCount (the
+// declared single read path) and ORs in the terminal policy-stall flag.
+test('hasPriorStopBlock is true only when a prior stop block or policy stall exists', () => {
+  assert.equal(hasPriorStopBlock({}), false, 'fresh session has no prior block');
+  assert.equal(hasPriorStopBlock({ stop_block_count: 0, stalled_by_policy: false }), false);
+  assert.equal(hasPriorStopBlock({ stop_block_count: 1 }), true, 'one prior block counts');
+  assert.equal(hasPriorStopBlock({ stop_block_count: '2' }), true, 'coerces a string count');
+  assert.equal(hasPriorStopBlock({ stop_block_count: 0, stalled_by_policy: true }), true, 'terminal policy stall counts');
+  // A non-numeric / NaN count with no stall is NOT a prior block (Number(NaN)||0 = 0).
+  assert.equal(hasPriorStopBlock({ stop_block_count: 'oops' }), false);
+});
+
+test('clearLoopBlockPatch zeroes stop fields and policy-stall state', () => {
   assert.deepEqual(clearLoopBlockPatch('stop'), {
     stop_block_count: 0, stop_block_reason: '', stop_block_message: '',
     stalled_by_policy: false, policy_stall_reason: '',
   });
-  assert.deepEqual(clearLoopBlockPatch('subagent_stop'), {
-    subagent_stop_block_count: 0, subagent_stop_block_reason: '', subagent_stop_block_message: '',
-    stalled_by_policy: false, policy_stall_reason: '',
-  });
   assert.equal(clearLoopBlockPatch('bad'), null);
+  // The per-agent `subagent_stop` clear is no longer routed through this
+  // function (the dispatcher clears one agent key via a map_delete event); it
+  // returns null for a per-agent prefix instead of a full-map snapshot that
+  // would re-introduce the ADR-0002 race clobber.
+  assert.equal(clearLoopBlockPatch('subagent_stop'), null);
 });
 
-test('userPromptResetPatch resets the stop loop', () => {
+test('userPromptResetPatch returns scalar reset + mapClears for the per-agent map', () => {
+  // ADR-0002 amendment: the per-agent map is cleared via a map_clear event
+  // (listed in mapClears), not folded into the scalar set_many, so a
+  // concurrent SubagentStop writer's key survives the turn reset.
   assert.deepEqual(userPromptResetPatch(), {
-    stop_block_count: 0, stop_block_reason: '', stop_block_message: '',
-    stalled_by_policy: false, policy_stall_reason: '',
+    scalar: {
+      stop_block_count: 0, stop_block_reason: '', stop_block_message: '',
+      stalled_by_policy: false, policy_stall_reason: '',
+    },
+    mapClears: ['subagent_stop_blocks'],
   });
 });
 

@@ -38,6 +38,13 @@ export function parseHookInput(input) {
     sessionId: typeof data.session_id === 'string' ? data.session_id : null,
     cwd: typeof data.cwd === 'string' ? data.cwd : null,
     transcriptPath: typeof data.transcript_path === 'string' ? data.transcript_path : null,
+    // ADR 0003: stop_hook_active signals the runtime is re-invoking the Stop
+    // hook after its own block — yield instead of re-blocking.
+    stopHookActive: data.stop_hook_active === true,
+    // Subagent identity fields consumed by other agents' files; surfaced here
+    // so callers can thread them without re-parsing `data`.
+    agentId: typeof data.agent_id === 'string' ? data.agent_id : null,
+    agentType: typeof data.agent_type === 'string' ? data.agent_type : null,
   };
 }
 

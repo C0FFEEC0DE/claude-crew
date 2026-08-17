@@ -1,0 +1,5 @@
+{
+  "session_id": "case-subagent-stop-generic-passthrough",
+  "agent_type": "general-purpose",
+  "last_assistant_message": "Outcome: structured findings emitted.\nChanged files: none.\nVerification status: not run.\nRemaining risks: none."
+}

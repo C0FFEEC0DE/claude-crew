@@ -236,7 +236,7 @@
     "script": "subagent-stop-guard.sh",
     "stdin": "test/hooks/fixtures/subagent_stop_loose_outcome.json",
     "expect_exit": 0,
-    "state_jq": ".subagent_stop_block_count == 0 and .subagent_stop_block_reason == \"\" and .subagent_stop_block_message == \"\""
+    "state_jq": ".subagent_stop_blocks | length == 0"
   },
   {
     "name": "subagent_stop_blocks_without_assistant_message",
@@ -284,7 +284,7 @@
     "stdin": "test/hooks/fixtures/subagent_stop_complete_loop_reset.json",
     "seed_state": "test/hooks/fixtures/state_subagent_stop_repeated_files_block.json",
     "expect_exit": 0,
-    "state_jq": ".subagent_stop_block_count == 0 and .subagent_stop_block_reason == \"\" and .subagent_stop_block_message == \"\""
+    "state_jq": ".subagent_stop_blocks | length == 0"
   },
   {
     "name": "subagent_stop_escalates_repeated_same_block_reason",
@@ -293,6 +293,44 @@
     "seed_state": "test/hooks/fixtures/state_subagent_stop_repeated_files_block.json",
     "expect_exit": 0,
     "stdout_jq": "((has(\"decision\") | not)) and .hardStop == true and .continue == false and (.stopReason | contains(\"Repeated stop-block loop detected\"))"
+  },
+  {
+    "name": "subagent_stop_passthrough_for_generic_type",
+    "script": "subagent-stop-guard.sh",
+    "stdin": "test/hooks/fixtures/subagent_stop_generic_type_passthrough.json",
+    "expect_exit": 0,
+    "stdout_jq": "has(\"decision\") | not"
+  },
+  {
+    "name": "subagent_stop_per_agent_no_cross_agent_hardstop",
+    "script": "subagent-stop-guard.sh",
+    "stdin": "test/hooks/fixtures/subagent_stop_agent_b_same_block.json",
+    "seed_state": "test/hooks/fixtures/state_subagent_stop_agent_a_count_2.json",
+    "expect_exit": 0,
+    "stdout_jq": ".decision == \"block\" and .hardStop == false"
+  },
+  {
+    "name": "subagent_stop_namespaced_specialist_is_enforced",
+    "script": "subagent-stop-guard.sh",
+    "stdin": "test/hooks/fixtures/subagent_stop_namespaced_cr.json",
+    "expect_exit": 0,
+    "stdout_jq": ".decision == \"block\" and (.reason | contains(\"Changed files:\"))"
+  },
+  {
+    "name": "subagent_stop_foreign_namespace_passes_through",
+    "script": "subagent-stop-guard.sh",
+    "stdin": "test/hooks/fixtures/subagent_stop_foreign_namespace_passthrough.json",
+    "expect_exit": 0,
+    "stdout_jq": "has(\"decision\") | not"
+  },
+  {
+    "name": "subagent_stop_clear_isolates_other_agents",
+    "script": "subagent-stop-guard.sh",
+    "stdin": "test/hooks/fixtures/subagent_stop_agent_a_valid_footer.json",
+    "seed_state": "test/hooks/fixtures/state_subagent_stop_agents_ab.json",
+    "expect_exit": 0,
+    "stdout_jq": "has(\"decision\") | not",
+    "state_jq": ".subagent_stop_blocks | length == 1 and (has(\"agent-A\") | not)"
   },
   {
     "name": "user_prompt_submit_handles_empty_session_id_gracefully",
@@ -883,6 +921,15 @@
     "expect_exit": 0,
     "stdout_jq": "((has(\"decision\") | not)) and .hardStop == true and .continue == false and (.stopReason | contains(\"Repeated stop-block loop detected\"))",
     "state_jq": ".stop_block_count == 3 and .stalled_by_policy == true"
+  },
+  {
+    "name": "stop_hook_active_yields_even_when_footer_missing",
+    "script": "stop-guard.sh",
+    "stdin": "test/hooks/fixtures/stop_hook_active_yields.json",
+    "seed_state": "test/hooks/fixtures/state_stop_guard_prior_block.json",
+    "expect_exit": 0,
+    "stdout_jq": "has(\"decision\") | not",
+    "state_jq": ".stop_block_count == 0 and .stop_block_reason == \"\" and .stop_block_message == \"\" and .stalled_by_policy == false"
   },
   {
     "name": "user_prompt_submit_clears_terminal_stop_state",

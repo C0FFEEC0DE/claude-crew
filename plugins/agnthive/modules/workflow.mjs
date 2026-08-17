@@ -240,29 +240,90 @@ export function taskTypeRequiresSpecialistHandoffs(taskType) {
   return taskTypeRequiresImplementationSummary(taskType) || taskType === 'support';
 }
 
-/** Map a loop-block prefix to its state field names, or null if unknown. */
+/**
+ * Map a loop-block prefix to its state field layout, or null if unknown.
+ *
+ * The `stop` prefix is a session-global scalar (the main agent has no
+ * agent_id); the `subagent_stop` prefix is a per-agent map keyed by agent_id
+ * so cross-agent accumulation can no longer terminate processing (ADR-0002).
+ * When agent_id is absent, a shared `_session` key keeps the safety backstop
+ * working for runtimes that omit agent_id.
+ *
+ * The two layouts are frozen module-level constants so every caller
+ * (`loopBlockCount`, `recordLoopBlock`, `clearLoopBlockPatch`,
+ * `emitLoopAwareBlock`) shares one reference instead of allocating a fresh
+ * object per call — `loopBlockFields` is on the block hot path and may be
+ * called more than once per block.
+ */
+const STOP_FIELDS = Object.freeze({
+  countKey: 'stop_block_count',
+  reasonKey: 'stop_block_reason',
+  messageKey: 'stop_block_message',
+  perAgent: false,
+});
+const SUBAGENT_STOP_FIELDS = Object.freeze({
+  mapKey: 'subagent_stop_blocks',
+  perAgent: true,
+});
+
 export function loopBlockFields(prefix) {
   switch (prefix) {
-    case 'stop': return { countKey: 'stop_block_count', reasonKey: 'stop_block_reason', messageKey: 'stop_block_message' };
-    case 'subagent_stop': return { countKey: 'subagent_stop_block_count', reasonKey: 'subagent_stop_block_reason', messageKey: 'subagent_stop_block_message' };
+    case 'stop': return STOP_FIELDS;
+    case 'subagent_stop': return SUBAGENT_STOP_FIELDS;
     default: return null;
   }
 }
 
-/** Read the current loop-block count for a prefix from a state object. */
-export function loopBlockCount(state, prefix) {
+/**
+ * The per-agent loop-block key: the agent's id when present, else the shared
+ * `_session` backstop for runtimes that omit `agent_id`. Single source of truth
+ * for the fallback (ADR 0006) — every per-agent loop-block site calls this.
+ */
+export function agentLoopKey(agentId) {
+  return agentId || '_session';
+}
+
+/**
+ * Read the current loop-block count for a prefix from a state object. The
+ * scalar `stop` branch is the production read path — `hasPriorStopBlock` (the
+ * ADR-0003 amendment gate) reads through it, so the count-read rule lives in one
+ * place. The per-agent `subagent_stop` branch is model-completeness + a
+ * test-pinned read contract: production carries the per-agent count forward via
+ * `recordLoopBlock`'s returned `entry.count` (ADR-0005), not by re-reading state
+ * here. It is kept for API symmetry and as a diagnostic/debug surface.
+ */
+export function loopBlockCount(state, prefix, agentId = null) {
   const f = loopBlockFields(prefix);
   if (!f) return 0;
+  if (f.perAgent) {
+    return Number(state?.[f.mapKey]?.[agentLoopKey(agentId)]?.count) || 0;
+  }
   return Number(state?.[f.countKey]) || 0;
 }
 
 /**
- * Compute the next loop-block patch. If reason+message match the previous
+ * Compute the next loop-block entry. If reason+message match the previous
  * values, the count increments; otherwise it resets to 1. Pure.
+ *
+ * For the per-agent `subagent_stop` prefix, returns `{ mapKey, key, entry }`
+ * — the single changed key plus its new `{ count, reason, message }` entry,
+ * with no full-map snapshot. The dispatcher persists `entry` via a single-key
+ * `map_set` (ADR-0002 race fix), and `emitLoopAwareBlock` threads it straight
+ * into `perKey`, so the merged map is never needed (ADR-0005: carry the entry
+ * explicitly). For the session-global `stop` prefix, returns the scalar patch
+ * (`{ [countKey], [reasonKey], [messageKey] }`) persisted as-is via `set_many`.
  */
-export function recordLoopBlock(state, prefix, reason, message) {
+export function recordLoopBlock(state, prefix, reason, message, agentId = null) {
   const f = loopBlockFields(prefix);
   if (!f) return null;
+  if (f.perAgent) {
+    const map = state?.[f.mapKey] || {};
+    const key = agentLoopKey(agentId);
+    const prev = map[key];
+    const nextCount = (prev?.reason === reason && prev?.message === message)
+      ? (Number(prev.count) || 0) + 1 : 1;
+    return { mapKey: f.mapKey, key, entry: { count: nextCount, reason, message } };
+  }
   const prevReason = state?.[f.reasonKey] ?? '';
   const prevMessage = state?.[f.messageKey] ?? '';
   const prevCount = Number(state?.[f.countKey]) || 0;
@@ -274,10 +335,16 @@ export function recordLoopBlock(state, prefix, reason, message) {
   };
 }
 
-/** Patch that clears a loop block (and policy-stall state) for a prefix. */
+/**
+ * Patch that clears the session-global `stop` loop block (and policy-stall
+ * state). Scalar-only: the per-agent `subagent_stop` clear is no longer routed
+ * through this function — the dispatcher clears one agent key via a `map_delete`
+ * event (see hook-dispatcher.mjs `handleSubagentStop`), which avoids the
+ * last-writer-wins full-map clobber a `set_many`-based clear would reintroduce.
+ */
 export function clearLoopBlockPatch(prefix) {
   const f = loopBlockFields(prefix);
-  if (!f) return null;
+  if (!f || f.perAgent) return null;
   return {
     [f.countKey]: 0,
     [f.reasonKey]: '',
@@ -288,17 +355,44 @@ export function clearLoopBlockPatch(prefix) {
 }
 
 /**
+ * True when there is evidence of a prior `stop` block this session: a non-zero
+ * session-global stop-block count, or a terminal policy stall. ADR-0003
+ * amendment: the `stop_hook_active` yield is gated on this so a runtime that
+ * erroneously sets the flag on a first Stop invocation cannot silently disable
+ * enforcement. Encapsulates the two-field policy check so the dispatcher states
+ * policy rather than field names, and routes the read through `loopBlockCount`
+ * (the declared single read path) instead of restating the scalar field inline.
+ */
+export function hasPriorStopBlock(state) {
+  return loopBlockCount(state, 'stop') > 0 || state?.stalled_by_policy === true;
+}
+
+/**
  * A real user prompt starts a new attempt after a terminal stop-hook failure,
- * so the stop loop resets. Returns the patch applied on UserPromptSubmit
- * (after classification).
+ * so the stop loop resets. Returns a structured reset applied on
+ * UserPromptSubmit (after classification):
+ *   - `scalar`: the session-global stop-loop + policy-stall fields, persisted
+ *     as one `set_many`.
+ *   - `mapClears`: per-agent maps to clear via `map_clear` events (ADR-0002
+ *     amendment) — NOT folded into the scalar set_many. This keeps the invariant
+ *     "all subagent_stop_blocks mutations flow through map_* events" with zero
+ *     exceptions (model consistency). It is NOT a per-key race fix: a clear is
+ *     intentionally whole-map (a new turn starts fresh), so a concurrent map_set
+ *     appended before the clear is wiped just as a set_many would. The ADR-0002
+ *     race fix proper is the per-key map_set/map_delete write path.
+ *
+ * The dispatcher emits the scalar patch and one `map_clear` per listed map.
  */
 export function userPromptResetPatch() {
   return {
-    stop_block_count: 0,
-    stop_block_reason: '',
-    stop_block_message: '',
-    stalled_by_policy: false,
-    policy_stall_reason: '',
+    scalar: {
+      stop_block_count: 0,
+      stop_block_reason: '',
+      stop_block_message: '',
+      stalled_by_policy: false,
+      policy_stall_reason: '',
+    },
+    mapClears: ['subagent_stop_blocks'],
   };
 }
 

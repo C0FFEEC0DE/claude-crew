@@ -279,19 +279,36 @@ export function sessionManagerIdleReason(state, startedRoles = null) {
 /**
  * emit_loop_aware_block: record the loop block, build the checklist, and
  * return the hook output plus the state patch to persist. On the 3rd repeated
- * block with the same reason+message, switch to a terminal continue:false
- * (hardStop) and mark stalled_by_policy for the stop prefix.
+ * block with the same reason+message (per agent for the `subagent_stop` prefix,
+ * session-global for the `stop` prefix), switch to a terminal continue:false
+ * (hardStop) and mark stalled_by_policy for the stop prefix only.
  */
-export function emitLoopAwareBlock(state, prefix, reason, message) {
+export function emitLoopAwareBlock(state, prefix, reason, message, agentId = null) {
   const fields = loopBlockFields(prefix);
-  const patch = recordLoopBlock(state, prefix, reason, message);
-  const count = fields ? patch[fields.countKey] : 0;
+  const result = recordLoopBlock(state, prefix, reason, message, agentId);
+  let count = 0;
+  // ADR 0005: recordLoopBlock returns the per-key entry explicitly for a
+  // per-agent prefix — `{ mapKey, key, entry }` — which we thread straight into
+  // `perKey` for the dispatcher to emit as a single-key map_set. No full-map
+  // patch is produced on this path, so `patch` is null. For a session-global
+  // prefix, `result` is the scalar patch and `perKey` stays null.
+  let perKey = null;
+  let fullPatch = null;
+  if (fields?.perAgent) {
+    perKey = result;
+    count = Number(perKey?.entry?.count) || 0;
+  } else if (fields) {
+    count = result[fields.countKey];
+    // recordLoopBlock's scalar branch returns a fresh object literal with no
+    // shared reference, so we can hold it directly and mutate the two
+    // policy-stall fields below in place — no defensive copy needed.
+    fullPatch = result;
+  }
   const hardStop = count >= 3;
   let finalReason = reason;
   if (hardStop) {
     finalReason = `Repeated stop-block loop detected (${count}x): ${reason} Do not retry the same final response again; change the summary or perform the required action first.`;
   }
-  const fullPatch = { ...patch };
   if (prefix === 'stop') {
     fullPatch.stalled_by_policy = hardStop;
     fullPatch.policy_stall_reason = hardStop ? finalReason : '';
@@ -300,7 +317,7 @@ export function emitLoopAwareBlock(state, prefix, reason, message) {
   const output = hardStop
     ? { continue: false, stopReason: finalReason, errorDetails: checklist, hardStop: true }
     : { decision: 'block', reason: finalReason, errorDetails: checklist, hardStop: false };
-  return { patch: fullPatch, output, hardStop, finalReason };
+  return { patch: fullPatch, output, hardStop, finalReason, perKey };
 }
 
 /** Sentinel: exit with a non-zero code and a stderr message (TaskCompleted / TeammateIdle). */

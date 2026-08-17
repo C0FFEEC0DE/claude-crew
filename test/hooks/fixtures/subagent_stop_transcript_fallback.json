@@ -1,4 +1,5 @@
 {
   "session_id": "case-subagent-stop-transcript",
+  "agent_alias": "cr",
   "transcript_path": "test/hooks/fixtures/transcripts/subagent_stop_summary.jsonl"
 }

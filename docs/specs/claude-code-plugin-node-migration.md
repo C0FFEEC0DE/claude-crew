@@ -192,9 +192,7 @@ fields written by `_atomic_state_update` / hook scripts. All live in
 | `subagent_start_count` | tracked | agents | SubagentStart counter |
 | `subagent_instance_count_by_role` | tracked | agents | Per-role instance counts |
 | `subagent_events` | tracked | agents | SubagentStart event log |
-| `subagent_stop_block_count` | loop | summary | SubagentStop loop counter (parallel to `stop_block_count`) |
-| `subagent_stop_block_reason` | loop | summary | SubagentStop last block reason |
-| `subagent_stop_block_message` | loop | summary | SubagentStop last block message |
+| `subagent_stop_blocks` | loop | workflow / summary | Per-agent SubagentStop loop-block map keyed by `agent_id` (ADR-0002); each entry is `{ count, reason, message }`, cleared per-key via `map_delete` on a valid footer and atomically via `map_clear` on turn reset |
 | `progress_ledger` (file) | ledger | ledger | Re-injected compact context |
 
 > **Intentional delta:** the 11 fields currently mutated directly by hook

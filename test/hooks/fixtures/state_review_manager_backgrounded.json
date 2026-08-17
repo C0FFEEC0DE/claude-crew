@@ -33,8 +33,5 @@
   "stop_block_count": 2,
   "stop_block_reason": "Agent-enforced workflow requires specific subagent handoffs before completion for review work. Missing required roles: @cr. Used so far: @m.",
   "stop_block_message": "",
-  "subagent_stop_block_count": 0,
-  "subagent_stop_block_reason": "",
-  "subagent_stop_block_message": "",
   "files": []
 }

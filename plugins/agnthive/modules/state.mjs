@@ -67,9 +67,14 @@ export const DEFAULT_STATE = Object.freeze({
   stop_block_message: '',
   stalled_by_policy: false,
   policy_stall_reason: '',
-  subagent_stop_block_count: 0,
-  subagent_stop_block_reason: '',
-  subagent_stop_block_message: '',
+  // ADR-0002: the subagent_stop loop-block counter is keyed by agent_id in the
+  // per-agent map below. When agent_id is absent a `_session` key preserves the
+  // safety backstop for runtimes that omit it. (The legacy scalar
+  // subagent_stop_block_count/_reason/_message fields were removed: nothing on
+  // the subagent_stop path reads or writes them, and old set_many event logs
+  // that still carry them are harmless — the reducer Object.assign's the keys
+  // back into existence on replay with no consumer.)
+  subagent_stop_blocks: {},
   files: [],
 });
 
@@ -97,6 +102,46 @@ export function statePaths(dataRoot, sessionId) {
 /** Ensure the session directory and events directory exist. */
 export function ensureStateDir(paths) {
   mkdirSync(paths.eventsDir, { recursive: true });
+}
+
+/**
+ * Resolve a map-typed state field, returning the live map object or a fresh {}
+ * when the field is missing or not a plain object. The `!Array.isArray` guard
+ * matters: a stray array field would otherwise be index-addressed like a map.
+ * Shared by the per-key map mutation events (map_set/map_delete). role_increment
+ * keeps its own looser guard intentionally (it predates this helper and its
+ * callers never target array fields).
+ */
+function resolveMapField(state, mapField) {
+  const cur = state[mapField];
+  return (cur && typeof cur === 'object' && !Array.isArray(cur)) ? cur : {};
+}
+
+/**
+ * Validate a map_* event's `mapField` is a non-empty string, or return null
+ * (tolerating a missing payload). Shared by `mapMutationContext` and the
+ * `map_clear` case so every member of the map_* family applies the same
+ * mapField guard and cannot drift on it.
+ */
+function validateMapField(ev) {
+  const { mapField } = ev.payload || {};
+  if (typeof mapField !== 'string' || mapField === '') return null;
+  return mapField;
+}
+
+/**
+ * Validate a per-key map-mutation payload and resolve its target map, or
+ * return null when the payload is missing or the mapField/key are not
+ * non-empty strings. Shared by map_set/map_delete so the two cases can't
+ * drift on which guards they apply. Returns `{ map, mapField, key }`.
+ */
+function mapMutationContext(state, ev) {
+  if (!ev.payload) return null;
+  const mapField = validateMapField(ev);
+  if (mapField === null) return null;
+  const { key } = ev.payload;
+  if (typeof key !== 'string' || key === '') return null;
+  return { map: resolveMapField(state, mapField), mapField, key };
 }
 
 /** Apply one event record to a state object (mutates state). */
@@ -130,6 +175,42 @@ function applyEvent(state, ev) {
       const map = (state[ev.payload.mapField] && typeof state[ev.payload.mapField] === 'object') ? state[ev.payload.mapField] : {};
       map[ev.payload.key] = (Number(map[ev.payload.key]) || 0) + (ev.payload.by || 1);
       state[ev.payload.mapField] = map;
+      break;
+    }
+    // ADR-0002 race fix: per-key map mutation. Unlike set_many (a shallow
+    // Object.assign that last-writer-wins the whole map and so loses a
+    // concurrently-written sibling agent's entry), map_set/map_delete touch a
+    // single key, so concurrent SubagentStop writers for different agents can no
+    // longer clobber each other's loop-block counter.
+    case 'map_set': {
+      const ctx = mapMutationContext(state, ev);
+      if (!ctx) break;
+      ctx.map[ctx.key] = ev.payload.value;
+      state[ctx.mapField] = ctx.map;
+      break;
+    }
+    case 'map_delete': {
+      const ctx = mapMutationContext(state, ev);
+      if (!ctx) break;
+      delete ctx.map[ctx.key];
+      state[ctx.mapField] = ctx.map;
+      break;
+    }
+    // ADR-0002 amendment: atomic full-map clear, the last member of the map_*
+    // event family. Used by the turn reset (userPromptResetPatch) so the
+    // per-agent map is cleared through a typed map_* event instead of overloading
+    // a scalar set_many with a map field — this keeps the invariant "all
+    // subagent_stop_blocks mutations flow through map_* events" with zero
+    // exceptions. NOTE: this is a model-consistency win, NOT a per-key race fix.
+    // A clear is intentionally whole-map (a new turn starts fresh), so a
+    // concurrent map_set appended BEFORE this clear is wiped, just as a set_many
+    // would; the ADR-0002 race fix proper is the per-key map_set/map_delete write
+    // path, where two agents incrementing concurrently no longer clobber each
+    // other. The reset is a deliberate clear, not a concurrent per-key write.
+    case 'map_clear': {
+      const mapField = validateMapField(ev);
+      if (mapField === null) break;
+      state[mapField] = {};
       break;
     }
     case 'set_many':

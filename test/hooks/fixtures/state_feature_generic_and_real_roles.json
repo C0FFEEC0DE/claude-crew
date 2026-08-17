@@ -31,23 +31,32 @@
     "cr": 1
   },
   "subagent_events": [
-    {"index": 1, "role": "general-purpose"},
-    {"index": 2, "role": "e"},
-    {"index": 3, "role": "cr"}
+    {
+      "index": 1,
+      "role": "general-purpose"
+    },
+    {
+      "index": 2,
+      "role": "e"
+    },
+    {
+      "index": 3,
+      "role": "cr"
+    }
   ],
   "required_subagents": [
     "t",
     "cr"
   ],
   "required_subagent_any_of": [
-    ["e", "a"]
+    [
+      "e",
+      "a"
+    ]
   ],
   "stop_block_count": 0,
   "stop_block_reason": "",
   "stop_block_message": "",
-  "subagent_stop_block_count": 0,
-  "subagent_stop_block_reason": "",
-  "subagent_stop_block_message": "",
   "files": [
     "src/app.py"
   ]

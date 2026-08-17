@@ -1,3 +1,4 @@
 {
+  "agent_alias": "cr",
   "last_assistant_message": "Outcome: implemented the parser.\nChanged files: src/parser.py.\nVerification status: not run.\nRemaining risks: none."
 }

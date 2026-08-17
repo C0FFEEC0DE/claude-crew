@@ -1,4 +1,5 @@
 {
   "session_id": "case-subagent-stop-loose-outcome",
+  "agent_alias": "cr",
   "last_assistant_message": "I fixed the bug and verified tests pass.\nChanged files: src/app.py\nVerification status: passed\nRemaining risks: none"
 }

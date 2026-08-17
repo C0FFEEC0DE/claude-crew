@@ -28,9 +28,6 @@
   "stop_block_message": "",
   "stalled_by_policy": false,
   "policy_stall_reason": "",
-  "subagent_stop_block_count": 0,
-  "subagent_stop_block_reason": "",
-  "subagent_stop_block_message": "",
   "files": [],
   "docs_required": true
 }

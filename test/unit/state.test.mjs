@@ -26,6 +26,15 @@ test('DEFAULT_STATE carries the dispatch-contract mode default for the PreToolUs
   assert.deepEqual(DEFAULT_STATE.subagents_started, []);
 });
 
+test('DEFAULT_STATE seeds an empty per-agent subagent_stop_blocks map (ADR-0002)', () => {
+  assert.deepEqual(DEFAULT_STATE.subagent_stop_blocks, {});
+  // Legacy scalar subagent_stop_block_* fields were removed; confirm they are
+  // absent from the default shape (old event logs replay them harmlessly).
+  assert.equal(DEFAULT_STATE.subagent_stop_block_count, undefined);
+  assert.equal(DEFAULT_STATE.subagent_stop_block_reason, undefined);
+  assert.equal(DEFAULT_STATE.subagent_stop_block_message, undefined);
+});
+
 test('safeSessionId accepts simple ids and sanitizes allowed chars', () => {
   assert.equal(safeSessionId('abc-123_DEF'), 'abc-123_DEF');
   assert.equal(safeSessionId('session_1'), 'session_1');
@@ -99,6 +108,108 @@ test('readEvents skips a corrupt event file and returns the rest', () => {
   // a fresh append still works after corruption
   appendEvent(p, 'increment', { field: 'c', by: 1 });
   assert.equal(readEvents(p).length, 1);
+});
+
+// --- map_set / map_delete (ADR-0002 race fix) ------------------------------
+// Per-key map mutation events. Unlike set_many (shallow Object.assign that
+// last-writer-wins the whole map and loses a concurrently-written sibling key),
+// map_set/map_delete touch one key, so concurrent writers for different keys
+// survive each other.
+
+test('map_set + reducer: per-key entries coexist in the map', () => {
+  const p = statePaths(root, 'mapset-1');
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-a', value: { count: 2, reason: 'r', message: 'm' } });
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-b', value: { count: 1, reason: 'r2', message: 'm2' } });
+  const state = reducer(readEvents(p));
+  assert.deepEqual(state.subagent_stop_blocks, {
+    'agent-a': { count: 2, reason: 'r', message: 'm' },
+    'agent-b': { count: 1, reason: 'r2', message: 'm2' },
+  });
+});
+
+test('map_set later value overwrites only the targeted key', () => {
+  const p = statePaths(root, 'mapset-2');
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-a', value: { count: 1 } });
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-b', value: { count: 1 } });
+  // agent-a's count increments to 3; agent-b must be untouched.
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-a', value: { count: 3 } });
+  const state = reducer(readEvents(p));
+  assert.equal(state.subagent_stop_blocks['agent-a'].count, 3);
+  assert.equal(state.subagent_stop_blocks['agent-b'].count, 1);
+});
+
+test('map_delete removes the targeted key and leaves siblings intact', () => {
+  const p = statePaths(root, 'mapdel-1');
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-a', value: { count: 1 } });
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-b', value: { count: 2 } });
+  appendEvent(p, 'map_delete', { mapField: 'subagent_stop_blocks', key: 'agent-a' });
+  const state = reducer(readEvents(p));
+  assert.equal(state.subagent_stop_blocks['agent-a'], undefined);
+  assert.equal(state.subagent_stop_blocks['agent-b'].count, 2);
+  // deleting a missing key is a no-op (no throw, siblings survive)
+  appendEvent(p, 'map_delete', { mapField: 'subagent_stop_blocks', key: 'never-there' });
+  assert.equal(reducer(readEvents(p)).subagent_stop_blocks['agent-b'].count, 2);
+});
+
+test('map_set on a non-object field coerces to a fresh map', () => {
+  const p = statePaths(root, 'mapset-3');
+  // DEFAULT_STATE.files is []; writing a map_set into it must not corrupt.
+  appendEvent(p, 'map_set', { mapField: 'files', key: 'k', value: 1 });
+  const state = reducer(readEvents(p));
+  assert.deepEqual(state.files, { k: 1 });
+});
+
+test('map_clear empties the targeted map (ADR-0002 amendment)', () => {
+  const p = statePaths(root, 'mapclear-1');
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-a', value: { count: 2 } });
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-b', value: { count: 1 } });
+  appendEvent(p, 'map_clear', { mapField: 'subagent_stop_blocks' });
+  const state = reducer(readEvents(p));
+  assert.deepEqual(state.subagent_stop_blocks, {});
+  // a non-string or empty-string mapField is a no-op (siblings / other fields untouched)
+  appendEvent(p, 'map_clear', { mapField: 42 });
+  appendEvent(p, 'map_clear', { mapField: '' });
+  assert.deepEqual(reducer(readEvents(p)).subagent_stop_blocks, {});
+  // an empty-string mapField never creates a state[''] key
+  assert.equal(reducer(readEvents(p))[''], undefined);
+});
+
+test('map_set/map_delete ignore a malformed (non-string/empty) key', () => {
+  const p = statePaths(root, 'mapset-malformed');
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-a', value: { count: 1 } });
+  // A missing/non-string key must not write a spurious 'undefined' entry.
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: undefined, value: { count: 9 } });
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: '', value: { count: 9 } });
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 42, value: { count: 9 } });
+  appendEvent(p, 'map_delete', { mapField: 'subagent_stop_blocks', key: null });
+  const state = reducer(readEvents(p));
+  assert.deepEqual(Object.keys(state.subagent_stop_blocks), ['agent-a'], 'no spurious keys from malformed key events');
+  assert.equal(state.subagent_stop_blocks['agent-a'].count, 1);
+});
+
+// The regression this fixes: two concurrent writers each compute a full-map
+// set_many snapshot from a state that does not yet include the other writer's
+// new key. Applied in seq order, the later set_many clobbers the earlier
+// writer's key (last-writer-wins over the whole map). map_set per-key survives.
+test('race fix: interleaved map_set for different keys survives; set_many would not', () => {
+  const p = statePaths(root, 'race-1');
+  // seed agent-a
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-a', value: { count: 2 } });
+  // Two writers that read the seeded state concurrently each write only their
+  // own new key via per-key map_set (the fix).
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-b', value: { count: 1 } });
+  appendEvent(p, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-c', value: { count: 1 } });
+  const state = reducer(readEvents(p));
+  assert.deepEqual(Object.keys(state.subagent_stop_blocks).sort(), ['agent-a', 'agent-b', 'agent-c']);
+  // Contrast: the old set_many full-map snapshots (each computed before the
+  // other key existed) would lose one when applied in order. Demonstrate the
+  // old behavior in a separate session so the test documents the bug.
+  const q = statePaths(root, 'race-old');
+  appendEvent(q, 'map_set', { mapField: 'subagent_stop_blocks', key: 'agent-a', value: { count: 2 } });
+  appendEvent(q, 'set_many', { fields: { subagent_stop_blocks: { 'agent-a': { count: 2 }, 'agent-b': { count: 1 } } } });
+  appendEvent(q, 'set_many', { fields: { subagent_stop_blocks: { 'agent-a': { count: 2 }, 'agent-c': { count: 1 } } } });
+  const oldState = reducer(readEvents(q));
+  assert.deepEqual(Object.keys(oldState.subagent_stop_blocks).sort(), ['agent-a', 'agent-c'], 'old set_many path loses agent-b');
 });
 
 // --- snapshot recovery -----------------------------------------------------

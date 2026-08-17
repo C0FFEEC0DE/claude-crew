@@ -24,6 +24,7 @@ import {
   sessionAgentEnforcementReason,
   sessionManagerIdleReason,
   stopSafeNoChangeFooterHint,
+  emitLoopAwareBlock,
 } from '../../plugins/agnthive/modules/summary-contract.mjs';
 
 // A representative prefix list mirroring the legacy helper test.
@@ -313,5 +314,93 @@ describe('stopSafeNoChangeFooterHint', () => {
     for (const docs of [true, false]) {
       assert.match(stopSafeNoChangeFooterHint(docs), /did not introduce additional changes/);
     }
+  });
+});
+
+// --- emit_loop_aware_block (per-agent subagent_stop) ----------------------
+
+describe('emitLoopAwareBlock', () => {
+  it('hardStops at 3 for the same agent (subagent_stop)', () => {
+    const state = { subagent_stop_blocks: { 'agent-a': { count: 2, reason: 'missing files', message: 'm' } } };
+    const { output, hardStop } = emitLoopAwareBlock(state, 'subagent_stop', 'missing files', 'm', 'agent-a');
+    assert.equal(hardStop, true);
+    assert.equal(output.continue, false);
+    assert.equal(output.hardStop, true);
+  });
+
+  it('does not hardStop across different agents (subagent_stop)', () => {
+    // agent-A at count 2; blocking agent-B with the same reason+message -> count 1, not hardStop
+    const state = { subagent_stop_blocks: { 'agent-a': { count: 2, reason: 'r', message: 'm' } } };
+    const { output, hardStop } = emitLoopAwareBlock(state, 'subagent_stop', 'r', 'm', 'agent-b');
+    assert.equal(hardStop, false);
+    assert.equal(output.decision, 'block');
+    assert.equal(output.hardStop, false);
+  });
+
+  it('two different agents each blocked twice -> neither hardStops', () => {
+    let state = { subagent_stop_blocks: {} };
+    // ADR-0005: the per-agent path returns patch:null and carries the changed
+    // entry in perKey; fold it into the map to accumulate across calls.
+    const fold = (st, pk) => ({
+      ...st,
+      subagent_stop_blocks: { ...(st.subagent_stop_blocks || {}), [pk.key]: pk.entry },
+    });
+    // agent-A: count 1 then 2 (same reason+message)
+    let r = emitLoopAwareBlock(state, 'subagent_stop', 'r', 'm', 'agent-a');
+    assert.equal(r.hardStop, false);
+    assert.equal(r.patch, null);
+    state = fold(state, r.perKey);
+    r = emitLoopAwareBlock(state, 'subagent_stop', 'r', 'm', 'agent-a');
+    assert.equal(r.hardStop, false);
+    // agent-B: count 1 then 2 — agent-A's budget must not carry over
+    r = emitLoopAwareBlock(state, 'subagent_stop', 'r', 'm', 'agent-b');
+    assert.equal(r.hardStop, false);
+    state = fold(state, r.perKey);
+    r = emitLoopAwareBlock(state, 'subagent_stop', 'r', 'm', 'agent-b');
+    assert.equal(r.hardStop, false);
+  });
+
+  it('stop prefix hardStop is unchanged (session-global)', () => {
+    const state = { stop_block_count: 2, stop_block_reason: 'r', stop_block_message: 'm' };
+    const { output, hardStop } = emitLoopAwareBlock(state, 'stop', 'r', 'm');
+    assert.equal(hardStop, true);
+    assert.equal(output.continue, false);
+  });
+
+  it('subagent_stop produces no scalar patch (perKey carries the entry)', () => {
+    const state = { subagent_stop_blocks: { 'agent-a': { count: 2, reason: 'r', message: 'm' } } };
+    const { patch, perKey } = emitLoopAwareBlock(state, 'subagent_stop', 'r', 'm', 'agent-a');
+    assert.equal(patch, null);
+    assert.equal(perKey.entry.count, 3);
+  });
+
+  it('stop prefix records the patch count via the scalar field', () => {
+    const state = { stop_block_count: 1, stop_block_reason: 'r', stop_block_message: 'm' };
+    const { patch } = emitLoopAwareBlock(state, 'stop', 'r', 'm');
+    assert.equal(patch.stop_block_count, 2);
+    assert.equal(patch.stalled_by_policy, false);
+  });
+
+  it('carries perKey for a per-agent prefix (ADR 0005)', () => {
+    const state = { subagent_stop_blocks: { 'agent-a': { count: 2, reason: 'r', message: 'm' } } };
+    const { perKey } = emitLoopAwareBlock(state, 'subagent_stop', 'r', 'm', 'agent-a');
+    assert.deepEqual(perKey, {
+      mapKey: 'subagent_stop_blocks',
+      key: 'agent-a',
+      entry: { count: 3, reason: 'r', message: 'm' },
+    });
+  });
+
+  it('perKey.key uses the _session fallback when agentId is absent (ADR 0005/0006)', () => {
+    const { perKey } = emitLoopAwareBlock({ subagent_stop_blocks: {} }, 'subagent_stop', 'r', 'm');
+    assert.equal(perKey.key, '_session');
+    assert.equal(perKey.mapKey, 'subagent_stop_blocks');
+    assert.deepEqual(perKey.entry, { count: 1, reason: 'r', message: 'm' });
+  });
+
+  it('perKey is null for a session-global prefix (ADR 0005)', () => {
+    const state = { stop_block_count: 1, stop_block_reason: 'r', stop_block_message: 'm' };
+    const { perKey } = emitLoopAwareBlock(state, 'stop', 'r', 'm');
+    assert.equal(perKey, null);
   });
 });

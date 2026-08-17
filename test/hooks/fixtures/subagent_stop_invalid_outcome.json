@@ -1,4 +1,5 @@
 {
   "session_id": "case-subagent-stop-invalid-outcome",
+  "agent_alias": "cr",
   "last_assistant_message": "Summary complete."
 }

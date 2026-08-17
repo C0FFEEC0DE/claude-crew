@@ -23,13 +23,20 @@
   "subagents_started": [],
   "subagent_events": [],
   "subagent_instance_count_by_role": {},
-  "required_subagents": ["t", "cr"],
-  "required_subagent_any_of": [["e", "a"]],
+  "required_subagents": [
+    "t",
+    "cr"
+  ],
+  "required_subagent_any_of": [
+    [
+      "e",
+      "a"
+    ]
+  ],
   "stop_block_count": 0,
   "stop_block_reason": "",
   "stop_block_message": "",
-  "subagent_stop_block_count": 0,
-  "subagent_stop_block_reason": "",
-  "subagent_stop_block_message": "",
-  "files": ["src/app.py"]
+  "files": [
+    "src/app.py"
+  ]
 }
