@@ -10,7 +10,50 @@ profile history; entries here begin with the plugin.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-17
+
 ### Added
+
+- **Per-agent loop-block isolation (ADR-0002).** The `subagent_stop` loop-block
+  counter is keyed by `agent_id` in a `subagent_stop_blocks` map instead of a
+  session-global scalar, so three *different* subagents returning identical
+  invalid output can no longer accumulate to a 3-strike hard stop. Persistence
+  flows through per-key `map_set`/`map_delete` events (concurrent writers for
+  different agents survive each other) plus a `map_clear` event for the turn
+  reset — every `subagent_stop_blocks` mutation is now a typed `map_*` event.
+
+- **Honor `stop_hook_active` (ADR-0003).** The Stop hook now yields on a
+  `stop_hook_active` re-invocation instead of re-blocking up to 3×, matching the
+  standard Claude Code loop-prevention contract. The yield is gated on evidence
+  of a prior block (`hasPriorStopBlock`), so a runtime that erroneously sets the
+  flag on a first Stop cannot silently disable enforcement. The 3× counter
+  remains as a backstop for runtimes that omit the flag.
+
+- **Namespace stripping in agent-label canonicalization (ADR-0004).** A
+  namespaced specialist type such as `agnthive:Code Reviewer` is now recognized,
+  so footer enforcement applies instead of passing through as a foreign type.
+
+- **Explicit per-key entry + centralized loop key (ADR-0005/0006).**
+  `recordLoopBlock` carries the changed per-key entry explicitly
+  (`{ mapKey, key, entry }`); `agentLoopKey` centralizes the
+  `agentId || '_session'` fallback as the single source of truth for every
+  per-agent loop-block site.
+
+- **Architecture decision records (ADR-0001..0007)** documenting the
+  subagent-footer scope, per-agent loop-block counter, `stop_hook_active`
+  honoring, namespace stripping, explicit per-key entry, centralized loop key,
+  and namespace-prefix identity.
+
+### Changed
+
+- **`/simplify` cleanups.** `hasPriorStopBlock` predicate encapsulates the
+  prior-block policy check; `isAliasesLoaded` is the single source of truth for
+  the alias-map loaded-ness predicate shared by the dispatcher and
+  `shouldEnforceSubagentFooter`; `validateMapField` shares the map-field guard
+  across the whole `map_*` event family; a redundant defensive spread in
+  `emitLoopAwareBlock` was dropped; `handleUserPromptSubmit` resolves session
+  paths once per turn; and `handleSubagentStop` short-circuits generic dispatch
+  types before the label-extraction walk.
 
 - **`make precommit`** — one-command local pre-push gate that chains the full
   repository self-check (`make validate`, which includes the tier-1
